@@ -1,10 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-const fetchBoards = () => axios.get('https://a.4cdn.org/boards.json');
-const fetchBoard = (boardId) => axios.get(`https://a.4cdn.org/${boardId}/catalog.json`);
-const fetchThread = (boardId, threadId) => axios.get(`https://a.4cdn.org/${boardId}/thread/${threadId}.json`);
-const fetchArchive = (boardId) => axios.get(`https://a.4cdn.org/${boardId}/archive.json`);
+const fetchBoards = () => axios.get('https://cdn.blu.org/boards.json');
+const fetchCatalog = (boardId) => axios.get(`https://cdn.blu.org/${boardId}.json`);
+const fetchThread = (boardId, threadId) => axios.get(`https://cdn.blu.org/${boardId}/thread/${threadId}.json`);
 
 const setLocal = async (key, value) => await AsyncStorage.setItem(key, JSON.stringify(value));
 const getLocal = async (key) => await AsyncStorage.getItem(key).then(res => JSON.parse(res));
@@ -32,8 +31,8 @@ const getLocalOrRemote = async ({ key, remote }) => {
 const Repo = {
     board: {
         set: async (board) => await setLocal('board', board),
-        getLocal: async (boardId) => await getLocalOrRemote({ key: `board/${boardId}`, remote: () => fetchBoard(boardId) }),
-        getRemote: async (boardId) => await getRemote({ key: `board/${boardId}`, remote: () => fetchBoard(boardId) }),
+        getLocal: async (boardId) => await getLocalOrRemote({ key: `board/${boardId}`, remote: () => fetchCatalog(boardId) }),
+        getRemote: async (boardId) => await getRemote({ key: `board/${boardId}`, remote: () => fetchCatalog(boardId) }),
     },
 
     thread: {
