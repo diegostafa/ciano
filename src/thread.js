@@ -2,71 +2,85 @@
 
 import { Marquee } from '@animatereactnative/marquee';
 import React from 'react';
-import { ActivityIndicator, FlatList, Image, Modal, Text, TouchableHighlight, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Button, FlatList, Image, Modal, Text, TextInput, TouchableHighlight, useWindowDimensions, View } from 'react-native';
+import { FloatingAction } from 'react-native-floating-action';
 import HTMLView from 'react-native-htmlview';
 
 import { Ctx } from './app';
 import { Repo } from './data';
 import { getRepliesTo, imgFromComment } from './utils';
 
-const ThreadHeader = () => {
+const ThreadHeaderLeft = () => {
+    return <View>
+        <Text>TODO: GO BACK</Text>
+    </View>;
+};
+const ThreadHeaderTitle = () => {
     const { state } = React.useContext(Ctx);
-    const currThread = state.history.at(-1).thread;
+    const thread = state.history.at(-1).thread;
 
     return <View
-        style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            overflow: 'hidden',
-        }} >
-        <Marquee>
-            <HTMLView value={`/${state.board}/ - ${currThread.sub || currThread.com}`} />
+        style={{ flex: 1, overflow: 'hidden' }}
+    >
+        <Marquee speed={1} spacing={10}>
+            <HTMLView value={`/${state.board}/ - ${thread.sub || thread.com}`} />
         </Marquee>
+    </View>;
+};
+const ThreadHeaderRight = () => {
+    return <View>
+        <Text>TODO: OPTIONS</Text>
     </View>;
 };
 const Thread = () => {
     const { state } = React.useContext(Ctx);
-    const currThread = state.history.at(-1).thread;
-    const [fullThread, setFullThread] = React.useState(null);
+    const thread = state.history.at(-1).thread;
+    const [comments, setComments] = React.useState(null);
     const [refreshing, setRefreshing] = React.useState(false);
+    const [createComment, setCreateComment] = React.useState(false);
+    const [formData, setFormData] = React.useState(null);
     const { width } = useWindowDimensions();
     const tw = width;
 
     React.useEffect(() => {
-        if (!fullThread) {
+        if (!comments) {
             async function fetch() {
-                const value = await Repo.thread.getRemote(state.board, currThread.no);
-                setFullThread(value);
+                const value = await Repo.comments.getRemote(state.board, thread.id);
+                setComments(value);
             }
             fetch();
         }
-    }, [currThread.no, state.board, fullThread, setFullThread]);
+    }, [thread.id, state.board, comments, setComments]);
 
-    if (!fullThread) {
-        return <View>
-            <CommentTile state={state} posts={[]} post={currThread} tw={tw} />
+    if (comments === null) {
+        return <View style={{ flex: 1 }}>
+            <CommentTile comments={[]} comment={thread} tw={tw} />
+            <Text>FETCHING COMMENTS</Text>
             <ActivityIndicator />
-            <ThreadStats thread={currThread} />
+            <ThreadStats thread={thread} />
         </View>;
     }
 
-    return <View>
-        <CommentList posts={fullThread.posts} setFullThread={setFullThread} state={state} currThread={currThread} refreshing={refreshing} setRefreshing={setRefreshing} tw={tw} />
-        <ThreadStats thread={fullThread.posts[0]} />
+    return <View style={{ flex: 1 }}>
+        <CommentList comments={comments} setComments={setComments} state={state} thread={thread} refreshing={refreshing} setRefreshing={setRefreshing} tw={tw} />
+        <ThreadStats thread={thread} />
+        <CreateCommentButton createComment={createComment} setCreateComment={setCreateComment} />
+        <Modal visible={createComment} onRequestClose={() => { setCreateComment(false); }}>
+            <CreateCommentForm thread={thread} setCreateComment={setCreateComment} formData={formData} setFormData={setFormData} />
+        </Modal>
     </View>;
 };
-
-const CommentList = ({ posts, setFullThread, state, currThread, refreshing, setRefreshing, tw }) => {
+const CommentList = ({ comments, setComments, state, thread, refreshing, setRefreshing, tw }) => {
     const [replies, setReplies] = React.useState([]);
 
     return <View><FlatList
-        data={posts}
-        renderItem={({ item }) => <CommentTile state={state} posts={posts} post={item} tw={tw} setReplies={setReplies} />}
-        keyExtractor={(item) => item.no}
+        data={comments}
+        renderItem={({ item }) => <CommentTile comments={comments} comment={item} tw={tw} setReplies={setReplies} />}
+        keyExtractor={(item) => item.id}
         onRefresh={async () => {
             setRefreshing(true);
-            const value = await Repo.thread.getRemote(state.board, currThread.no);
-            setFullThread(value);
+            const value = await Repo.comments.getRemote(state.board, thread.id);
+            setComments(value);
             setRefreshing(false);
         }}
         refreshing={refreshing}
@@ -74,8 +88,7 @@ const CommentList = ({ posts, setFullThread, state, currThread, refreshing, setR
         <Modal
             visible={replies.length > 0}
             animationType="fade"
-            onRequestClose={() => setReplies([])}
-        >
+            onRequestClose={() => setReplies([])}>
             <View style={{
                 borderRadius: 20,
                 alignItems: 'center',
@@ -83,20 +96,13 @@ const CommentList = ({ posts, setFullThread, state, currThread, refreshing, setR
                 shadowOpacity: 0.25,
                 elevation: 5,
             }}>
-                <CommentList posts={replies} setFullThread={setFullThread} state={state} currThread={currThread} refreshing={refreshing} setRefreshing={setRefreshing} tw={tw} />
+                <CommentList comments={replies} setComments={setComments} state={state} thread={thread} refreshing={refreshing} setRefreshing={setRefreshing} tw={tw} />
             </View>
         </Modal >
     </View >
         ;
 };
-
-const ThreadStats = ({ thread }) => {
-    return <View>
-        <View><Text style={{ fontWeight: 'bold', textAlign: 'center' }}>TODO: THREAD INFO</Text></View>
-        <View><Text style={{ fontWeight: 'bold', textAlign: 'center' }}>TODO: RELOAD BUTTON</Text></View>
-    </View>;
-};
-const CommentTile = ({ state, posts, post, tw, setReplies }) => {
+const CommentTile = ({ comments, comment, tw, setReplies }) => {
     const COMMENT_STYLE = {
         paddingBottom: 4,
         paddingTop: 4,
@@ -108,24 +114,20 @@ const CommentTile = ({ state, posts, post, tw, setReplies }) => {
         borderBottomWidth: 4,
     };
 
-    const img = imgFromComment(state.board, post.tim);
+    const img = imgFromComment(comment);
     const thumbWidth = tw / 4;
-
-    console.log('posts', posts);
-    console.log('post', post);
-    let replies = getRepliesTo(posts, post);
+    let replies = getRepliesTo(comments, comment);
 
     return <View style={COMMENT_STYLE}>
         <View style={{ flexDirection: 'row' }}>
             {img && <CommentThumbnail src={img} w={thumbWidth} h={thumbWidth} />}
             <View>
-
-                <Text>Anonymous, On: Date</Text>
+                <Text>Anonymous, On: {comment.created_at}</Text>
                 <Text>Filesize</Text>
-                {post.sub && <HTMLView value={`<b>${post.sub}</b>`} />}
+                {comment.sub && <HTMLView value={`<b>${comment.sub}</b>`} />}
             </View>
         </View>
-        {post.com && <HTMLView value={post.com} />}
+        {comment.com && <HTMLView value={comment.com} />}
         {replies.length > 0 &&
             <TouchableHighlight
                 onPress={() => {
@@ -144,5 +146,51 @@ const CommentThumbnail = ({ src, w, h }) => {
         <Image src={src} style={{ width: w, height: h }} />
     </TouchableHighlight>;
 };
+const CreateCommentButton = ({ createComment, setCreateComment }) => {
+    return <FloatingAction
+        showBackground={false}
+        visible={!createComment}
+        onPressMain={() => { setCreateComment(true); }}
+    />;
+};
+const CreateCommentForm = ({ thread, setCreateComment, formData, setFormData }) => {
+    return <View style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    }}>
+        <View style={{
+            backgroundColor: 'white',
+            padding: 20,
+            borderRadius: 10,
+            width: '80%',
+        }}>
+            <Text style={{ fontSize: 18, marginBottom: 10 }}>Create a Thread</Text>
+            <TextInput
+                placeholder="Content"
+                style={{ height: 80, borderColor: '#ddd', borderWidth: 1, marginBottom: 10, paddingLeft: 10, textAlignVertical: 'top' }}
+                multiline
+                onChangeText={(text) => setFormData({ ...formData, com: text })}
+            />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Button title="Cancel" onPress={() => { setCreateComment(false); }} />
+                <Button title="Submit" onPress={async () => {
+                    const data = { ...formData, op: thread.id };
+                    console.log('creating comment', data);
+                    await Repo.comments.create(data).catch(console.error);
+                    setCreateComment(false);
+                }} />
+            </View>
+        </View>
+    </View>;
+};
+const ThreadStats = ({ thread }) => {
+    return <View>
+        <View><Text style={{ fontWeight: 'bold', textAlign: 'center' }}>TODO: THREAD INFO</Text></View>
+        <View><Text style={{ fontWeight: 'bold', textAlign: 'center' }}>TODO: RELOAD BUTTON</Text></View>
+    </View>;
+};
 
-export { Thread, ThreadHeader };
+export { Thread, ThreadHeaderLeft, ThreadHeaderRight, ThreadHeaderTitle };
+

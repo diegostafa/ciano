@@ -2,82 +2,106 @@
 
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
-import { ActivityIndicator, FlatList, Image, Text, TouchableHighlight, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Button, FlatList, Image, Modal, Text, TextInput, TouchableHighlight, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { FloatingAction } from 'react-native-floating-action';
 import HTMLView from 'react-native-htmlview';
 
 import { Ctx } from './app';
-import { Repo } from './data';
+import { Prefs, Repo } from './data';
 import { historyAdd, imgFromComment } from './utils';
 
-const CatalogHeader = () => {
+const CatalogHeaderLeft = () => {
+    return <View>
+        <TouchableOpacity onPress={() => { }}>
+            <Text>TODO: HISTORY</Text>
+        </TouchableOpacity>
+    </View>;
+};
+const CatalogHeaderTitle = () => {
     const { state } = React.useContext(Ctx);
-    return <View
-        style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
+    return <View>
+        <TouchableOpacity>
+            <Text>Board: {state.board}</Text>
+        </TouchableOpacity>
+    </View>;
+};
+const CatalogHeaderRight = () => {
+    const { state, setState } = React.useContext(Ctx);
+    return <View>
+        <TouchableOpacity onPress={async () => {
+            if (state.catalogMode === 'list') {
+                setState({ ...state, catalogMode: 'grid' });
+                await Prefs.set('catalogMode', 'grid');
+            } else {
+                setState({ ...state, catalogMode: 'list' });
+                await Prefs.set('catalogMode', 'list');
+            }
         }} >
-        <Text>Board: {state.board}</Text>
+            <Text>{state.catalogMode === 'list' ? 'Switch to grid' : 'Switch to list'}</Text>
+        </TouchableOpacity>
     </View>;
 };
 const Catalog = () => {
-    const { state, setState } = React.useContext(Ctx);
     const { width, height } = useWindowDimensions();
+    const { state, setState } = React.useContext(Ctx);
+    const [createThread, setCreateThread] = React.useState(false);
+    const [formData, setFormData] = React.useState(null);
+    const [fetchError, setFetchError] = React.useState(false);
+
     React.useEffect(() => {
         if (!state.board) { return; }
-        if (!state.boards[state.board]) { refreshBoard(state, setState); }
+        if (!state.boards[state.board]) { refreshBoard(state, setState, setFetchError); }
     }, [state, setState]);
 
     if (!state.boards) {
-        return <View><Text>TODO: FETCH BOARDS LOADER</Text></View>;
+        return <View style={{ flex: 1 }}><Text>TODO: FETCH BOARDS LOADER</Text></View>;
     }
     if (!state.board) {
-        return <View><Text>SELECT A BOARD TO GET STARTED</Text></View>;
+        return <View style={{ flex: 1 }}><Text>SELECT A BOARD TO GET STARTED</Text></View>;
+    }
+    if (fetchError) {
+        return <View style={{ flex: 1 }}>
+            <Text>TODO: FETCH ERROR</Text>
+            <Button title={'Retry'} onPress={() => {
+                setFetchError(false);
+                refreshBoard(state, setState, setFetchError);
+            }} />
+        </View>;
     }
     if (!state.boards[state.board]) {
-        return <View><ActivityIndicator /></View>;
+        return <View style={{ flex: 1 }}>
+            <Text>FETCHING BOARD</Text>
+            <ActivityIndicator /></View>;
     }
-    if (state.catalogMode === 'grid') {
-        const tw = width / 3;
-        const th = height / 4;
-        return <View>
+    if (state.boards[state.board].length === 0) {
+        return <View style={{ flex: 1 }}>
             <FlatList
-                data={state.boards[state.board].flatMap(page => page.threads)}
-                renderItem={({ item }) => <CatalogTile state={state} setState={setState} thread={item} tw={tw} th={th} />}
-                keyExtractor={(item) => item.no}
-                onRefresh={() => refreshBoard(state, setState)}
+                data={[null]}
+                renderItem={() => <Text>NO THREADS</Text>}
+                onRefresh={() => refreshBoard(state, setState, setFetchError)}
                 refreshing={!state.boards[state.board]}
             />
         </View>;
     }
-    if (state.catalogMode === 'list') {
-        const tw = width;
-        const th = height / 8;
-        return <View>
-            <FlatList
-                data={state.boards[state.board].flatMap(page => page.threads)}
-                renderItem={({ item }) => <ListTile state={state} setState={setState} thread={item} tw={tw} th={th} />}
-                keyExtractor={(item) => item.no}
-                onRefresh={() => refreshBoard(state, setState)}
-                refreshing={!state.boards[state.board]}
-            />
-        </View>;
-    }
-    if (state.viewMode === 'page') {
-        return <View><Text>TODO: catalog pagination</Text></View>;
-    }
-    return <View><Text>Unreachable</Text></View>;
+
+    return <View style={{ flex: 1 }}>
+        <Threads state={state} setState={setState} setFetchError={setFetchError} width={width} height={height} />
+        <CreateThreadButton createThread={createThread} setCreateThread={setCreateThread} />
+        <Modal visible={createThread} onRequestClose={() => { setCreateThread(false); }}>
+            <CreateThreadForm setCreateThread={setCreateThread} formData={formData} setFormData={setFormData} />
+        </Modal>
+    </View>;
 };
 
-const CatalogTile = ({ state, setState, thread, tw, th }) => {
+const GridTile = ({ state, setState, thread, tw, th }) => {
     const sailor = useNavigation();
-    const img = imgFromComment(state.board, thread.tim);
+    const img = imgFromComment(thread);
     const lastThread = state.history.at(-1);
     const threadTileStyle = {
         width: tw - 4,
         height: th,
         margin: 2,
-        backgroundColor: lastThread && lastThread.board === state.board && lastThread.thread.no === thread.no ? '#FFDDDD' : '#ddd',
-        flexDirection: 'row',
+        backgroundColor: lastThread && lastThread.board === state.board && lastThread.thread.id === thread.id ? '#FFDDDD' : '#ddd',
         overflow: 'hidden',
     };
     return <TouchableHighlight
@@ -111,13 +135,13 @@ const CatalogTile = ({ state, setState, thread, tw, th }) => {
 };
 const ListTile = ({ state, setState, thread, tw, th }) => {
     const sailor = useNavigation();
-    const img = imgFromComment(state.board, thread.tim);
+    const img = imgFromComment(thread);
     const lastThread = state.history.at(-1);
     const threadTileStyle = {
         width: tw - 4,
         height: th,
         margin: 2,
-        backgroundColor: lastThread && lastThread.board === state.board && lastThread.thread.no === thread.no ? '#FFDDDD' : '#ddd',
+        backgroundColor: lastThread && lastThread.board === state.board && lastThread.thread.id === thread.id ? '#FFDDDD' : '#ddd',
         flexDirection: 'row',
     };
 
@@ -150,25 +174,102 @@ const ListTile = ({ state, setState, thread, tw, th }) => {
                 </View>
 
                 <View style={{ marginTop: 2 }}>
-                    <Text>{thread.replies}R, {thread.images}I</Text>
+                    <Text>{thread.replies} Replies, {thread.images} Images</Text>
                 </View>
             </View>
         </View>
     </TouchableHighlight>;
 };
 
-const refreshBoard = async (state, setState) => {
-    console.log('fetching board', state.board);
-    const board = await Repo.board.getRemote(state.board);
-    setState({ ...state, boards: { ...state.boards, [state.board]: board } });
-};
-const CatalogImageGallery = ({ state, setState }) => {
-    if (state.selectedImgIdx === null) {
-        return null;
+const Threads = ({ state, setState, setFetchError, width, height }) => {
+    if (state.catalogMode === 'list') {
+        const tw = width;
+        const th = height / 8;
+        return <FlatList
+            data={state.boards[state.board]}
+            renderItem={({ item }) => <ListTile state={state} setState={setState} thread={item} tw={tw} th={th} />}
+            keyExtractor={(item) => item.id}
+            onRefresh={() => refreshBoard(state, setState, setFetchError)}
+            refreshing={!state.boards[state.board]}
+        />;
     }
-    const threads = state.boards[state.board].flatMap(page => page.threads);
-    const thread = threads[state.selectedImgIdx];
-    return <View><Text>TODO: IMAGE GALLERY</Text></View>;
+    if (state.catalogMode === 'grid') {
+        const tw = width / 3;
+        const th = height / 4;
+        return <FlatList
+            data={state.boards[state.board]}
+            renderItem={({ item }) => <GridTile state={state} setState={setState} thread={item} tw={tw} th={th} />}
+            keyExtractor={(item) => item.id}
+            onRefresh={() => refreshBoard(state, setState, setFetchError)}
+            refreshing={!state.boards[state.board]}
+        />;
+    }
 };
 
-export { Catalog, CatalogHeader };
+const CreateThreadButton = ({ createThread, setCreateThread }) => {
+    return <FloatingAction
+        showBackground={false}
+        visible={!createThread}
+        onPressMain={() => { setCreateThread(true); }}
+    />;
+};
+
+const CreateThreadForm = ({ setCreateThread, formData, setFormData }) => {
+    return <View style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    }}>
+        <View style={{
+            backgroundColor: 'white',
+            padding: 20,
+            borderRadius: 10,
+            width: '80%',
+        }}>
+            <Text style={{ fontSize: 18, marginBottom: 10 }}>Create a Thread</Text>
+
+            <TextInput
+                placeholder="Title"
+                style={{ height: 40, borderColor: '#ddd', borderWidth: 1, marginBottom: 10, paddingLeft: 10 }}
+                onChangeText={(text) => setFormData({ ...formData, title: text })}
+            />
+            <TextInput
+                placeholder="Content"
+                style={{ height: 80, borderColor: '#ddd', borderWidth: 1, marginBottom: 10, paddingLeft: 10, textAlignVertical: 'top' }}
+                multiline
+                onChangeText={(text) => setFormData({ ...formData, content: text })}
+            />
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Button title="Cancel" onPress={() => { setCreateThread(false); }} />
+                <Button title="Submit" onPress={() => {
+                    setCreateThread(false);
+                    console.log('sending thread', formData);
+                }} />
+            </View>
+        </View>
+    </View>
+        ;
+};
+
+const refreshBoard = async (state, setState, setFetchError) => {
+    const board = await Repo.threads.getRemote(state.board);
+    if (!board) {
+        setFetchError(true);
+    }
+    else {
+        setState({ ...state, boards: { ...state.boards, [state.board]: board } });
+    }
+};
+// const CatalogImageGallery = ({ state, setState }) => {
+//     if (state.selectedImgIdx === null) {
+//         return null;
+//     }
+//     const threads = state.boards[state.board];
+//     const thread = threads[state.selectedImgIdx];
+//     return <View><Text>TODO: IMAGE GALLERY</Text></View>;
+// };
+
+export { Catalog, CatalogHeaderLeft, CatalogHeaderRight, CatalogHeaderTitle };
+

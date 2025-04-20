@@ -12,12 +12,15 @@ const HistoryTile = ({ item, tw, th }) => {
     const { state, setState } = React.useContext(Ctx);
     const board = item.board;
     const thread = item.thread;
-    const img = imgFromComment(board, thread.tim);
+    const img = imgFromComment(thread);
 
     return <TouchableHighlight
         onPress={async () => {
             setState({ ...state, history: await historyAdd(state, thread) });
-            sailor.navigate('Thread');
+            sailor.navigate('BottomTab', {
+                screen: 'Board',
+                params: { screen: 'Thread' },
+            });
         }}>
         <View
             style={{
@@ -48,7 +51,7 @@ const History = () => {
         <FlatList
             data={state.history}
             renderItem={({ item }) => <HistoryTile item={item} tw={tw} th={th} />}
-            keyExtractor={(item) => item.thread.no}
+            keyExtractor={(item) => item.thread.id}
             inverted
         />
     </View>;
