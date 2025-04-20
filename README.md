@@ -1,6 +1,6 @@
 # Ciano
 
-A react native frontend for Blu
+A react native frontend for [Blu](https://github.com/diegostafa/blue)
 
 run with:
 - `npm install`
