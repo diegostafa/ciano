@@ -1,20 +1,21 @@
-/* eslint-disable react-native/no-inline-styles */
-
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
-import { FlatList, Image, TouchableHighlight, useWindowDimensions, View } from 'react-native';
+import { FlatList, Image, Pressable, Text, useWindowDimensions, View } from 'react-native';
+import { TextInput } from 'react-native-gesture-handler';
 import HTMLView from 'react-native-htmlview';
+
+import { api } from './api';
 import { Ctx } from './app';
-import { historyAdd, imgFromComment } from './utils';
+import { HeaderIcon, historyAdd } from './utils';
 
 const HistoryTile = ({ item, tw, th }) => {
     const sailor = useNavigation();
     const { state, setState } = React.useContext(Ctx);
     const board = item.board;
     const thread = item.thread;
-    const img = imgFromComment(thread);
+    const img = api.blu.media(thread);
 
-    return <TouchableHighlight
+    return <Pressable
         onPress={async () => {
             setState({ ...state, history: await historyAdd(state, thread) });
             sailor.navigate('BottomTab', {
@@ -28,7 +29,6 @@ const HistoryTile = ({ item, tw, th }) => {
                 flexDirection: 'row',
                 margin: 10,
                 overflow: 'hidden',
-
             }} >
             <Image src={img} style={{
                 borderRadius: th / 2,
@@ -38,7 +38,7 @@ const HistoryTile = ({ item, tw, th }) => {
             }} />
             <HTMLView value={`/${board}/ - ${thread.sub || thread.com}`} />
         </View>
-    </TouchableHighlight>;
+    </Pressable>;
 };
 
 const History = () => {
@@ -47,15 +47,33 @@ const History = () => {
     const tw = width;
     const th = height / 16;
 
-    return <View>
-        <FlatList
-            data={state.history}
-            renderItem={({ item }) => <HistoryTile item={item} tw={tw} th={th} />}
-            keyExtractor={(item) => item.thread.id}
-            inverted
-        />
+    return <View style={{ flex: 1 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Text>History</Text>
+            <HeaderIcon name="clear" />
+        </View>
+        <View style={{ flex: 1 }}>
+            <FlatList
+                data={state.history}
+                inverted
+                renderItem={({ item }) => <HistoryTile item={item} tw={tw} th={th} />}
+                keyExtractor={(item) => item.thread.id}
+                ListEmptyComponent={<NoHistory />}
+            />
+        </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <TextInput style={{ color: 'black', flex: 1, backgroundColor: 'lightblue' }} placeholder="search" />
+            <HeaderIcon name="search" />
+        </View>
     </View>;
 };
+
+const NoHistory = () => {
+    return <View style={{ flex: 1 }}>
+        <Text>NO HISTORY</Text>
+    </View>;
+};
+
 
 export { History };
 

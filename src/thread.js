@@ -1,108 +1,140 @@
-/* eslint-disable react-native/no-inline-styles */
-
 import { Marquee } from '@animatereactnative/marquee';
 import React from 'react';
-import { ActivityIndicator, Button, FlatList, Image, Modal, Text, TextInput, TouchableHighlight, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Button, FlatList, Image, Modal, Pressable, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { FloatingAction } from 'react-native-floating-action';
 import HTMLView from 'react-native-htmlview';
+import { SwipeListView } from 'react-native-swipe-list-view';
+import Icon from 'react-native-vector-icons/Ionicons';
 
+import { api } from './api';
 import { Ctx } from './app';
-import { Repo } from './data';
-import { getRepliesTo, imgFromComment } from './utils';
+import { Repo } from './repo';
+import { getRepliesTo, HeaderIcon } from './utils';
 
 const ThreadHeaderLeft = () => {
-    return <View>
-        <Text>TODO: GO BACK</Text>
-    </View>;
+    return <HeaderIcon name="arrow-back" onPress={() => {
+        // FIXME: can't pop the stack from the header rooted in bottom nav bar
+    }} />;
 };
 const ThreadHeaderTitle = () => {
     const { state } = React.useContext(Ctx);
     const thread = state.history.at(-1).thread;
 
-    return <View
-        style={{ flex: 1, overflow: 'hidden' }}
-    >
-        <Marquee speed={1} spacing={10}>
-            <HTMLView value={`/${state.board}/ - ${thread.sub || thread.com}`} />
-        </Marquee>
-    </View>;
+    return <Marquee
+        speed={0.3}
+        spacing={100}
+        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
+        <HTMLView value={`/${state.board}/ - ${thread.sub || thread.com}`} />
+    </Marquee>;
 };
 const ThreadHeaderRight = () => {
-    return <View>
-        <Text>TODO: OPTIONS</Text>
+    return <View style={{ backgroundColor: 'white', flexDirection: 'row' }}>
+        <HeaderIcon name="information-circle" onPress={() => {
+            // show thread info
+        }} />
+        <HeaderIcon name="ellipsis-vertical" />
     </View>;
+};
+const loadThread = async (setComments, thread) => {
+    const value = await Repo.comments.getLocalOrRemote(thread.board, thread.id);
+    setComments(value);
+};
+const refreshThread = async (setComments, thread) => {
+    const value = await Repo.comments.getRemote(thread.board, thread.id);
+    setComments(value);
 };
 const Thread = () => {
     const { state } = React.useContext(Ctx);
     const thread = state.history.at(-1).thread;
+    // const [refreshTimeout, setRefreshTimeout] = React.useState(state.refreshTimeout);
     const [comments, setComments] = React.useState(null);
-    const [refreshing, setRefreshing] = React.useState(false);
     const [createComment, setCreateComment] = React.useState(false);
     const [formData, setFormData] = React.useState(null);
-    const { width } = useWindowDimensions();
+    const [showCommentMenu, setShowCommentMenu] = React.useState(null);
+    const [replies, setReplies] = React.useState([]);
+    const { width, height } = useWindowDimensions();
     const tw = width;
 
-    React.useEffect(() => {
-        if (!comments) {
-            async function fetch() {
-                const value = await Repo.comments.getRemote(state.board, thread.id);
-                setComments(value);
-            }
-            fetch();
-        }
-    }, [thread.id, state.board, comments, setComments]);
+    React.useEffect(() => { if (!comments) { loadThread(setComments, thread); } }, [comments, setComments, thread]);
+
 
     if (comments === null) {
         return <View style={{ flex: 1 }}>
             <CommentTile comments={[]} comment={thread} tw={tw} />
+            <ActivityIndicator />
             <Text>FETCHING COMMENTS</Text>
             <ActivityIndicator />
-            <ThreadStats thread={thread} />
+            <ThreadStats />
         </View>;
     }
 
     return <View style={{ flex: 1 }}>
-        <CommentList comments={comments} setComments={setComments} state={state} thread={thread} refreshing={refreshing} setRefreshing={setRefreshing} tw={tw} />
-        <ThreadStats thread={thread} />
-        <CreateCommentButton createComment={createComment} setCreateComment={setCreateComment} />
-        <Modal visible={createComment} onRequestClose={() => { setCreateComment(false); }}>
-            <CreateCommentForm thread={thread} setCreateComment={setCreateComment} formData={formData} setFormData={setFormData} />
-        </Modal>
-    </View>;
-};
-const CommentList = ({ comments, setComments, state, thread, refreshing, setRefreshing, tw }) => {
-    const [replies, setReplies] = React.useState([]);
-
-    return <View><FlatList
-        data={comments}
-        renderItem={({ item }) => <CommentTile comments={comments} comment={item} tw={tw} setReplies={setReplies} />}
-        keyExtractor={(item) => item.id}
-        onRefresh={async () => {
-            setRefreshing(true);
-            const value = await Repo.comments.getRemote(state.board, thread.id);
-            setComments(value);
-            setRefreshing(false);
-        }}
-        refreshing={refreshing}
-    />
+        <CommentList setReplies={setReplies} setShowCommentMenu={setShowCommentMenu} comments={comments} setComments={setComments} tw={tw} />
+        <CreateCommentFab createComment={createComment} setCreateComment={setCreateComment} />
+        <CommentMenu showCommentMenu={showCommentMenu} setShowCommentMenu={setShowCommentMenu} />
+        {createComment && <CreateCommentForm height={height} setCreateComment={setCreateComment} formData={formData} setFormData={setFormData} />}
         <Modal
             visible={replies.length > 0}
-            animationType="fade"
+            transparent
             onRequestClose={() => setReplies([])}>
-            <View style={{
-                borderRadius: 20,
-                alignItems: 'center',
-                shadowColor: '#000',
-                shadowOpacity: 0.25,
-                elevation: 5,
-            }}>
-                <CommentList comments={replies} setComments={setComments} state={state} thread={thread} refreshing={refreshing} setRefreshing={setRefreshing} tw={tw} />
-            </View>
+            <Pressable
+                onPress={() => setReplies([])}
+            >
+
+                <View
+                    style={{
+                        flex: 1,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    }}
+                >
+                    <CommentList comments={replies} setComments={setComments} tw={tw} />
+                </View>
+
+            </Pressable>
         </Modal >
-    </View >
-        ;
+
+    </View>;
 };
-const CommentTile = ({ comments, comment, tw, setReplies }) => {
+const NoComments = () => {
+    return <View>
+        <Text>TODO: NO COMMENTS</Text>
+    </View>;
+};
+const HiddenItem = ({ data }) => {
+    return <View style={{ flex: 1, backgroundColor: 'lightblue', flexDirection: 'row-reverse' }}>
+        <Icon name="return-down-back" size={20} color="black" />
+    </View>;
+
+};
+const CommentList = ({ comments, setComments, tw, setShowCommentMenu, setReplies }) => {
+    const { state, config } = React.useContext(Ctx);
+    const thread = state.history.at(-1).thread;
+
+    if (config.swipeToReply) {
+        return <View><SwipeListView
+            data={comments}
+            renderItem={({ item, index }) => <CommentTile setShowCommentMenu={setShowCommentMenu} idx={index + 1} comments={comments} comment={item} tw={tw} setReplies={setReplies} />}
+            renderHiddenItem={(data) => <HiddenItem data={data} />}
+            disableRightSwipe
+            keyExtractor={(item) => item.id}
+            onRefresh={async () => { await refreshThread(setComments, thread); }}
+            refreshing={comments === null}
+            ListEmptyComponent={<NoComments />} />
+        </View >;
+    }
+    return <View><FlatList
+        data={comments}
+        renderItem={({ item, index }) => <CommentTile setShowCommentMenu={setShowCommentMenu} idx={index + 1} comments={comments} comment={item} tw={tw} setReplies={setReplies} />}
+        keyExtractor={(item) => item.id}
+        onRefresh={async () => { await refreshThread(setComments, thread); }}
+        refreshing={comments === null}
+        ListEmptyComponent={<NoComments />} />
+    </View >;
+};
+const CommentTile = ({ setShowCommentMenu, idx, comments, comment, tw, setReplies }) => {
+    const { state, config } = React.useContext(Ctx);
     const COMMENT_STYLE = {
         paddingBottom: 4,
         paddingTop: 4,
@@ -114,83 +146,128 @@ const CommentTile = ({ comments, comment, tw, setReplies }) => {
         borderBottomWidth: 4,
     };
 
-    const img = imgFromComment(comment);
+    const MY_COMMENT_STYLE = {};
+    const STYLE = state.myComments.includes(comment.id) ? MY_COMMENT_STYLE : COMMENT_STYLE;
+    const img = api.blu.media(comment);
     const thumbWidth = tw / 4;
-    let replies = getRepliesTo(comments, comment);
+    const replies = getRepliesTo(comments, comment);
+    const alias = comment.alias || config.alias;
 
-    return <View style={COMMENT_STYLE}>
-        <View style={{ flexDirection: 'row' }}>
-            {img && <CommentThumbnail src={img} w={thumbWidth} h={thumbWidth} />}
-            <View>
-                <Text>Anonymous, On: {comment.created_at}</Text>
-                <Text>Filesize</Text>
-                {comment.sub && <HTMLView value={`<b>${comment.sub}</b>`} />}
-            </View>
-        </View>
-        {comment.com && <HTMLView value={comment.com} />}
-        {replies.length > 0 &&
-            <TouchableHighlight
-                onPress={() => {
-                    setReplies(replies);
-                }}
-                underlayColor="#fff">
+
+    return <Pressable
+        onLongPress={() => { setShowCommentMenu(comment); }}>
+        <View style={STYLE}>
+            <View style={{ flexDirection: 'row' }}>
+                {img && <CommentThumbnail src={img} w={thumbWidth} h={thumbWidth} />}
                 <View>
-                    <Text>Replies: {replies.length}</Text>
+                    <View style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                    }}>
+                        <View><Text>{alias} #{idx}, No. {comment.id}</Text></View>
+                        <Text>, Sent: {comment.created_at}</Text>
+                    </View>
+                    <Text>Filesize</Text>
+                    {comment.sub && <HTMLView value={`<b>${comment.sub}</b>`} />}
                 </View>
-            </TouchableHighlight>
-        }
-    </View>;
+            </View>
+            {comment.com && <HTMLView value={comment.com} />}
+            {replies.length > 0 &&
+                <Pressable onPress={() => { setReplies(replies); }}>
+                    <View><Text>Replies: {replies.length}</Text></View>
+                </Pressable>
+            }
+        </View>
+    </Pressable>;
+
 };
 const CommentThumbnail = ({ src, w, h }) => {
-    return <TouchableHighlight underlayColor="#fff">
+    return <Pressable underlayColor="#fff">
         <Image src={src} style={{ width: w, height: h }} />
-    </TouchableHighlight>;
+    </Pressable>;
 };
-const CreateCommentButton = ({ createComment, setCreateComment }) => {
+const CreateCommentFab = ({ createComment, setCreateComment }) => {
     return <FloatingAction
         showBackground={false}
         visible={!createComment}
         onPressMain={() => { setCreateComment(true); }}
     />;
 };
-const CreateCommentForm = ({ thread, setCreateComment, formData, setFormData }) => {
+const CreateCommentForm = ({ formData, setFormData, setCreateComment }) => {
+    const { state, setState } = React.useContext(Ctx);
+    const thread = state.history.at(-1).thread;
+
     return <View style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        width: '100%',
+        height: '100%',
+        justifyContent: 'space-between',
+        backgroundColor: '#2d2d2d'
     }}>
-        <View style={{
-            backgroundColor: 'white',
-            padding: 20,
-            borderRadius: 10,
-            width: '80%',
-        }}>
-            <Text style={{ fontSize: 18, marginBottom: 10 }}>Create a Thread</Text>
-            <TextInput
-                placeholder="Content"
-                style={{ height: 80, borderColor: '#ddd', borderWidth: 1, marginBottom: 10, paddingLeft: 10, textAlignVertical: 'top' }}
-                multiline
-                onChangeText={(text) => setFormData({ ...formData, com: text })}
-            />
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Button title="Cancel" onPress={() => { setCreateComment(false); }} />
-                <Button title="Submit" onPress={async () => {
-                    const data = { ...formData, op: thread.id };
-                    console.log('creating comment', data);
-                    await Repo.comments.create(data).catch(console.error);
-                    setCreateComment(false);
-                }} />
+        <TextInput
+            placeholder="Name (Optional)"
+            onChangeText={(text) => setFormData({ ...formData, name: text })}
+        />
+        <TextInput
+            placeholder="Comment (max 2000 chars)"
+            multiline
+            onChangeText={(text) => setFormData({ ...formData, com: text })}
+        />
+        <Button title="send" onPress={async () => {
+            const data = { ...formData, op: thread.id };
+            const id = await Repo.comments.create(data);
+            setState({ ...state, myComments: [...state.myComments, id] })
+            setCreateComment(false);
+            // await refreshThread(setComments, thread);
+        }} />
+    </View>;
+
+};
+const ThreadStats = () => {
+    const { state } = React.useContext(Ctx);
+    const thread = state.history.at(-1).thread;
+    return <View><Text style={{ fontWeight: 'bold', textAlign: 'center' }}>Replies: {thread.replies}, Images: {thread.images}</Text></View>;
+};
+// const ThreadRefreshInfo = () => {
+//     const { config } = React.useContext(Ctx);
+//     if (config.refreshTimeout) {
+//         return <View />;
+//     }
+//     return <Text style={{ fontWeight: 'bold', textAlign: 'center' }}>Automatically refreshing in {config.refreshTimeout}s</Text>;
+
+// };
+const CommentMenu = ({ showCommentMenu, setShowCommentMenu }) => {
+    return <Modal
+        animationType="fade"
+        transparent
+        visible={showCommentMenu !== null}
+        onRequestClose={() => { setShowCommentMenu(null); }}>
+        <View
+            style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            }}>
+            <View
+                style={{
+                    width: '90%',
+                    backgroundColor: 'rgb(255, 255, 255)',
+                    justifyContent: 'space-evenly',
+                }}>
+                <Pressable onPress={() => {
+                    setShowCommentMenu(null);
+
+                }}><Text style={{ fontSize: 18, margin: 10, borderBottomColor: '#ccc', borderBottomWidth: 1 }}>Quote</Text></Pressable>
+                <Pressable onPress={() => {
+                    setShowCommentMenu(null);
+
+                }}><Text style={{ fontSize: 18, margin: 10, borderBottomColor: '#ccc', borderBottomWidth: 1 }}>Quote text</Text></Pressable>
+                <Pressable onPress={() => {
+                    setShowCommentMenu(null);
+
+                }}><Text style={{ fontSize: 18, margin: 10 }}>Copy</Text></Pressable>
             </View>
         </View>
-    </View>;
+    </Modal>;
 };
-const ThreadStats = ({ thread }) => {
-    return <View>
-        <View><Text style={{ fontWeight: 'bold', textAlign: 'center' }}>TODO: THREAD INFO</Text></View>
-        <View><Text style={{ fontWeight: 'bold', textAlign: 'center' }}>TODO: RELOAD BUTTON</Text></View>
-    </View>;
-};
-
 export { Thread, ThreadHeaderLeft, ThreadHeaderRight, ThreadHeaderTitle };
-
