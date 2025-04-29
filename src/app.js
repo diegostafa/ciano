@@ -1,6 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import { DefaultTheme, NavigationContainer, useNavigationState } from '@react-navigation/native';
+import { NavigationContainer, useNavigationState } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
 import { ActivityIndicator, useColorScheme, View } from 'react-native';
@@ -10,8 +10,9 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { Catalog, CatalogHeaderLeft, CatalogHeaderRight, CatalogHeaderTitle } from './catalog';
 import { Config } from './config';
 import { History } from './history';
-import { About, Accessibility, Appearance, Downloads, SettingsMenu } from './settings';
+import { About, Accessibility, Advanced, Appearance, Downloads, SettingsMenu } from './settings';
 import { State } from './state';
+import { DarkTheme, LightTheme } from './theme';
 import { Thread, ThreadHeaderLeft, ThreadHeaderRight, ThreadHeaderTitle } from './thread';
 
 enableScreens();
@@ -34,7 +35,7 @@ const App = () => {
     if (!state || !config) { return <View><ActivityIndicator /></View>; }
 
     return <Ctx.Provider value={{ state, setState, config, setConfig }}>
-        <NavigationContainer theme={Theme === 'dark' ? DefaultTheme : DefaultTheme} >
+        <NavigationContainer theme={Theme === 'dark' ? DarkTheme : LightTheme} >
             <Drawer.Navigator
                 screenOptions={{ headerShown: false }}
                 initialRouteName="BottomTab"
@@ -75,12 +76,9 @@ const SettingsIcon = ({ color }) => {
     return <Icon name="settings" size={24} color={color} />;
 };
 const BottomTab = () => {
-    return <Tab.Navigator screenOptions={{
-        tabBarActiveTintColor: 'tomato',
-        tabBarInactiveTintColor: 'gray',
-    }}>
+    return <Tab.Navigator>
         <Tab.Screen
-            name="Board"
+            name="BoardTab"
             component={Board}
             options={{
                 tabBarIcon: BoardIcon,
@@ -103,7 +101,7 @@ const BottomTab = () => {
             })}
         />
         <Tab.Screen
-            name="Settings"
+            name="SettingsTab"
             component={Settings}
             options={{
                 headerShown: false,
@@ -134,7 +132,7 @@ const Board = () => {
 const Settings = () => {
     return <Stack.Navigator>
         <Stack.Screen
-            name="SettingsMenu"
+            name="Settings"
             component={SettingsMenu}
             options={{
                 headerStyle: { height: 48 },
@@ -155,6 +153,12 @@ const Settings = () => {
         <Stack.Screen
             name="Downloads"
             component={Downloads}
+            options={{
+                headerStyle: { height: 48 },
+            }} />
+        <Stack.Screen
+            name="Advanced"
+            component={Advanced}
             options={{
                 headerStyle: { height: 48 },
             }} />

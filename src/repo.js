@@ -2,6 +2,11 @@ import { api } from './api';
 import { getLocal, getLocalOrRemote, getRemote, setLocal } from './utils';
 
 const Repo = {
+    media: {
+        from: (comment) => {
+            return api.blu.media(comment);
+        }
+    },
     threads: {
         set: async (threads) => {
             return setLocal('board', threads);

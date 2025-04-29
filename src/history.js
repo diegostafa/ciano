@@ -1,12 +1,10 @@
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
-import { FlatList, Image, Pressable, Text, useWindowDimensions, View } from 'react-native';
-import { TextInput } from 'react-native-gesture-handler';
-import HTMLView from 'react-native-htmlview';
+import { FlatList, Image, Text, TouchableNativeFeedback, useWindowDimensions, View } from 'react-native';
 
 import { api } from './api';
 import { Ctx } from './app';
-import { HeaderIcon, historyAdd } from './utils';
+import { HeaderIcon, historyAdd, HtmlText, ThemedText } from './utils';
 
 const HistoryTile = ({ item, tw, th }) => {
     const sailor = useNavigation();
@@ -15,7 +13,7 @@ const HistoryTile = ({ item, tw, th }) => {
     const thread = item.thread;
     const img = api.blu.media(thread);
 
-    return <Pressable
+    return <TouchableNativeFeedback
         onPress={async () => {
             setState({ ...state, history: await historyAdd(state, thread) });
             sailor.navigate('BottomTab', {
@@ -27,18 +25,28 @@ const HistoryTile = ({ item, tw, th }) => {
             style={{
                 height: th,
                 flexDirection: 'row',
-                margin: 10,
                 overflow: 'hidden',
             }} >
             <Image src={img} style={{
+                padding: 0,
+                margin: 0,
+                top: 0,
                 borderRadius: th / 2,
                 width: th,
                 height: th,
                 overflow: 'hidden',
             }} />
-            <HTMLView value={`/${board}/ - ${thread.sub || thread.com}`} />
+            <View style={{ padding: 10 }}>
+                <HtmlText
+                    value={`/${board}/ - ${thread.sub || thread.com}`}
+                    renderNode={(node, index, siblings, parent, defaultRenderer) => {
+                        if (node.name === 'br') { return null; }
+                    }}
+                />
+
+            </View>
         </View>
-    </Pressable>;
+    </TouchableNativeFeedback>;
 };
 
 const History = () => {
@@ -49,8 +57,8 @@ const History = () => {
 
     return <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text>History</Text>
-            <HeaderIcon name="clear" />
+            <ThemedText content={'History'} />
+            <HeaderIcon name="circle" />
         </View>
         <View style={{ flex: 1 }}>
             <FlatList
@@ -62,7 +70,6 @@ const History = () => {
             />
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <TextInput style={{ color: 'black', flex: 1, backgroundColor: 'lightblue' }} placeholder="search" />
             <HeaderIcon name="search" />
         </View>
     </View>;

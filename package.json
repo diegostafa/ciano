@@ -30,7 +30,6 @@
         "react": "19.0.0",
         "react-native": "0.79.0",
         "react-native-context-menu-view": "^1.18.0",
-        "react-native-floating-action": "^1.22.0",
         "react-native-gesture-handler": "^2.25.0",
         "react-native-htmlview": "^0.17.0",
         "react-native-reanimated": "^3.17.3",

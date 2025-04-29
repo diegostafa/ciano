@@ -1,26 +1,32 @@
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { TouchableNativeFeedback, View } from 'react-native';
 
+import { ThemedText } from './utils';
 
 const Appearance = () => {
     return <View>
-        <Text>todo: Appearance</Text>
+        <ThemedText content={"todo: Appearance"} />
     </View>;
 };
 const Accessibility = () => {
     return <View>
-        <Text>todo: Accessibility</Text>
+        <ThemedText content={"todo: Accessibility"} />
     </View>;
 };
 const Downloads = () => {
     return <View>
-        <Text>todo: Downloads</Text>
+        <ThemedText content={"todo: Downloads"} />
+    </View>;
+};
+const Advanced = () => {
+    return <View>
+        <ThemedText content={"todo: Advanced"} />
     </View>;
 };
 const About = () => {
     return <View>
-        <Text>todo: About</Text>
+        <ThemedText content={"todo: About"} />
     </View>;
 };
 
@@ -28,50 +34,37 @@ const About = () => {
 const SettingsMenu = () => {
     const sailor = useNavigation();
     return (
-        <View style={styles.container}>
-            <Pressable onPress={() => { sailor.navigate('Appearance'); }}>
+        <View>
+            <TouchableNativeFeedback onPress={() => { sailor.navigate('Appearance'); }}>
                 <View style={{ padding: 20 }}>
-                    <Text>Appearance</Text>
+                    <ThemedText content={"Appearance"} />
                 </View>
-            </Pressable>
-            <Pressable onPress={() => { sailor.navigate('Accessibility'); }}>
+            </TouchableNativeFeedback>
+            <TouchableNativeFeedback onPress={() => { sailor.navigate('Accessibility'); }}>
                 <View style={{ padding: 20 }}>
-                    <Text>Accessibility</Text>
+                    <ThemedText content={"Accessibility"} />
                 </View>
-            </Pressable>
-            <Pressable onPress={() => { sailor.navigate('Downloads'); }}>
+            </TouchableNativeFeedback>
+            <TouchableNativeFeedback onPress={() => { sailor.navigate('Downloads'); }}>
                 <View style={{ padding: 20 }}>
-                    <Text>Downloads</Text>
+                    <ThemedText content={"Downloads"} />
                 </View>
-            </Pressable>
-            <Pressable onPress={() => { sailor.navigate('About'); }}>
+            </TouchableNativeFeedback>
+            <TouchableNativeFeedback onPress={() => { sailor.navigate('Advanced'); }}>
                 <View style={{ padding: 20 }}>
-                    <Text>About</Text>
+                    <ThemedText content={"Advanced"} />
                 </View>
-            </Pressable>
+            </TouchableNativeFeedback>
+            <TouchableNativeFeedback onPress={() => { sailor.navigate('About'); }}>
+                <View style={{ padding: 20 }}>
+                    <ThemedText content={"About"} />
+                </View>
+            </TouchableNativeFeedback>
         </View>
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-        padding: 20,
-    },
-    item: {
-        paddingVertical: 15,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    itemText: {
-        fontSize: 16,
-    },
-});
 
 
-export { About, Accessibility, Appearance, Downloads, SettingsMenu };
+export { About, Accessibility, Advanced, Appearance, Downloads, SettingsMenu };
 

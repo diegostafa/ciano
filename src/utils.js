@@ -1,17 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '@react-navigation/native';
 import React from 'react';
-import { Modal, Pressable, View } from 'react-native';
-import { FloatingAction } from 'react-native-floating-action';
+import { Modal, Text, TouchableNativeFeedback, View } from 'react-native';
+import HTMLView from 'react-native-htmlview';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import { Config } from './config';
-
-
+import { DarkHtmlTheme, LightHtmlTheme } from './theme';
 
 const setLocal = async (key, value) => AsyncStorage.setItem(key, JSON.stringify(value));
 const getLocal = async (key) => AsyncStorage.getItem(key).then(res => JSON.parse(res));
 const getRemote = async ({ key, remote }) => {
-    const newValue = await remote().then(res => res.data).catch(console.error);
+    const newValue = await remote().catch(console.error);
     await setLocal(key, newValue).catch(console.error);
     return newValue;
 };
@@ -23,7 +23,7 @@ const getLocalOrRemote = async ({ key, remote }) => {
     if (!remote) {
         return null;
     }
-    const newValue = await remote().then(res => res.data).catch(console.error);
+    const newValue = await remote().catch(console.error);
     await setLocal(key, newValue).catch(console.error);
     return newValue;
 };
@@ -42,26 +42,46 @@ const historyAdd = async (state, thread) => {
     await Config.set('history', history);
     return history;
 };
-const getThread = (thread, threadId) => {
-    return thread.find(item => item.id === threadId);
+const getThread = (comments, threadId) => {
+    return comments.find(item => item.id === threadId);
 };
-const getRepliesTo = (thread, comment) => {
-    return thread.filter(item => item.com.includes(comment.id));
+const getRepliesTo = (comments, comment) => {
+    return comments.filter(item => item.com && item.com.includes(comment.id));
+};
+const ThemedIcon = ({ name, size }) => {
+    const theme = useTheme();
+    return <Icon name={name} size={size || 28} color={theme.colors.text} />;
 };
 const HeaderIcon = ({ name, onPress }) => {
-    return <Pressable onPress={onPress}>
+    return <TouchableNativeFeedback onPress={onPress}>
         <View style={{ padding: 10 }}>
-            <Icon name={name} size={28} />
+            <ThemedIcon name={name} />
         </View>
-    </Pressable>;
+    </TouchableNativeFeedback>;
 };
-const Fab = ({ isShowing, setIsShowing }) => {
-    return <FloatingAction
-        showBackground={false}
-        visible={isShowing}
-        onPressMain={() => { setIsShowing(false); }}
-    />;
-}
+const Fab = ({ onPress }) => {
+    const theme = useTheme();
+    const size = 52;
+
+    return <TouchableNativeFeedback onPress={onPress}>
+        <View style={{
+            position: 'absolute',
+            bottom: 48,
+            right: 32,
+            zIndex: 1,
+            height: size,
+            width: size,
+            borderRadius: '50%',
+            backgroundColor: theme.colors.secondary,
+            overflow: 'hidden',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+        }}>
+            <ThemedIcon name={"add"} />
+        </View>
+    </TouchableNativeFeedback>;
+};
 // todo spawn it near the tap
 const ModalMenu = ({ child, visible, centered }) => {
     return <Modal
@@ -78,7 +98,6 @@ const ModalMenu = ({ child, visible, centered }) => {
             <View
                 style={{
                     width: '90%',
-                    backgroundColor: 'rgb(255, 255, 255)',
                     justifyContent: 'space-evenly',
                 }}>
                 {child}
@@ -86,19 +105,44 @@ const ModalMenu = ({ child, visible, centered }) => {
         </View>
     </Modal>;
 };
+const ThemedText = ({ content, style }) => {
+    const theme = useTheme();
+    return <Text style={{ ...style, color: theme.colors.text }}>{content}</Text>;
+}
+
+const HtmlTextRendered = (node, index, siblings, parent, defaultRenderer) => {
+    const next = siblings[index + 1];
+
+    if (node.name === 'br') {
+        if (next.name === 'br') {
+            return undefined;
+        } else {
+            return null
+        }
+    }
+};
+const HtmlText = ({ value, renderNode }) => {
+    const theme = useTheme();
+
+    return <HTMLView
+        onLinkPress={() => { }}
+        renderNode={renderNode || HtmlTextRendered}
+        addLineBreaks={false}
+        value={`<p>${value}</p>`}
+        stylesheet={theme.dark ? DarkHtmlTheme : LightHtmlTheme}
+    />;
+};
 
 export {
     Fab,
     getLocal,
-    getLocalOrRemote,
-    getRemote,
+    getLocalOrRemote, getRemote,
     getRepliesTo,
     getThread,
     HeaderIcon,
-    historyAdd,
-    ModalMenu,
+    historyAdd, HtmlText, ModalMenu,
     prettyTimestamp,
-    setLocal
+    setLocal, ThemedIcon, ThemedText
 };
 
 
