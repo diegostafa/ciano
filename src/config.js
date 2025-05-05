@@ -1,4 +1,4 @@
-import { getLocal, setLocal } from "./utils";
+import { getLocal, setLocal } from './utils';
 
 const defaultConfig = {
     catalogMode: 'list', // 'list' or 'grid'
@@ -8,12 +8,12 @@ const defaultConfig = {
     selectedImg: null, // this can be lowered
     themeLight: null,
     themeDark: null,
-    refreshTimeout: 10, // or null
+    refreshTimeout: 15, // or null
     relativeTime: false,
     swipeToReply: false,
     alias: 'Anonymous',
 };
-const Config = {
+export const Config = {
     get: async (key) => getLocal(key),
     set: async (key, value) => setLocal(key, value),
     restore: async () => {
@@ -32,5 +32,3 @@ const Config = {
         };
     },
 };
-
-export { Config };

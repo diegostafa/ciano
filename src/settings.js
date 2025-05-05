@@ -1,70 +1,76 @@
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
-import { TouchableNativeFeedback, View } from 'react-native';
+import { Button, TouchableNativeFeedback, View } from 'react-native';
 
+import { Repo } from './repo';
 import { ThemedText } from './utils';
 
-const Appearance = () => {
-    return <View>
-        <ThemedText content={"todo: Appearance"} />
-    </View>;
-};
-const Accessibility = () => {
-    return <View>
-        <ThemedText content={"todo: Accessibility"} />
-    </View>;
-};
-const Downloads = () => {
-    return <View>
-        <ThemedText content={"todo: Downloads"} />
-    </View>;
-};
-const Advanced = () => {
-    return <View>
-        <ThemedText content={"todo: Advanced"} />
-    </View>;
-};
-const About = () => {
-    return <View>
-        <ThemedText content={"todo: About"} />
-    </View>;
-};
+export const SETTINGS_MENU_KEY = 'SettingsMenu';
+export const APPEARANCE_KEY = 'Appearance';
+export const ACCESSIBILITY_KEY = 'Accessibility';
+export const DOWNLOADS_KEY = 'Downloads';
+export const ADVANCED_KEY = 'Advanced';
+export const ABOUT_KEY = 'About';
 
-
-const SettingsMenu = () => {
+export const SettingsMenu = () => {
     const sailor = useNavigation();
-    return (
-        <View>
-            <TouchableNativeFeedback onPress={() => { sailor.navigate('Appearance'); }}>
-                <View style={{ padding: 20 }}>
-                    <ThemedText content={"Appearance"} />
-                </View>
-            </TouchableNativeFeedback>
-            <TouchableNativeFeedback onPress={() => { sailor.navigate('Accessibility'); }}>
-                <View style={{ padding: 20 }}>
-                    <ThemedText content={"Accessibility"} />
-                </View>
-            </TouchableNativeFeedback>
-            <TouchableNativeFeedback onPress={() => { sailor.navigate('Downloads'); }}>
-                <View style={{ padding: 20 }}>
-                    <ThemedText content={"Downloads"} />
-                </View>
-            </TouchableNativeFeedback>
-            <TouchableNativeFeedback onPress={() => { sailor.navigate('Advanced'); }}>
-                <View style={{ padding: 20 }}>
-                    <ThemedText content={"Advanced"} />
-                </View>
-            </TouchableNativeFeedback>
-            <TouchableNativeFeedback onPress={() => { sailor.navigate('About'); }}>
-                <View style={{ padding: 20 }}>
-                    <ThemedText content={"About"} />
-                </View>
-            </TouchableNativeFeedback>
-        </View>
-    );
+    const style = {
+        padding: 20
+    };
+
+    return <View>
+        <TouchableNativeFeedback onPress={() => { sailor.navigate(APPEARANCE_KEY); }}>
+            <View style={style}>
+                <ThemedText content={APPEARANCE_KEY} />
+            </View>
+        </TouchableNativeFeedback>
+        <TouchableNativeFeedback onPress={() => { sailor.navigate(ACCESSIBILITY_KEY); }}>
+            <View style={style}>
+                <ThemedText content={ACCESSIBILITY_KEY} />
+            </View>
+        </TouchableNativeFeedback>
+        <TouchableNativeFeedback onPress={() => { sailor.navigate(DOWNLOADS_KEY); }}>
+            <View style={style}>
+                <ThemedText content={DOWNLOADS_KEY} />
+            </View>
+        </TouchableNativeFeedback>
+        <TouchableNativeFeedback onPress={() => { sailor.navigate(ADVANCED_KEY); }}>
+            <View style={style}>
+                <ThemedText content={ADVANCED_KEY} />
+            </View>
+        </TouchableNativeFeedback>
+        <TouchableNativeFeedback onPress={() => { sailor.navigate(ABOUT_KEY); }}>
+            <View style={style}>
+                <ThemedText content={ABOUT_KEY} />
+            </View>
+        </TouchableNativeFeedback>
+    </View>;
 };
-
-
-
-export { About, Accessibility, Advanced, Appearance, Downloads, SettingsMenu };
-
+export const Appearance = () => {
+    return <View>
+        <ThemedText content={'todo: Appearance'} />
+    </View>;
+};
+export const Accessibility = () => {
+    return <View>
+        <ThemedText content={'todo: Accessibility'} />
+    </View>;
+};
+export const Downloads = () => {
+    return <View>
+        <ThemedText content={'todo: Downloads'} />
+    </View>;
+};
+export const Advanced = () => {
+    return <View>
+        <Button title={'Clear cache'} onPress={async () => {
+            await Repo.clear();
+        }} />
+        <ThemedText content={'todo: Advanced'} />
+    </View>;
+};
+export const About = () => {
+    return <View>
+        <ThemedText content={'todo: About'} />
+    </View>;
+};

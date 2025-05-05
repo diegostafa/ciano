@@ -1,19 +1,21 @@
 import { Marquee } from '@animatereactnative/marquee';
-import React from 'react';
-import { ActivityIndicator, Button, FlatList, Image, Modal, Pressable, TextInput, TouchableNativeFeedback, useWindowDimensions, View } from 'react-native';
-import { SwipeListView } from 'react-native-swipe-list-view';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { useFocusEffect, useTheme } from '@react-navigation/native';
+import React, { useCallback, useRef } from 'react';
+import { ActivityIndicator, BackHandler, FlatList, Image, Linking, Modal, Pressable, TextInput, TouchableHighlight, TouchableNativeFeedback, useWindowDimensions, View } from 'react-native';
+import ImageCropPicker from 'react-native-image-crop-picker';
 
 import { Ctx } from './app';
 import { Repo } from './repo';
-import { Fab, getRepliesTo, HeaderIcon, HtmlText, ThemedText } from './utils';
+import { Fab, getRepliesTo, HeaderIcon, HtmlText, quotes, relativeTime, ThemedIcon, ThemedText } from './utils';
 
-const ThreadHeaderLeft = () => {
-    return <HeaderIcon name="arrow-back" onPress={() => {
+// --- public
+
+export const ThreadHeaderLeft = () => {
+    return <HeaderIcon name='arrow-back' onPress={() => {
         // FIXME: can't pop the stack from the header rooted in bottom nav bar
     }} />;
 };
-const ThreadHeaderTitle = () => {
+export const ThreadHeaderTitle = () => {
     const { state } = React.useContext(Ctx);
     const thread = state.history.at(-1).thread;
 
@@ -21,73 +23,169 @@ const ThreadHeaderTitle = () => {
         speed={0.3}
         spacing={100}
         style={{ flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
-        <HtmlText value={`/${state.board}/ - ${thread.sub || thread.com}`} />
+        <ThemedText content={`/${thread.board}/ - ${thread.sub || thread.com}`} />
     </Marquee>;
 };
-const ThreadHeaderRight = () => {
-    return <View style={{ backgroundColor: 'white', flexDirection: 'row' }}>
-        <HeaderIcon name="information-circle" onPress={() => {
+export const ThreadHeaderRight = () => {
+    return <View style={{ flexDirection: 'row' }}>
+        <HeaderIcon name='information-circle' onPress={() => {
             // show thread info
         }} />
-        <HeaderIcon name="ellipsis-vertical" />
+        <HeaderIcon name='ellipsis-vertical' />
     </View>;
 };
-const loadThread = async (setComments, thread) => {
-    const value = await Repo.comments.getLocalOrRemote(thread.board, thread.id);
-    setComments(value);
-};
-const refreshThread = async (setComments, thread) => {
-    const value = await Repo.comments.getRemote(thread.board, thread.id);
-    setComments(value);
-};
-const Thread = () => {
-    const { state } = React.useContext(Ctx);
+export const Thread = () => {
+    const { state, config } = React.useContext(Ctx);
+    const { width } = useWindowDimensions();
     const thread = state.history.at(-1).thread;
-    // const [refreshTimeout, setRefreshTimeout] = React.useState(state.refreshTimeout);
-    const [comments, setComments] = React.useState(null);
+    const [allComments, setAllComments] = React.useState(null);
+    const [selectedComment, setSelectedComment] = React.useState(null);
+    const [repliesStack, setRepliesStack] = React.useState([]);
     const [createComment, setCreateComment] = React.useState(false);
-    const [formData, setFormData] = React.useState(null);
-    const [showCommentMenu, setShowCommentMenu] = React.useState(null);
-    const [replies, setReplies] = React.useState([]);
-    const { width, height } = useWindowDimensions();
-    const tw = width;
+    const [highlightedComment, setHighlightedComment] = React.useState(null);
+    const [lastComment, setLastComment] = React.useState(null);
+    const [autoRefreshTimer, setAutoRefreshTimer] = React.useState(null);
+    const refList = useRef(null);
+    const [quoteList, setQuoteList] = React.useState([]);
+    // const [refreshTimeout, setRefreshTimeout] = React.useState(state.refreshTimeout);
 
-    React.useEffect(() => { if (!comments) { loadThread(setComments, thread); } }, [comments, setComments, thread]);
+
+    useFocusEffect(
+        useCallback(() => {
+            const onBackPress = () => {
+                if (createComment) {
+                    setCreateComment(false);
+                    return true;
+                }
+                return false;
+            };
+            const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+            return () => subscription.remove();
+        }, [createComment])
+    );
 
 
-    if (comments === null) {
+    React.useEffect(() => {
+        if (!allComments) {
+            loadThread(setAllComments, thread);
+        }
+    }, [allComments, setAllComments, thread]);
+
+    React.useEffect(() => {
+        if (!autoRefreshTimer) {
+            const timer = setTimeout(() => {
+                updateThread(allComments, setAllComments, setLastComment, thread);
+                setAutoRefreshTimer(null);
+            }, config.refreshTimeout * 1000);
+            setAutoRefreshTimer(timer);
+        }
+    }, [allComments, autoRefreshTimer, config.refreshTimeout, thread]);
+
+    React.useEffect(() => {
+        if (highlightedComment) {
+            setTimeout(() => setHighlightedComment(null), 3000);
+        }
+    }, [highlightedComment]);
+
+    if (allComments === null) {
         return <View style={{ flex: 1 }}>
-            <CommentTile comments={[]} comment={thread} tw={tw} />
+            <CommentTile allComments={[]} comment={thread} tw={width} />
             <ActivityIndicator />
-            <ThemedText content={"FETCHING COMMENTS"} />
+            <ThemedText content={'FETCHING COMMENTS'} />
             <ActivityIndicator />
             <ThreadStats />
         </View>;
     }
 
     return <View style={{ flex: 1 }}>
-        <CommentList setReplies={setReplies} setShowCommentMenu={setShowCommentMenu} comments={comments} setComments={setComments} tw={tw} />
-        {!createComment && <Fab onPress={() => { setCreateComment(true) }} />}
-        <CommentMenu showCommentMenu={showCommentMenu} setShowCommentMenu={setShowCommentMenu} />
-        {createComment && <CreateCommentForm height={height} setCreateComment={setCreateComment} formData={formData} setFormData={setFormData} />}
-        <Modal
-            visible={replies.length > 0}
-            transparent
-            onRequestClose={() => setReplies([])}>
-            <TouchableNativeFeedback onPress={() => setReplies([])} >
-                <View style={{
-                    flex: 1,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                }}>
-                    <CommentList comments={replies} setComments={setComments} tw={tw} />
-                </View>
+        <CommentList
+            ref={refList}
+            allComments={allComments} setAllComments={setAllComments}
+            repliesStack={repliesStack} setRepliesStack={setRepliesStack}
+            highlightedComment={highlightedComment}
+            selectedComment={selectedComment} setSelectedComment={setSelectedComment}
+            lastComment={lastComment}
+            quoteList={quoteList}
+        />
 
-            </TouchableNativeFeedback>
-        </Modal >
+        <RepliesModal
+            repliesStack={repliesStack} setRepliesStack={setRepliesStack}
+            allComments={allComments} setSelectedComment={setSelectedComment} refList={refList}
+            setHighlightedComment={setHighlightedComment}
+        />
 
+        <CommentMenu
+            selectedComment={selectedComment} setSelectedComment={setSelectedComment}
+            quoteList={quoteList} setQuoteList={setQuoteList}
+        />
+
+        {createComment ?
+            <CreateCommentForm setCreateComment={setCreateComment} setAllComments={setAllComments} /> :
+            <Fab onPress={() => {
+                // todo: check if the thread has reached max replies
+                setCreateComment(true)
+            }} />}
     </View>;
+};
+
+// --- sub components
+
+const RepliesModal = ({ repliesStack, setRepliesStack, allComments, setSelectedComment, setHighlightedComment, refList }) => {
+    const currReplies = repliesStack.at(-1);
+    const theme = useTheme();
+    const width = useWindowDimensions().width - 50;
+
+    return <Modal
+        visible={repliesStack.length > 0}
+        transparent
+        onRequestClose={() => setRepliesStack(repliesStack.slice(0, -1))}
+        onBackdropPress={() => setRepliesStack(repliesStack.slice(0, -1))}>
+        <View style={{
+            flex: 1,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            alignItems: 'center',
+            justifyContent: 'center',
+        }}>
+            <View
+                style={{
+                    width: width,
+                    maxHeight: '70%',
+                    backgroundColor: theme.colors.background,
+                }}>
+
+                <FlatList
+                    data={currReplies}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => {
+                        return <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <View style={{ flex: 1 }}>
+                                <CommentTile
+                                    tw={width}
+                                    allComments={allComments} comment={item}
+                                    repliesStack={repliesStack} setRepliesStack={setRepliesStack}
+                                    setSelectedComment={setSelectedComment}
+                                />
+                            </View>
+
+                        </View>;
+                    }}
+                />
+
+                <View display='flex' flexDirection='row'>
+                    <TouchableNativeFeedback onPress={() => setRepliesStack(repliesStack.slice(0, -1))}>
+                        <View style={{ flex: 1, padding: 20, alignItems: 'center' }}>
+                            <ThemedText content='back' />
+                        </View>
+                    </TouchableNativeFeedback>
+                    <TouchableNativeFeedback onPress={() => setRepliesStack([])}>
+                        <View style={{ flex: 1, padding: 20, alignItems: 'center' }}>
+                            <ThemedText content='close' />
+                        </View>
+                    </TouchableNativeFeedback>
+                </View>
+            </View>
+        </View>
+    </Modal >;
 };
 const NoComments = () => {
     const { state } = React.useContext(Ctx);
@@ -95,66 +193,111 @@ const NoComments = () => {
     const tw = useWindowDimensions().width;
 
     return <View>
-        <CommentTile comments={[]} comment={thread} tw={tw} />
-        <ThemedText content={"TODO: THERE ARE NO COMMENTS"} />
+        <CommentTile allComments={[]} comment={thread} tw={tw} />
+        <ThemedText content={'TODO: THERE ARE NO COMMENTS'} />
     </View>;
 };
-const HiddenItem = ({ data }) => {
-    return <View style={{ flex: 1, flexDirection: 'row-reverse' }}>
-        <Icon name="return-down-back" size={20} color="black" />
-    </View>;
+const CommentList = ({ ref, allComments, setAllComments, selectedComment, setSelectedComment, repliesStack, setRepliesStack, highlightedComment, lastComment, quoteList }) => {
+    const { state } = React.useContext(Ctx);
+    const { width } = useWindowDimensions();
 
-};
-const CommentList = ({ comments, setComments, tw, setShowCommentMenu, setReplies }) => {
-    const { state, config } = React.useContext(Ctx);
     const thread = state.history.at(-1).thread;
+    return <FlatList
+        ref={ref}
+        data={allComments}
+        ListFooterComponent={ThreadStats}
+        onScrollToIndexFailed={info => {
+            const wait = new Promise(resolve => setTimeout(resolve, 500));
+            wait.then(() => {
+                ref.current?.scrollToEnd({ animated: true });
 
-    if (config.swipeToReply) {
-        return <View><SwipeListView
-            data={comments}
-            renderItem={({ item, index }) => <CommentTile setShowCommentMenu={setShowCommentMenu} idx={index + 1} comments={comments} comment={item} tw={tw} setReplies={setReplies} />}
-            renderHiddenItem={(data) => <HiddenItem data={data} />}
-            disableRightSwipe
-            keyExtractor={(item) => item.id}
-            onRefresh={async () => { await refreshThread(setComments, thread); }}
-            refreshing={comments === null}
-            ListEmptyComponent={<NoComments />} />
-        </View >;
-    }
-    return <View><FlatList
-        data={comments}
-        renderItem={({ item, index }) => <CommentTile setShowCommentMenu={setShowCommentMenu} idx={index + 1} comments={comments} comment={item} tw={tw} setReplies={setReplies} />}
+            });
+        }}
+        renderItem={({ item }) => <CommentTile
+            allComments={allComments} comment={item}
+            repliesStack={repliesStack} setRepliesStack={setRepliesStack}
+            highlightedComment={highlightedComment}
+            selectedComment={selectedComment} setSelectedComment={setSelectedComment}
+            lastComment={lastComment}
+            quoteList={quoteList}
+            tw={width}
+        />}
         keyExtractor={(item) => item.id}
-        onRefresh={async () => { await refreshThread(setComments, thread); }}
-        refreshing={comments === null}
-        ListEmptyComponent={<NoComments />} />
-    </View >;
+        onRefresh={async () => { await refreshThread(setAllComments, thread); }}
+        refreshing={allComments === null}
+        ListEmptyComponent={<NoComments />} />;
+    // if (config.swipeToReply) {
+    //     return <View><SwipeListView
+    //         data={comments}
+    //         renderItem={({ item, index }) => <CommentTile setSelectedComment={setSelectedComment} idx={index + 1} comments={comments} comment={item} tw={tw} setReplies={setReplies} />}
+    //         renderHiddenItem={(data) => <HiddenItem data={data} />}
+    //         disableRightSwipe
+    //         keyExtractor={(item) => item.id}
+    //         onRefresh={async () => { await refreshThread(setAllComments, thread); }}
+    //         refreshing={comments === null}
+    //         ListEmptyComponent={<NoComments />} />
+    //     </View >;
+    // }
+
 };
-const CommentTile = ({ setShowCommentMenu, idx, comments, comment, tw, setReplies }) => {
+const CommentTile = ({ selectedComment, setSelectedComment, allComments, comment, tw, repliesStack, setRepliesStack, highlightedComment, lastComment, quoteList }) => {
     const { state, config } = React.useContext(Ctx);
-    const commentStyle = {
-        padding: 8,
-        flexDirection: 'column',
-        borderBottomWidth: 2,
-    };
-    const myCommentStyle = {};
+    const theme = useTheme();
     const img = Repo.media.from(comment);
     const thumbWidth = tw / 4;
-    const replies = getRepliesTo(comments, comment);
+    const replies = getRepliesTo(allComments, comment);
     const reply = replies.length === 1 ? 'reply' : 'replies';
     const alias = comment.alias || config.alias;
 
+    let style = {
+        padding: 10,
+        flexDirection: 'column',
+        borderBottomWidth: 2,
+    };
+    if (comment.id === highlightedComment || selectedComment && comment.id === selectedComment.id) {
+        style = {
+            ...style,
+            backgroundColor: theme.colors.highlight,
+        };
+    }
+    if (state.myComments.includes(comment.id)) {
+        style = {
+            ...style,
+            borderLeftWidth: 2,
+            borderLeftColor: theme.colors.primary
+        };
+    }
+    if (quotes(comment).some(id => state.myComments.includes(id))) {
+        style = {
+            ...style,
+            backgroundColor: 'rgba(255, 0, 0, 0.5)'
+        };
+    }
+    if (quoteList && quoteList.includes(comment.id)) {
+        style = {
+            ...style,
+            backgroundColor: 'rgba(0, 255, 0, 0.5)'
+        };
+    }
+    if (lastComment && comment.created_at > lastComment.created_at) {
+        style = {
+            ...style,
+            borderLeftWidth: 2,
+            borderLeftColor: 'red'
+        };
+    }
+
     return <Pressable
-        onLongPress={() => { setShowCommentMenu(comment); }}>
-        <View style={state.myComments.includes(comment.id) ? myCommentStyle : commentStyle}>
+        onLongPress={() => { setSelectedComment(comment); }}>
+        <View style={style}>
             <View style={{ flexDirection: 'row' }}>
                 {img && <CommentThumbnail src={img} w={thumbWidth} h={thumbWidth} />}
                 <View style={{ flex: 1 }}>
-                    {comment.sub && <HtmlText value={`<b>${comment.sub}</b>`} />}
+                    {comment.sub && <HtmlText value={`<sub>${comment.sub}</sub>`} />}
 
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                        <HtmlText value={`<name>${alias}</name><info>, ${comment.created_at}</info>`} />
-                        <HtmlText value={`<info>No. ${comment.id}</info>`} />
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                        <HtmlText value={`<name>${alias}</name><info>, ${comment.created_at ? relativeTime(comment.created_at) : ''}</info>`} />
+                        <HtmlText value={`<info>ID: ${comment.id}</info>`} />
                     </View>
                     {img &&
                         <View>
@@ -166,12 +309,23 @@ const CommentTile = ({ setShowCommentMenu, idx, comments, comment, tw, setReplie
             </View>
 
             <View style={{ marginTop: 8 }}>
-                {comment.com && <HtmlText value={comment.com} />}
+                {comment.com && <HtmlText value={`<com>${comment.com}</com>`} onLinkPress={(url) => {
+                    if (url.startsWith('#')) {
+                        url = url.slice(2);
+                    }
+                    const quoted = allComments.find(item => item.id === Number(url));
+                    if (quoted) {
+                        setRepliesStack([...repliesStack, [quoted]]);
+                    } else {
+                        Linking.openURL(url);
+                    }
+
+                }} />}
             </View>
 
             {replies.length > 0 &&
                 <TouchableNativeFeedback
-                    onPress={() => { setReplies(replies); }}>
+                    onPress={() => setRepliesStack([...repliesStack, replies])}>
                     <View style={{
                         borderRadius: 20,
                         overflow: 'hidden',
@@ -189,63 +343,160 @@ const CommentTile = ({ setShowCommentMenu, idx, comments, comment, tw, setReplie
             }
         </View>
     </Pressable>;
-
 };
 const CommentThumbnail = ({ src, w, h }) => {
-    return <TouchableNativeFeedback underlayColor="#fff">
-        <Image src={src} style={{ width: w, height: h, marginRight: 8 }} />
+    return <TouchableNativeFeedback underlayColor='#fff'>
+        <Image src={src} style={{ borderRadius: 10, width: w, height: h, marginRight: 8 }} />
     </TouchableNativeFeedback>;
 };
-const CreateCommentForm = ({ formData, setFormData, setCreateComment }) => {
+const CreateCommentForm = ({ setCreateComment, setAllComments }) => {
     const { state, setState } = React.useContext(Ctx);
     const thread = state.history.at(-1).thread;
+    // const [mediaTypeError, setMediaTypeError] = React.useState(false);
+
+    const [form, setForm] = React.useState({
+        data: {
+            alias: null,
+            com: null,
+            op: thread.id,
+            board: thread.board,
+        },
+        media: null,
+    });
+    const theme = useTheme();
 
     return <View style={{
-        width: '100%',
-        height: '100%',
-        justifyContent: 'space-between',
-        backgroundColor: '#2d2d2d'
+        borderTopWidth: 1,
+        borderColor: theme.colors.primary,
+        backgroundColor: theme.colors.formBg,
+        boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
     }}>
-        <TextInput
-            placeholder="Name (Optional)"
-            onChangeText={(text) => setFormData({ ...formData, name: text })}
-        />
-        <TextInput
-            placeholder="Comment (max 2000 chars)"
-            multiline
-            onChangeText={(text) => setFormData({ ...formData, com: text })}
-        />
-        <Button title="send" onPress={async () => {
-            const data = { ...formData, op: thread.id };
-            const id = await Repo.comments.create(data);
-            setState({ ...state, myComments: [...state.myComments, id] })
-            setCreateComment(false);
-            // await refreshThread(setComments, thread);
-        }} />
-    </View>;
+        {
+            form.media &&
+            <View style={{
+                marginTop: 10,
+                marginLeft: 10,
+                marginRight: 10,
+            }}>
+
+
+                <View style={{ flexDirection: 'row' }}>
+                    <View />
+
+                    <TouchableHighlight onPress={() => { }}>
+                        <Image src={form.media.path} style={{ width: 100, height: 100 }} />
+                    </TouchableHighlight>
+
+                    <View style={{ flex: 1, paddingLeft: 10 }}>
+                        <ThemedText content={`Name: ${form.media.path.split('/').pop()}`} />
+                        <ThemedText content={`Size: ${form.media.size}kb`} />
+                        <ThemedText content={`Type: ${form.media.mime}`} />
+                        <TouchableNativeFeedback onPress={() => {
+                            setForm({ ...form, media: null });
+                        }}>
+                            <View style={{ padding: 10, width: '30%', alignItems: 'center', backgroundColor: 'rgba(255, 0,0, 0.2)', borderRadius: 20 }}>
+                                <ThemedText content={`Remove`} />
+                            </View>
+                        </TouchableNativeFeedback>
+                    </View>
+                </View>
+            </View>
+
+        }
+
+        <View >
+            <View style={{
+                margin: 10,
+                borderRadius: 20,
+                overflow: 'hidden',
+            }}>
+                <TextInput
+                    value={form.data.alias || ''}
+                    style={{
+                        backgroundColor: theme.colors.highlight,
+                        fontSize: 16,
+                        paddingLeft: 20,
+                        color: theme.colors.text
+                    }}
+                    placeholder='Name (Optional)'
+                    onChangeText={(text) => setForm({ ...form, data: { ...form.data, alias: text } })}
+                />
+            </View>
+            <View style={{
+                flexDirection: 'row',
+                marginLeft: 10,
+                marginRight: 10,
+                marginBottom: 10,
+                borderRadius: 20,
+                overflow: 'hidden',
+            }}>
+                <View style={{ justifyContent: 'flex-end' }}>
+                    <TouchableNativeFeedback onPress={() => {
+                        ImageCropPicker.openPicker({
+                            mediaType: "video",
+                        }).then((video) => {
+                            // todo: validation
+                            setForm({ ...form, media: video });
+                            console.log(video);
+                        });
+                    }}>
+                        <View style={{ padding: 10, backgroundColor: theme.colors.highlight }}>
+                            <ThemedIcon name={'attach'} size={22} />
+                        </View>
+                    </TouchableNativeFeedback>
+
+                </View>
+                <TextInput
+                    // eslint-disable-next-line jsx-a11y/no-autofocus
+                    autoFocus={true}
+                    value={form.data.com || ''}
+                    style={{
+                        flex: 1,
+                        padding: 5,
+                        fontSize: 16,
+                        color: theme.colors.text,
+                        backgroundColor: theme.colors.highlight
+                    }}
+                    placeholder='Comment (max 2000 chars)'
+                    multiline
+                    onChangeText={(text) => setForm({ ...form, data: { ...form.data, com: text } })}
+                />
+                <View style={{ justifyContent: 'flex-end' }}>
+                    <TouchableNativeFeedback onPress={async () => {
+                        console.log(form);
+                        const comment = await Repo.comments.create(form);
+                        setState({ ...state, myComments: [...state.myComments, comment.id] })
+                        setCreateComment(false);
+                        await refreshThread(setAllComments, thread);
+                    }}>
+                        <View style={{ padding: 10, backgroundColor: theme.colors.highlight }}>
+                            <ThemedIcon name={'send'} size={22} />
+                        </View>
+                    </TouchableNativeFeedback>
+                </View>
+            </View>
+        </View>
+
+    </View >;
 
 };
 const ThreadStats = () => {
     const { state } = React.useContext(Ctx);
     const thread = state.history.at(-1).thread;
-    return <View>
-        <ThemedText content={`Replies: ${thread.replies}, Images: ${thread.images}`} style={{ fontWeight: 'bold', textAlign: 'center' }} />
+    return <View style={{ padding: 30 }}>
+        <ThemedText content={`Replies: ${thread.replies}, Images: ${thread.images}`} />
     </View>;
 };
-// const ThreadRefreshInfo = () => {
-//     const { config } = React.useContext(Ctx);
-//     if (config.refreshTimeout) {
-//         return <View />;
-//     }
-//     return <ThemedText content={``} style={{ fontWeight: 'bold', textAlign: 'center' }}>Automatically refreshing in {config.refreshTimeout}s;
+const CommentMenu = ({ selectedComment, setSelectedComment, quoteList, setQuoteList }) => {
+    const { state, setState } = React.useContext(Ctx);
+    const theme = useTheme();
+    const itemStyle = { fontSize: 18, padding: 10, borderBottomWidth: 2 };
 
-// };
-const CommentMenu = ({ showCommentMenu, setShowCommentMenu }) => {
     return <Modal
-        animationType="fade"
+        animationType='fade'
         transparent
-        visible={showCommentMenu !== null}
-        onRequestClose={() => { setShowCommentMenu(null); }}>
+        visible={selectedComment !== null}
+        onRequestClose={() => { setSelectedComment(null); }}>
         <View
             style={{
                 flex: 1,
@@ -253,25 +504,82 @@ const CommentMenu = ({ showCommentMenu, setShowCommentMenu }) => {
                 alignItems: 'center',
                 backgroundColor: 'rgba(0, 0, 0, 0.5)',
             }}>
-            <View
-                style={{
-                    width: '90%',
-                    backgroundColor: 'rgb(255, 255, 255)',
-                    justifyContent: 'space-evenly',
+            <View style={{
+                width: '90%',
+                backgroundColor: theme.colors.background,
+                justifyContent: 'space-evenly',
+            }}>
+
+                <TouchableNativeFeedback onPress={() => {
+                    setState({ ...state, myComments: [...state.myComments, selectedComment.id] })
+                    setSelectedComment(null)
                 }}>
-                <TouchableNativeFeedback onPress={() => setShowCommentMenu(null)}>
-                    <ThemedText content={`Quote`} style={{ fontSize: 18, margin: 10, borderBottomColor: '#ccc', borderBottomWidth: 1 }} />
+                    <View>
+                        <ThemedText content={`Mark as yours`} style={itemStyle} />
+                    </View>
                 </TouchableNativeFeedback>
 
-                <TouchableNativeFeedback onPress={() => setShowCommentMenu(null)}>
-                    <ThemedText content={`Quote text`} style={{ fontSize: 18, margin: 10, borderBottomColor: '#ccc', borderBottomWidth: 1 }} />
+                <TouchableNativeFeedback onPress={() => {
+                    setQuoteList([...quoteList, selectedComment])
+                    setSelectedComment(null)
+                }}>
+                    <View>
+                        <ThemedText content={`Quote`} style={itemStyle} />
+                    </View>
                 </TouchableNativeFeedback>
 
-                <TouchableNativeFeedback onPress={() => setShowCommentMenu(null)}>
-                    <ThemedText content={`Copy`} style={{ fontSize: 18, margin: 10 }} />
+                <TouchableNativeFeedback onPress={() => {
+                    setSelectedComment(null)
+                }}>
+                    <View>
+                        <ThemedText content={`Quote text`} style={itemStyle} />
+                    </View>
+                </TouchableNativeFeedback>
+
+                <TouchableNativeFeedback onPress={() => setSelectedComment(null)}>
+                    <View>
+                        <ThemedText content={`Copy`} style={{ fontSize: 18, padding: 10 }} />
+                    </View>
                 </TouchableNativeFeedback>
             </View>
         </View>
     </Modal >;
 };
-export { Thread, ThreadHeaderLeft, ThreadHeaderRight, ThreadHeaderTitle };
+
+// --- functions
+
+const loadThread = async (setAllComments, thread) => {
+    const value = await Repo.comments.getLocalOrRemote(thread.board, thread.id);
+    setAllComments(value);
+};
+const refreshThread = async (setAllComments, thread) => {
+    const value = await Repo.comments.getRemote(thread.board, thread.id);
+    setAllComments(value);
+};
+const updateThread = async (comments, setAllComments, setlastComment, thread) => {
+    const value = await Repo.comments.getRemote(thread.board, thread.id);
+    const firstNew = value.find(v => !comments.find(c => c.id === v.id));
+    setlastComment(firstNew);
+    setAllComments(value);
+};
+const scrollToCommentId = (allComments, id, refList, setHighlightedComment) => {
+    setHighlightedComment(id);
+    const index = allComments.findIndex(item => item.id === id);
+    if (index >= 0) {
+        refList.current?.scrollToIndex({ index, animated: true });
+    }
+};
+
+// const ThreadRefreshInfo = () => {
+//     const { config } = React.useContext(Ctx);
+//     if (config.refreshTimeout) {
+//         return <View />;
+//     }
+//     return <ThemedText content={``} style={{ fontWeight: 'bold', textAlign: 'center' }}>Automatically refreshing in {config.refreshTimeout}s;
+// };
+
+// const HiddenItem = ({ data }) => {
+//     return <View style={{ flex: 1, flexDirection: 'row-reverse' }}>
+//         <Icon name='return-down-back' size={20} color='black' />
+//     </View>;
+// };

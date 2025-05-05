@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-const blu = `http://192.168.21.97:3000`;
+const blu = `http://192.168.4.5:3000`;
 const chan = 'https://a.4cdn.org';
 
-const api = {
-    chan: {
+export const api = {
+    ciano: {
         media: (comment) => {
             if (!comment || !comment.media_name) {
                 return null;
@@ -29,12 +29,26 @@ const api = {
                 url: `${blu}/${boardId}/thread/${threadId}`,
             }).then(res => res.data);
         },
-        postComment: (comment) => {
+        postComment: (form) => {
+            const multipart = new FormData();
+            const data = form.data;
+            const media = form.media;
+
+            if (!data.com && !media) {
+                return null;
+            }
+            if (data.com) {
+                multipart.append('data', JSON.stringify(data));
+            }
+            if (media) {
+                multipart.append('media', "@" + media.path);
+            }
             return axios({
                 method: 'post',
                 url: `${blu}/create_comment`,
-                data: JSON.stringify(comment),
-            }).then(res => res.data.ok);
+                headers: { 'Content-Type': 'multipart/form-data' },
+                data: multipart,
+            }).then(res => res.data.Ok);
         }
     },
     blu: {
@@ -89,4 +103,3 @@ const api = {
     }
 };
 
-export { api };

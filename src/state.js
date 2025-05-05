@@ -1,15 +1,20 @@
-import { getLocal, setLocal } from "./utils";
-
+import { getLocal, setLocal } from './utils';
 
 const defaultState = {
     board: 'a',
-    history: [],
     boards: {},
+    history: [],
     myComments: [],
 };
-const State = {
+export const State = {
     get: async (key) => getLocal(key),
     set: async (key, value) => setLocal(key, value),
+    save: async (state) => {
+        await setLocal('board', state.board);
+        await setLocal('history', state.history);
+        await setLocal('boards', state.boards);
+        await setLocal('myComments', state.myComments);
+    },
     restore: async () => {
         return {
             board: await getLocal('board').catch(() => null) || defaultState.board,
@@ -19,5 +24,3 @@ const State = {
         };
     },
 };
-
-export { State };

@@ -1,21 +1,29 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@react-navigation/native';
+import { formatDistanceToNow } from 'date-fns';
 import React from 'react';
 import { Modal, Text, TouchableNativeFeedback, View } from 'react-native';
 import HTMLView from 'react-native-htmlview';
 import Icon from 'react-native-vector-icons/Ionicons';
 
+import { BOARD_TAB_KEY, CATALOG_KEY } from './app';
 import { Config } from './config';
 import { DarkHtmlTheme, LightHtmlTheme } from './theme';
 
-const setLocal = async (key, value) => AsyncStorage.setItem(key, JSON.stringify(value));
-const getLocal = async (key) => AsyncStorage.getItem(key).then(res => JSON.parse(res));
-const getRemote = async ({ key, remote }) => {
+// --- functions
+
+export const setLocal = async (key, value) => {
+    return AsyncStorage.setItem(key, JSON.stringify(value));
+};
+export const getLocal = async (key) => {
+    return AsyncStorage.getItem(key).then(res => JSON.parse(res));
+};
+export const getRemote = async ({ key, remote }) => {
     const newValue = await remote().catch(console.error);
     await setLocal(key, newValue).catch(console.error);
     return newValue;
 };
-const getLocalOrRemote = async ({ key, remote }) => {
+export const getLocalOrRemote = async ({ key, remote }) => {
     const value = await getLocal(key).catch(console.error);
     if (value !== null) {
         return value;
@@ -27,10 +35,10 @@ const getLocalOrRemote = async ({ key, remote }) => {
     await setLocal(key, newValue).catch(console.error);
     return newValue;
 };
-const prettyTimestamp = (tstamp) => {
-    return tstamp;
+export const relativeTime = (tstamp) => {
+    return formatDistanceToNow(Number(tstamp) * 1000, { addSuffix: true });
 };
-const historyAdd = async (state, thread) => {
+export const historyAdd = async (state, thread) => {
     if (!thread) {
         return state.history;
     }
@@ -42,24 +50,51 @@ const historyAdd = async (state, thread) => {
     await Config.set('history', history);
     return history;
 };
-const getThread = (comments, threadId) => {
+export const getComment = (comments, threadId) => {
     return comments.find(item => item.id === threadId);
 };
-const getRepliesTo = (comments, comment) => {
-    return comments.filter(item => item.com && item.com.includes(comment.id));
+export const getRepliesTo = (comments, comment) => {
+    return comments.filter(item => item.com && item.com.includes("&gt;&gt;" + comment.id));
 };
-const ThemedIcon = ({ name, size }) => {
+export const quotes = (comment) => {
+    if (!comment.com) {
+        return [];
+    }
+    const matches = comment.com.match(/>>\S+/g) || [];
+    return matches.map(str => str.slice(2));
+}
+export const getThreadSignature = (thread) => {
+    const board = `<info>/${thread.board}/ - </info>`;
+    if (thread.sub) {
+        return `${board}<sub>${thread.sub}</sub>`;
+    } else {
+        return `${board}<com>${thread.com}</com>`;
+    }
+}
+export const currRoute = (state) => {
+    const tabRoute = state.routes.find(r => r.name === BOARD_TAB_KEY);
+    const stackState = tabRoute?.state;
+    const currentRoute = stackState?.routes?.[stackState.index]?.name;
+    return currentRoute || CATALOG_KEY;
+};
+
+// --- components
+
+export const ThemedIcon = ({ name, size, color }) => {
     const theme = useTheme();
-    return <Icon name={name} size={size || 28} color={theme.colors.text} />;
+    return <Icon name={name} size={size || 28} color={color || theme.colors.text} />;
 };
-const HeaderIcon = ({ name, onPress }) => {
+export const HeaderIcon = ({ name, onPress }) => {
     return <TouchableNativeFeedback onPress={onPress}>
         <View style={{ padding: 10 }}>
             <ThemedIcon name={name} />
         </View>
     </TouchableNativeFeedback>;
 };
-const Fab = ({ onPress }) => {
+export const TabIcon = (name) => ({ color }) => {
+    return ThemedIcon({ name, size: 24, color });
+};
+export const Fab = ({ onPress }) => {
     const theme = useTheme();
     const size = 52;
 
@@ -72,20 +107,19 @@ const Fab = ({ onPress }) => {
             height: size,
             width: size,
             borderRadius: '50%',
-            backgroundColor: theme.colors.secondary,
+            backgroundColor: theme.colors.primary,
             overflow: 'hidden',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
         }}>
-            <ThemedIcon name={"add"} />
+            <ThemedIcon name={'add'} />
         </View>
     </TouchableNativeFeedback>;
 };
-// todo spawn it near the tap
-const ModalMenu = ({ child, visible, centered }) => {
+export const ModalMenu = ({ child, visible, centered }) => {
     return <Modal
-        animationType="fade"
+        animationType='fade'
         transparent
         visible={visible}>
         <View
@@ -105,44 +139,15 @@ const ModalMenu = ({ child, visible, centered }) => {
         </View>
     </Modal>;
 };
-const ThemedText = ({ content, style }) => {
+export const ThemedText = ({ content, style }) => {
     const theme = useTheme();
     return <Text style={{ ...style, color: theme.colors.text }}>{content}</Text>;
-}
-
-const HtmlTextRendered = (node, index, siblings, parent, defaultRenderer) => {
-    const next = siblings[index + 1];
-
-    if (node.name === 'br') {
-        if (next.name === 'br') {
-            return undefined;
-        } else {
-            return null
-        }
-    }
 };
-const HtmlText = ({ value, renderNode }) => {
+export const HtmlText = ({ value, onLinkPress }) => {
     const theme = useTheme();
-
     return <HTMLView
-        onLinkPress={() => { }}
-        renderNode={renderNode || HtmlTextRendered}
-        addLineBreaks={false}
+        onLinkPress={onLinkPress}
         value={`<p>${value}</p>`}
         stylesheet={theme.dark ? DarkHtmlTheme : LightHtmlTheme}
     />;
 };
-
-export {
-    Fab,
-    getLocal,
-    getLocalOrRemote, getRemote,
-    getRepliesTo,
-    getThread,
-    HeaderIcon,
-    historyAdd, HtmlText, ModalMenu,
-    prettyTimestamp,
-    setLocal, ThemedIcon, ThemedText
-};
-
-

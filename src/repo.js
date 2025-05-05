@@ -1,7 +1,12 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { api } from './api';
 import { getLocal, getLocalOrRemote, getRemote, setLocal } from './utils';
 
-const Repo = {
+export const Repo = {
+    clear: async () => {
+        return AsyncStorage.clear();
+    },
     media: {
         from: (comment) => {
             return api.blu.media(comment);
@@ -31,11 +36,11 @@ const Repo = {
         getRemote: async (boardId, threadId) => {
             return getRemote({ key: `board/${boardId}/thread/${threadId}`, remote: () => api.blu.getComments(boardId, threadId) });
         },
-        create: async (comment) => {
-            return api.blu.postComment(comment);
+        create: async (form) => {
+            return api.blu.postComment(form);
         },
     },
+    boards: {
+    }
 };
-
-export { Repo };
 
