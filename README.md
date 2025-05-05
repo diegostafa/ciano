@@ -22,11 +22,9 @@ todo:
   - [ ] fill the various sections (appearance, accessibility ...)
 - catalog:
   - [ ] hide FAB when scrolling down
-  - [ ] create thread form (on a separate screen)
 - thread:
   - [ ] hide FAB when scrolling down
-  - [ ] swipe to reply
+  - [ ] ~~swipe to reply~~ maybe not
 - gallery:
   - [ ] gallery for catalog and thread images
   - [ ] tap and hold for a menu (download, copy name, copy link, share)
-
