@@ -63,7 +63,21 @@ export const api = {
             return axios({
                 method: 'get',
                 url: `${chan}/boards.json`,
-            }).then(res => res.data);
+            }).then(res => res.data.boards.map(board => {
+                return {
+                    code: board.board,
+                    name: board.title,
+                    desc: board.meta_description,
+                    max_threads: null,
+                    max_replies: null,
+                    max_img_replies: board.image_limit,
+                    max_sub_len: board.max_comment_chars,
+                    max_com_len: board.max_comment_chars,
+                    max_file_size: board.max_file_size,
+                    is_nsfw: board.ws_board === 1,
+                    created_at: null,
+                };
+            }));
         },
         getThreads: (boardId) => {
             return axios({

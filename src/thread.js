@@ -10,11 +10,6 @@ import { Fab, getRepliesTo, HeaderIcon, HtmlText, quotes, relativeTime, ThemedIc
 
 // --- public
 
-export const ThreadHeaderLeft = () => {
-    return <HeaderIcon name='arrow-back' onPress={() => {
-        // FIXME: can't pop the stack from the header rooted in bottom nav bar
-    }} />;
-};
 export const ThreadHeaderTitle = () => {
     const { state } = React.useContext(Ctx);
     const thread = state.history.at(-1).thread;
@@ -27,7 +22,8 @@ export const ThreadHeaderTitle = () => {
     </Marquee>;
 };
 export const ThreadHeaderRight = () => {
-    return <View style={{ flexDirection: 'row' }}>
+    const theme = useTheme();
+    return <View style={{ flexDirection: 'row', backgroundColor: theme.colors.card }}>
         <HeaderIcon name='information-circle' onPress={() => {
             // show thread info
         }} />
@@ -37,16 +33,27 @@ export const ThreadHeaderRight = () => {
 export const Thread = () => {
     const { state, config } = React.useContext(Ctx);
     const { width } = useWindowDimensions();
+    const theme = useTheme();
     const thread = state.history.at(-1).thread;
+    const refList = useRef(null);
     const [allComments, setAllComments] = React.useState(null);
     const [selectedComment, setSelectedComment] = React.useState(null);
     const [repliesStack, setRepliesStack] = React.useState([]);
     const [createComment, setCreateComment] = React.useState(false);
     const [highlightedComment, setHighlightedComment] = React.useState(null);
     const [lastComment, setLastComment] = React.useState(null);
-    const [autoRefreshTimer, setAutoRefreshTimer] = React.useState(null);
-    const refList = useRef(null);
+    const [isUpdatingThread, setIsUpdatingThread] = React.useState(false);
+    const [autoRefreshSec, setAutoRefreshSec] = React.useState(config.refreshTimeout);
     const [quoteList, setQuoteList] = React.useState([]);
+    const [form, setForm] = React.useState({
+        data: {
+            alias: null,
+            com: null,
+            op: thread.id,
+            board: thread.board,
+        },
+        media: null,
+    });
     // const [refreshTimeout, setRefreshTimeout] = React.useState(state.refreshTimeout);
 
 
@@ -63,23 +70,30 @@ export const Thread = () => {
             return () => subscription.remove();
         }, [createComment])
     );
-
-
     React.useEffect(() => {
         if (!allComments) {
             loadThread(setAllComments, thread);
         }
     }, [allComments, setAllComments, thread]);
 
+
     React.useEffect(() => {
-        if (!autoRefreshTimer) {
-            const timer = setTimeout(() => {
-                updateThread(allComments, setAllComments, setLastComment, thread);
-                setAutoRefreshTimer(null);
-            }, config.refreshTimeout * 1000);
-            setAutoRefreshTimer(timer);
-        }
-    }, [allComments, autoRefreshTimer, config.refreshTimeout, thread]);
+        // Countdown interval - updates every second
+        const countdownInterval = setInterval(() => {
+            setAutoRefreshSec((prev) => {
+                if (prev === 0) {
+                    console.log('Event triggered!');
+                    updateThread(allComments, setAllComments, setLastComment, thread, setIsUpdatingThread);
+                    return config.refreshTimeout;
+                }
+                if (isUpdatingThread) {
+                    return prev;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(countdownInterval);
+    }, [allComments, config.refreshTimeout, thread, isUpdatingThread, setIsUpdatingThread]);
 
     React.useEffect(() => {
         if (highlightedComment) {
@@ -88,17 +102,19 @@ export const Thread = () => {
     }, [highlightedComment]);
 
     if (allComments === null) {
-        return <View style={{ flex: 1 }}>
+        // fixme: what if the commentTile exceeds the view height??
+        return <View style={{ flex: 1, backgroundColor: theme.colors.card }}>
             <CommentTile allComments={[]} comment={thread} tw={width} />
             <ActivityIndicator />
             <ThemedText content={'FETCHING COMMENTS'} />
             <ActivityIndicator />
-            <ThreadStats />
+            <ThreadInfo />
         </View>;
     }
 
-    return <View style={{ flex: 1 }}>
+    return <View style={{ flex: 1, backgroundColor: theme.colors.card }}>
         <CommentList
+            autoRefreshSec={autoRefreshSec}
             ref={refList}
             allComments={allComments} setAllComments={setAllComments}
             repliesStack={repliesStack} setRepliesStack={setRepliesStack}
@@ -120,7 +136,7 @@ export const Thread = () => {
         />
 
         {createComment ?
-            <CreateCommentForm setCreateComment={setCreateComment} setAllComments={setAllComments} /> :
+            <CreateCommentForm setCreateComment={setCreateComment} setAllComments={setAllComments} form={form} setForm={setForm} /> :
             <Fab onPress={() => {
                 // todo: check if the thread has reached max replies
                 setCreateComment(true)
@@ -145,12 +161,14 @@ const RepliesModal = ({ repliesStack, setRepliesStack, allComments, setSelectedC
             backgroundColor: 'rgba(0, 0, 0, 0.5)',
             alignItems: 'center',
             justifyContent: 'center',
+
         }}>
             <View
                 style={{
                     width: width,
-                    maxHeight: '70%',
-                    backgroundColor: theme.colors.background,
+                    maxHeight: '80%',
+                    backgroundColor: theme.colors.card,
+                    borderRadius: 10,
                 }}>
 
                 <FlatList
@@ -171,15 +189,15 @@ const RepliesModal = ({ repliesStack, setRepliesStack, allComments, setSelectedC
                     }}
                 />
 
-                <View display='flex' flexDirection='row'>
+                <View style={{ flexDirection: 'row', borderRadius: 10, }}>
                     <TouchableNativeFeedback onPress={() => setRepliesStack(repliesStack.slice(0, -1))}>
-                        <View style={{ flex: 1, padding: 20, alignItems: 'center' }}>
-                            <ThemedText content='back' />
+                        <View style={{ flex: 1, padding: 15, margin: 5, borderRadius: 10, alignItems: 'center', backgroundColor: theme.colors.highlight }}>
+                            <ThemedText content='BACK' />
                         </View>
                     </TouchableNativeFeedback>
                     <TouchableNativeFeedback onPress={() => setRepliesStack([])}>
-                        <View style={{ flex: 1, padding: 20, alignItems: 'center' }}>
-                            <ThemedText content='close' />
+                        <View style={{ flex: 1, padding: 15, margin: 5, borderRadius: 10, alignItems: 'center', backgroundColor: theme.colors.highlight }}>
+                            <ThemedText content='CLOSE' />
                         </View>
                     </TouchableNativeFeedback>
                 </View>
@@ -197,15 +215,20 @@ const NoComments = () => {
         <ThemedText content={'TODO: THERE ARE NO COMMENTS'} />
     </View>;
 };
-const CommentList = ({ ref, allComments, setAllComments, selectedComment, setSelectedComment, repliesStack, setRepliesStack, highlightedComment, lastComment, quoteList }) => {
+const CommentList = ({ autoRefreshSec, ref, allComments, setAllComments, selectedComment, setSelectedComment, repliesStack, setRepliesStack, highlightedComment, lastComment, quoteList }) => {
     const { state } = React.useContext(Ctx);
     const { width } = useWindowDimensions();
 
     const thread = state.history.at(-1).thread;
     return <FlatList
         ref={ref}
+        onScroll={(ev) => {
+            const offsetY = ev.nativeEvent.contentOffset.y;
+            console.log(offsetY);
+
+        }}
         data={allComments}
-        ListFooterComponent={ThreadStats}
+        ListFooterComponent={<ThreadInfo autoRefreshSec={autoRefreshSec} />}
         onScrollToIndexFailed={info => {
             const wait = new Promise(resolve => setTimeout(resolve, 500));
             wait.then(() => {
@@ -250,9 +273,11 @@ const CommentTile = ({ selectedComment, setSelectedComment, allComments, comment
     const alias = comment.alias || config.alias;
 
     let style = {
+        backgroundColor: theme.colors.background,
+        margin: 5,
+        borderRadius: 10,
         padding: 10,
         flexDirection: 'column',
-        borderBottomWidth: 2,
     };
     if (comment.id === highlightedComment || selectedComment && comment.id === selectedComment.id) {
         style = {
@@ -349,27 +374,20 @@ const CommentThumbnail = ({ src, w, h }) => {
         <Image src={src} style={{ borderRadius: 10, width: w, height: h, marginRight: 8 }} />
     </TouchableNativeFeedback>;
 };
-const CreateCommentForm = ({ setCreateComment, setAllComments }) => {
+const CreateCommentForm = ({ setCreateComment, setAllComments, form, setForm }) => {
     const { state, setState } = React.useContext(Ctx);
     const thread = state.history.at(-1).thread;
     // const [mediaTypeError, setMediaTypeError] = React.useState(false);
 
-    const [form, setForm] = React.useState({
-        data: {
-            alias: null,
-            com: null,
-            op: thread.id,
-            board: thread.board,
-        },
-        media: null,
-    });
+
     const theme = useTheme();
 
     return <View style={{
         borderTopWidth: 1,
         borderColor: theme.colors.primary,
-        backgroundColor: theme.colors.formBg,
+        backgroundColor: theme.colors.background,
         boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
+        maxHeight: '50%',
     }}>
         {
             form.media &&
@@ -384,17 +402,19 @@ const CreateCommentForm = ({ setCreateComment, setAllComments }) => {
                     <View />
 
                     <TouchableHighlight onPress={() => { }}>
-                        <Image src={form.media.path} style={{ width: 100, height: 100 }} />
+                        <Image src={form.media.path} style={{ width: 100, height: 100, borderRadius: 10, }} />
                     </TouchableHighlight>
 
-                    <View style={{ flex: 1, paddingLeft: 10 }}>
-                        <ThemedText content={`Name: ${form.media.path.split('/').pop()}`} />
-                        <ThemedText content={`Size: ${form.media.size}kb`} />
-                        <ThemedText content={`Type: ${form.media.mime}`} />
+                    <View style={{ flex: 1, paddingLeft: 10, justifyContent: 'space-between' }}>
+                        <View>
+                            <ThemedText content={`Name: ${form.media.path.split('/').pop()}`} />
+                            <ThemedText content={`Size: ${form.media.size}kb`} />
+                            <ThemedText content={`Type: ${form.media.mime}`} />
+                        </View>
                         <TouchableNativeFeedback onPress={() => {
                             setForm({ ...form, media: null });
                         }}>
-                            <View style={{ padding: 10, width: '30%', alignItems: 'center', backgroundColor: 'rgba(255, 0,0, 0.2)', borderRadius: 20 }}>
+                            <View style={{ padding: 10, width: '30%', alignItems: 'center', backgroundColor: 'rgba(255, 0,0, 0.2)', borderRadius: 10 }}>
                                 <ThemedText content={`Remove`} />
                             </View>
                         </TouchableNativeFeedback>
@@ -407,7 +427,7 @@ const CreateCommentForm = ({ setCreateComment, setAllComments }) => {
         <View >
             <View style={{
                 margin: 10,
-                borderRadius: 20,
+                borderRadius: 10,
                 overflow: 'hidden',
             }}>
                 <TextInput
@@ -427,7 +447,7 @@ const CreateCommentForm = ({ setCreateComment, setAllComments }) => {
                 marginLeft: 10,
                 marginRight: 10,
                 marginBottom: 10,
-                borderRadius: 20,
+                borderRadius: 10,
                 overflow: 'hidden',
             }}>
                 <View style={{ justifyContent: 'flex-end' }}>
@@ -447,8 +467,6 @@ const CreateCommentForm = ({ setCreateComment, setAllComments }) => {
 
                 </View>
                 <TextInput
-                    // eslint-disable-next-line jsx-a11y/no-autofocus
-                    autoFocus={true}
                     value={form.data.com || ''}
                     style={{
                         flex: 1,
@@ -480,11 +498,17 @@ const CreateCommentForm = ({ setCreateComment, setAllComments }) => {
     </View >;
 
 };
-const ThreadStats = () => {
+const ThreadInfo = ({ autoRefreshSec, isUpdatingThread }) => {
     const { state } = React.useContext(Ctx);
     const thread = state.history.at(-1).thread;
     return <View style={{ padding: 30 }}>
         <ThemedText content={`Replies: ${thread.replies}, Images: ${thread.images}`} />
+
+        {isUpdatingThread ?
+            <ThemedText content={`Refreshing the thread...`} /> :
+            <ThemedText content={`Refreshing the thread in ${autoRefreshSec}s`} />
+        }
+
     </View>;
 };
 const CommentMenu = ({ selectedComment, setSelectedComment, quoteList, setQuoteList }) => {
@@ -506,6 +530,7 @@ const CommentMenu = ({ selectedComment, setSelectedComment, quoteList, setQuoteL
             }}>
             <View style={{
                 width: '90%',
+                borderRadius: 10,
                 backgroundColor: theme.colors.background,
                 justifyContent: 'space-evenly',
             }}>
@@ -556,19 +581,22 @@ const refreshThread = async (setAllComments, thread) => {
     const value = await Repo.comments.getRemote(thread.board, thread.id);
     setAllComments(value);
 };
-const updateThread = async (comments, setAllComments, setlastComment, thread) => {
+const updateThread = async (comments, setAllComments, setlastComment, thread, setIsUpdatingThread) => {
+    setIsUpdatingThread(true);
     const value = await Repo.comments.getRemote(thread.board, thread.id);
     const firstNew = value.find(v => !comments.find(c => c.id === v.id));
     setlastComment(firstNew);
     setAllComments(value);
+    setIsUpdatingThread(false);
+
 };
-const scrollToCommentId = (allComments, id, refList, setHighlightedComment) => {
-    setHighlightedComment(id);
-    const index = allComments.findIndex(item => item.id === id);
-    if (index >= 0) {
-        refList.current?.scrollToIndex({ index, animated: true });
-    }
-};
+// const scrollToCommentId = (allComments, id, refList, setHighlightedComment) => {
+//     setHighlightedComment(id);
+//     const index = allComments.findIndex(item => item.id === id);
+//     if (index >= 0) {
+//         refList.current?.scrollToIndex({ index, animated: true });
+//     }
+// };
 
 // const ThreadRefreshInfo = () => {
 //     const { config } = React.useContext(Ctx);

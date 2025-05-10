@@ -3,7 +3,7 @@ import React from 'react';
 import { ActivityIndicator, Button, FlatList, Image, TouchableNativeFeedback, useWindowDimensions, View } from 'react-native';
 
 import { api } from './api';
-import { CREATE_THREAD_KEY, Ctx, THREAD_KEY } from './app';
+import { CREATE_THREAD_KEY, Ctx, SETUP_BOARDS_KEY, THREAD_KEY } from './app';
 import { Config } from './config';
 import { Repo } from './repo';
 import { Fab, HeaderIcon, historyAdd, HtmlText, ThemedText } from './utils';
@@ -16,14 +16,23 @@ export const CatalogHeaderLeft = () => {
 };
 export const CatalogHeaderTitle = () => {
     const { state } = React.useContext(Ctx);
+
+    if (!state.board) {
+        return <View>
+            <ThemedText content={'Catalog'} />
+        </View>;
+    }
+
     return <View>
         <TouchableNativeFeedback>
-            <ThemedText content={`Board: ${state.board}`} />
+            <ThemedText content={`${state.board}`} />
         </TouchableNativeFeedback>
     </View>;
 };
 export const CatalogHeaderRight = () => {
     const { state, setState, config, setConfig } = React.useContext(Ctx);
+    if (!state.board) { return <View />; }
+
     const newMode = config.catalogMode === 'list' ? 'grid' : 'list';
     const icon = newMode === 'list' ? 'list' : 'grid'; // todo: find better icons
 
@@ -44,15 +53,29 @@ export const Catalog = () => {
     const theme = useTheme();
 
     React.useEffect(() => {
-        if (!state.board) { return; }
-        if (!state.boards[state.board]) { loadBoard(state, setState, setFetchError); }
+        if (!state.board) {
+            setBoards(state, setState);
+        }
+    }, [state, setState]);
+    React.useEffect(() => {
+        if (state.board && !state.boards[state.board]) {
+            loadBoard(state, setState, setFetchError);
+        }
     }, [state, setState]);
 
     if (!state.boards) {
-        return <View style={{ flex: 1 }}><ThemedText content={'TODO: FETCH BOARDS LOADER'} /></View>;
+        return <View style={{ flex: 1 }}>
+            <ThemedText content={'FETCHING BOARDS'} />
+            <ActivityIndicator />
+        </View>;
     }
     if (!state.board) {
-        return <View style={{ flex: 1 }}><ThemedText content={'SELECT A BOARD TO GET STARTED'} /></View>;
+        return <View style={{ flex: 1 }}>
+            <ThemedText content={'Select a board to get started'} />
+            <Button title={'Select'} onPress={() => {
+                sailor.navigate(SETUP_BOARDS_KEY);
+            }} />
+        </View>
     }
     if (fetchError) {
         return <View style={{ flex: 1 }}>
@@ -66,7 +89,8 @@ export const Catalog = () => {
     if (!state.boards[state.board]) {
         return <View style={{ flex: 1 }}>
             <ThemedText content={'FETCHING THREADS'} />
-            <ActivityIndicator /></View>;
+            <ActivityIndicator />
+        </View>;
     }
 
     return <View style={{ flex: 1, backgroundColor: theme.colors.card }}>
@@ -122,43 +146,55 @@ const GridTile = ({ thread, tw, th }) => {
     const img = api.blu.media(thread);
     const lastThread = state.history.at(-1);
     const threadTileStyle = {
-        width: tw - 4,
+        width: tw - 8,
         height: th,
-        margin: 1,
+        margin: 4,
         backgroundColor: lastThread && lastThread.thread.id === thread.id ? theme.colors.highlight : theme.colors.card,
         overflow: 'hidden',
     };
 
-    return <TouchableNativeFeedback
-        onPress={async () => {
-            const history = await historyAdd(state, thread)
-            setState({ ...state, history });
-            sailor.navigate(THREAD_KEY);
-        }}>
-        <View style={threadTileStyle}>
-            <TouchableNativeFeedback
-                onPress={() => {
-                    console.log('open gallery');
-                }}>
-                <Image src={img} style={{ width: '100%', height: th / 3 }} />
-            </TouchableNativeFeedback>
+    return <View style={threadTileStyle}>
+        <TouchableNativeFeedback
+            onPress={() => {
+                console.log('todo: open gallery');
+            }}>
+            <Image src={img} style={{
+                width: '100%',
+                height: th / 3,
+                borderTopLeftRadius: 10,
+                borderTopRightRadius: 10,
+                borderBottomLeftRadius: 0,
+                borderBottomRightRadius: 0,
+            }} />
+        </TouchableNativeFeedback>
 
+        <TouchableNativeFeedback
+            onPress={async () => {
+                const history = await historyAdd(state, thread)
+                setState({ ...state, history });
+                sailor.navigate(THREAD_KEY);
+            }}>
             <View style={{
-                padding: 2,
                 flex: 1,
                 justifyContent: 'space-between',
+                backgroundColor: lastThread && lastThread.thread.id === thread.id ? theme.colors.highlight : theme.colors.background,
+                padding: 5,
+                borderBottomLeftRadius: 10,
+                borderBottomRightRadius: 10,
             }}>
                 <View style={{ flexShrink: 1, overflow: 'hidden' }}>
                     {thread.sub && <HtmlText value={`<sub>${thread.sub}</sub>`} />}
                     {thread.com && <HtmlText value={`<com>${thread.com}</com>`} />}
                 </View>
 
-                <View style={{ marginTop: 2 }}>
+                <View style={{ marginTop: 10 }}>
                     <HtmlText value={`<info>${thread.replies}R, ${thread.images}I</info>`} />
                 </View>
             </View>
-        </View>
-    </TouchableNativeFeedback>;
+
+        </TouchableNativeFeedback>
+
+    </View>;
 };
 const ListTile = ({ thread, tw, th }) => {
     const { state, setState } = React.useContext(Ctx);
@@ -201,12 +237,19 @@ const ListTile = ({ thread, tw, th }) => {
                 backgroundColor: lastThread && lastThread.thread.id === thread.id ? theme.colors.highlight : theme.colors.background,
                 borderRadius: 10,
             }}>
-                <View style={{ flexShrink: 1, overflow: 'hidden' }}>
+                <View style={{
+                    flexShrink: 1,
+                    overflow: 'hidden',
+
+                }}>
                     {thread.sub && <HtmlText value={`<sub>${thread.sub}</sub>`} />}
                     {thread.com && <HtmlText value={`<com>${thread.com}</com>`} />}
                 </View>
 
-                <View style={{ marginTop: 2, justifyContent: 'flex-end', flex: 1 }}>
+                <View style={{
+                    marginTop: 8,
+                    justifyContent: 'flex-end',
+                }}>
                     <HtmlText value={`<info>${thread.replies} Replies, ${thread.images} Images</info>`} />
                 </View>
             </View>
@@ -235,5 +278,16 @@ const refreshBoard = async (state, setState, setFetchError) => {
         setState({ ...state, boards: { ...state.boards, [state.board]: board } });
     }
 };
+const setCurrentBoard = () => {
 
+    // todo: let the user select the current board from
+    // the list of boards
+    // when selecting, set the current board on setState
+    // set the value currBoard in <Thread>
+    // thread will then use that value to display stuff
+};
 
+const setBoards = async (state, setState) => {
+    const boards = await Repo.boards.getLocalOrRemote();
+    setState({ ...state, boards });
+};

@@ -41,6 +41,12 @@ export const Repo = {
         },
     },
     boards: {
+        getLocalOrRemote: async () => {
+            return getLocalOrRemote({ key: `boards`, remote: () => api.blu.getBoards() });
+        },
+        getRemote: async () => {
+            return api.blu.getBoards();
+        },
     }
 };
 
