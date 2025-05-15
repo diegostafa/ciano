@@ -3,7 +3,7 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
-import { ActivityIndicator, Keyboard, Text, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, AppState, Keyboard, useColorScheme, View } from 'react-native';
 import { enableScreens } from 'react-native-screens';
 
 import { SetupBoards, SetupBoardsHeaderRight, SetupBoardsHeaderTitle } from './boards_setup';
@@ -12,7 +12,7 @@ import { Config } from './config';
 import { CreateThread } from './create_thread';
 import { Notifications } from './notifications';
 import { About, ABOUT_KEY, Accessibility, ACCESSIBILITY_KEY, Advanced, ADVANCED_KEY, Appearance, APPEARANCE_KEY, Downloads, DOWNLOADS_KEY, SETTINGS_MENU_KEY, SettingsMenu } from './settings';
-import { State } from './state';
+import { defaultFlags, State } from './state';
 import { DarkTheme, LightTheme } from './theme';
 import { Thread, ThreadHeaderRight, ThreadHeaderTitle } from './thread';
 import { TabIcon } from './utils';
@@ -34,8 +34,10 @@ export const NOTIFICATIONS_TAB_KEY = 'Notifications';
 export const SETUP_BOARDS_KEY = 'SetupBoards';
 
 export const App = () => {
+    const appState = React.useRef(AppState.currentState);
     const [state, setState] = React.useState(null);
     const [config, setConfig] = React.useState(null);
+    const [flags, setFlags] = React.useState(null);
     const theme = useColorScheme();
 
     async function restoreState() { setState(await State.restore()) }
@@ -43,19 +45,37 @@ export const App = () => {
 
     React.useEffect(() => { if (!state) restoreState() }, [state]);
     React.useEffect(() => { if (!config) restoreConfig() }, [config]);
+    React.useEffect(() => { if (!flags) setFlags(defaultFlags) }, [flags]);
 
-    if (!state || !config) { return <View><ActivityIndicator /></View>; }
+    React.useEffect(() => {
+        const handleAppStateChange = async (nextAppState) => {
+            if (appState.current === 'active' && nextAppState.match(/inactive|background/)) {
+                await State.save(state);
+                await Config.save(config);
+            }
+            appState.current = nextAppState;
+        };
+        const subscription = AppState.addEventListener('change', handleAppStateChange);
+        return () => { subscription.remove(); };
+    }, [config, state]);
 
-    return <Ctx.Provider value={{ state, setState, config, setConfig }}>
+    if (!state || !config || !flags) { return <View><ActivityIndicator /></View>; }
+
+    return <Ctx.Provider value={{ state, setState, config, setConfig, flags, setFlags }}>
         <NavigationContainer theme={theme === 'dark' ? DarkTheme : LightTheme} >
             <Drawer.Navigator
                 screenOptions={{ headerShown: false }}
                 initialRouteName={BOTTOM_NAV_KEY}
-                drawerContent={() => <Text>Drawer</Text>} >
+                drawerContent={DrawerScreen} >
                 <Drawer.Screen name={BOTTOM_NAV_KEY} component={BottomTab} />
             </Drawer.Navigator>
         </NavigationContainer></Ctx.Provider>;
 };
+
+const DrawerScreen = () => {
+    return <View />;
+}
+
 const BottomTab = () => {
     const [isKeyboardVisible, setKeyboardVisible] = React.useState(false);
 

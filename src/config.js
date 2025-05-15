@@ -1,17 +1,18 @@
 import { getLocal, setLocal } from './utils';
 
 const defaultConfig = {
-    catalogMode: 'list', // 'list' or 'grid'
-    catalogSort: 'new', // 'new' or 'latest' or 'replies'
+    catalogMode: 0, // 0: list, 1: grid
+    catalogSort: 0, // 0: created, 1: bump, 2: # replies
+    catalogRev: false,
+
     catalogCols: 3,
     catalogRows: 4,
-    selectedImg: null, // this can be lowered
     themeLight: null,
     themeDark: null,
     refreshTimeout: 15, // or null
     relativeTime: false,
     swipeToReply: false,
-    alias: 'Anonymous',
+    alias: null,
 };
 export const Config = {
     get: async (key) => getLocal(key),
@@ -20,9 +21,9 @@ export const Config = {
         return {
             catalogMode: await getLocal('catalogMode').catch(() => null) || defaultConfig.catalogMode,
             catalogSort: await getLocal('catalogSort').catch(() => null) || defaultConfig.catalogSort,
+            catalogRev: await getLocal('catalogRev').catch(() => null) || defaultConfig.catalogRev,
             catalogCols: await getLocal('catalogCols').catch(() => null) || defaultConfig.catalogCols,
             catalogRows: await getLocal('catalogRows').catch(() => null) || defaultConfig.catalogRows,
-            selectedImg: await getLocal('selectedImg').catch(() => null) || defaultConfig.selectedImg,
             themeLight: await getLocal('themeLight').catch(() => null) || defaultConfig.themeLight,
             themeDark: await getLocal('themeDark').catch(() => null) || defaultConfig.themeDark,
             refreshTimeout: await getLocal('refreshTimeout').catch(() => null) || defaultConfig.refreshTimeout,
@@ -31,4 +32,14 @@ export const Config = {
             alias: await getLocal('alias').catch(() => null) || defaultConfig.alias,
         };
     },
+};
+
+export const numToMode = {
+    0: 'list',
+    1: 'grid',
+};
+export const numToSort = {
+    0: 'created',
+    1: 'last reply',
+    2: 'replies',
 };

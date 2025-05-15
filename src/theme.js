@@ -12,21 +12,21 @@ export const LightTheme = {
         border: 'rgb(216, 216, 216)',
         notification: 'rgb(255, 59, 48)',
         highlight: 'rgba(0, 0, 0, 0.1)',
-        formBg: 'rgb(57, 60, 66)' // fixme
+        formBg: 'rgb(57, 60, 66)'
     },
     fonts: DefaultLight.fonts,
 };
 export const DarkTheme = {
     dark: true,
     colors: {
-        primary: '#458588',
+        primary: '#b294bb',
         background: '#1d2021',
-        formBg: 'rgb(50, 50, 55)',
         card: 'rgb(18, 18, 18)',
         text: 'rgb(229, 229, 231)',
         border: 'rgb(39, 39, 41)',
         notification: 'rgb(255, 69, 58)',
         highlight: 'rgba(255, 255, 255, 0.1)',
+        formBg: 'rgb(50, 50, 55)',
     },
     fonts: DefaultDark.fonts,
 };

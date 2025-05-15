@@ -63,21 +63,25 @@ export const api = {
             return axios({
                 method: 'get',
                 url: `${chan}/boards.json`,
-            }).then(res => res.data.boards.map(board => {
-                return {
-                    code: board.board,
-                    name: board.title,
-                    desc: board.meta_description,
-                    max_threads: null,
-                    max_replies: null,
-                    max_img_replies: board.image_limit,
-                    max_sub_len: board.max_comment_chars,
-                    max_com_len: board.max_comment_chars,
-                    max_file_size: board.max_file_size,
-                    is_nsfw: board.ws_board === 1,
-                    created_at: null,
-                };
-            }));
+            }).then(res => res.data.boards
+                .map(board => {
+                    return {
+                        code: board.board,
+                        name: board.title,
+                        desc: board.meta_description,
+                        max_threads: null,
+                        max_replies: null,
+                        max_img_replies: board.image_limit,
+                        max_sub_len: board.max_comment_chars,
+                        max_com_len: board.max_comment_chars,
+                        max_file_size: board.max_file_size,
+                        is_nsfw: board.ws_board === 0,
+                        created_at: null,
+                    };
+                })
+                .filter(board => !board.is_nsfw)
+
+            );
         },
         getThreads: (boardId) => {
             return axios({
@@ -105,6 +109,7 @@ export const api = {
             }).then(res => res.data.posts.map(thread => {
                 return {
                     id: thread.no,
+                    alias: thread.alias || 'Anonymous',
                     sub: thread.sub,
                     com: thread.com,
                     op: thread.resto,

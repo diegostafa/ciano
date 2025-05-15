@@ -1,7 +1,7 @@
+/* eslint-disable react/react-in-jsx-scope */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@react-navigation/native';
 import { formatDistanceToNow } from 'date-fns';
-import React from 'react';
 import { Modal, Text, TouchableNativeFeedback, View } from 'react-native';
 import HTMLView from 'react-native-htmlview';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -77,6 +77,33 @@ export const currRoute = (state) => {
     const currentRoute = stackState?.routes?.[stackState.index]?.name;
     return currentRoute || CATALOG_KEY;
 };
+export const arraysDiffer = (a, b) => {
+    if (a.length !== b.length) return true;
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) return true;
+    }
+    return false;
+};
+export const sortThreads = (threads, sortMode, reverse = false) => {
+    let sorted = [...threads];
+    switch (sortMode) {
+        case 0:
+            sorted.sort((a, b) => b.created_at - a.created_at);
+            break;
+        case 1:
+            sorted.sort((a, b) => b.bumped_at - a.bumped_at || b.created_at - a.created_at);
+            break;
+        case 2: // Most replies
+            sorted.sort((a, b) => b.replies - a.replies);
+            break;
+        case 3: // Most images
+            sorted.sort((a, b) => b.images - a.images);
+            break;
+        default:
+            break;
+    }
+    return reverse ? sorted.reverse() : sorted;
+};
 
 // --- components
 
@@ -94,14 +121,14 @@ export const HeaderIcon = ({ name, onPress }) => {
 export const TabIcon = (name) => ({ color }) => {
     return ThemedIcon({ name, size: 24, color });
 };
-export const Fab = ({ onPress }) => {
+export const Fab = ({ onPress, child }) => {
     const theme = useTheme();
     const size = 52;
 
     return <TouchableNativeFeedback onPress={onPress}>
         <View style={{
             position: 'absolute',
-            bottom: 48,
+            bottom: 36,
             right: 32,
             zIndex: 1,
             height: size,
@@ -113,15 +140,17 @@ export const Fab = ({ onPress }) => {
             justifyContent: 'center',
             alignItems: 'center',
         }}>
-            <ThemedIcon name={'add'} />
+            {child || <ThemedIcon name={'add'} />}
         </View>
     </TouchableNativeFeedback>;
 };
-export const ModalMenu = ({ child, visible, centered }) => {
+export const ModalView = ({ content, visible, onClose }) => {
+    const theme = useTheme();
     return <Modal
         animationType='fade'
         transparent
-        visible={visible}>
+        visible={visible}
+        onRequestClose={onClose}>
         <View
             style={{
                 flex: 1,
@@ -129,15 +158,66 @@ export const ModalMenu = ({ child, visible, centered }) => {
                 alignItems: 'center',
                 backgroundColor: 'rgba(0, 0, 0, 0.5)',
             }}>
-            <View
-                style={{
-                    width: '90%',
-                    justifyContent: 'space-evenly',
-                }}>
-                {child}
+            <View style={{
+                width: '90%',
+                borderRadius: 10,
+                backgroundColor: theme.colors.card,
+                justifyContent: 'space-evenly',
+                overflow: 'hidden'
+            }}>
+                {content}
             </View>
         </View>
-    </Modal>;
+    </Modal >;
+};
+export const ModalAlert = ({ msg, visible, cancel, confirm, onClose, onCancel, onConfirm }) => {
+    const btnStyle = { padding: 10, flex: 1, alignItems: 'center' };
+
+    return <ModalView
+        visible={visible}
+        onClose={onClose}
+        content={
+            <View>
+                <View style={{ padding: 15 }} >
+                    <ThemedText content={msg} />
+                </View>
+
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <TouchableNativeFeedback onPress={onCancel}>
+                        <View style={btnStyle}>
+                            <ThemedText content={cancel} />
+                        </View>
+                    </TouchableNativeFeedback>
+
+                    <TouchableNativeFeedback onPress={onConfirm}>
+                        <View style={btnStyle}>
+                            <ThemedText content={confirm} />
+                        </View>
+                    </TouchableNativeFeedback>
+
+                </View>
+            </View>
+        }
+    />
+}
+// content is an array of pairs [name, action]
+export const ModalMenu = ({ visible, onClose, items }) => {
+    const btnStyle = { padding: 15 };
+    return <ModalView
+        visible={visible}
+        onClose={onClose}
+        content={
+            <View>
+                {items.map(([value, action]) => {
+                    return <TouchableNativeFeedback key={value} onPress={action}>
+                        <View style={btnStyle}>
+                            <ThemedText content={value} />
+                        </View>
+                    </TouchableNativeFeedback>
+                })}
+            </View>
+        }
+    />
 };
 export const ThemedText = ({ content, style }) => {
     const theme = useTheme();
