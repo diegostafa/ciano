@@ -9,10 +9,11 @@ import { enableScreens } from 'react-native-screens';
 import { SetupBoards, SetupBoardsHeaderRight, SetupBoardsHeaderTitle } from './boards_setup';
 import { Catalog, CatalogHeaderLeft, CatalogHeaderRight, CatalogHeaderTitle } from './catalog';
 import { Config } from './config';
-import { CreateThread } from './create_thread';
+import { CreateThread, CreateThreadHeaderRight, CreateThreadHeaderTitle } from './create_thread';
 import { Notifications } from './notifications';
 import { About, ABOUT_KEY, Accessibility, ACCESSIBILITY_KEY, Advanced, ADVANCED_KEY, Appearance, APPEARANCE_KEY, Downloads, DOWNLOADS_KEY, SETTINGS_MENU_KEY, SettingsMenu } from './settings';
-import { defaultFlags, State } from './state';
+import { State } from './state';
+import { Temp } from './temp.js';
 import { DarkTheme, LightTheme } from './theme';
 import { Thread, ThreadHeaderRight, ThreadHeaderTitle } from './thread';
 import { TabIcon } from './utils';
@@ -24,6 +25,8 @@ export const Stack = createStackNavigator();
 export const Ctx = React.createContext();
 export const Drawer = createDrawerNavigator();
 
+export const BAR_HEIGHT = 48;
+
 export const BOTTOM_NAV_KEY = 'BottomNav';
 export const BOARD_TAB_KEY = 'Board';
 export const SETTINGS_TAB_KEY = 'Settings';
@@ -34,18 +37,17 @@ export const NOTIFICATIONS_TAB_KEY = 'Notifications';
 export const SETUP_BOARDS_KEY = 'SetupBoards';
 
 export const App = () => {
+    const theme = useColorScheme();
     const appState = React.useRef(AppState.currentState);
     const [state, setState] = React.useState(null);
     const [config, setConfig] = React.useState(null);
-    const [flags, setFlags] = React.useState(null);
-    const theme = useColorScheme();
+    const [temp, setTemp] = React.useState(Temp.default());
 
     async function restoreState() { setState(await State.restore()) }
     async function restoreConfig() { setConfig(await Config.restore()) }
 
     React.useEffect(() => { if (!state) restoreState() }, [state]);
     React.useEffect(() => { if (!config) restoreConfig() }, [config]);
-    React.useEffect(() => { if (!flags) setFlags(defaultFlags) }, [flags]);
 
     React.useEffect(() => {
         const handleAppStateChange = async (nextAppState) => {
@@ -59,9 +61,9 @@ export const App = () => {
         return () => { subscription.remove(); };
     }, [config, state]);
 
-    if (!state || !config || !flags) { return <View><ActivityIndicator /></View>; }
+    if (!state || !config) { return <View><ActivityIndicator /></View>; }
 
-    return <Ctx.Provider value={{ state, setState, config, setConfig, flags, setFlags }}>
+    return <Ctx.Provider value={{ state, setState, config, setConfig, temp, setTemp }}>
         <NavigationContainer theme={theme === 'dark' ? DarkTheme : LightTheme} >
             <Drawer.Navigator
                 screenOptions={{ headerShown: false }}
@@ -71,11 +73,9 @@ export const App = () => {
             </Drawer.Navigator>
         </NavigationContainer></Ctx.Provider>;
 };
-
 const DrawerScreen = () => {
     return <View />;
 }
-
 const BottomTab = () => {
     const [isKeyboardVisible, setKeyboardVisible] = React.useState(false);
 
@@ -98,14 +98,17 @@ const BottomTab = () => {
 
     return <Tab.Navigator
         initialRouteName={BOARD_TAB_KEY}
-        screenOptions={{ tabBarStyle: { display: isKeyboardVisible ? 'none' : 'flex' } }}>
+        screenOptions={{
+            height: BAR_HEIGHT,
+            tabBarStyle: { display: isKeyboardVisible ? 'none' : 'flex' }
+        }}>
 
         <Tab.Screen
             name={NOTIFICATIONS_TAB_KEY}
             component={Notifications}
             options={{
                 tabBarIcon: TabIcon('notifications'),
-                headerStyle: { height: 48 },
+                headerStyle: { height: BAR_HEIGHT },
 
             }}
         />
@@ -113,11 +116,8 @@ const BottomTab = () => {
             name={BOARD_TAB_KEY}
             component={Board}
             options={{
-                // tabBarShowLabel: false,
                 tabBarIcon: TabIcon('home'),
-                // headerStyle: { height: 48 },
                 headerShown: false
-
             }}
             listeners={({ navigation, route }) => ({
                 tabPress: e => {
@@ -137,7 +137,6 @@ const BottomTab = () => {
             options={{
                 headerShown: false,
                 tabBarIcon: TabIcon('settings'),
-                // tabBarShowLabel: false,
             }}
         />
     </Tab.Navigator>;
@@ -151,8 +150,7 @@ const Board = () => {
                 headerLeft: CatalogHeaderLeft,
                 headerTitle: CatalogHeaderTitle,
                 headerRight: CatalogHeaderRight,
-                headerStyle: { height: 48 },
-
+                headerStyle: { height: BAR_HEIGHT },
             }}
         />
         <Stack.Screen
@@ -161,7 +159,7 @@ const Board = () => {
             options={{
                 headerTitle: ThreadHeaderTitle,
                 headerRight: ThreadHeaderRight,
-                headerStyle: { height: 48 },
+                headerStyle: { height: BAR_HEIGHT },
                 animation: 'slide_from_right',
             }}
         />
@@ -170,7 +168,9 @@ const Board = () => {
             component={CreateThread}
             options={{
                 animation: 'slide_from_bottom',
-                headerStyle: { height: 48 },
+                headerStyle: { height: BAR_HEIGHT },
+                headerTitle: CreateThreadHeaderTitle,
+                headerRight: CreateThreadHeaderRight
             }}
         />
         <Stack.Screen
@@ -178,7 +178,7 @@ const Board = () => {
             component={SetupBoards}
             options={{
                 animation: 'slide_from_bottom',
-                headerStyle: { height: 48 },
+                headerStyle: { height: BAR_HEIGHT },
                 headerTitle: SetupBoardsHeaderTitle,
                 headerRight: SetupBoardsHeaderRight
             }}
@@ -187,7 +187,7 @@ const Board = () => {
 };
 const Settings = () => {
     const style = {
-        headerStyle: { height: 48 },
+        headerStyle: { height: BAR_HEIGHT },
     }
     return <Stack.Navigator>
         <Stack.Screen

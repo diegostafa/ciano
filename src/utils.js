@@ -1,12 +1,13 @@
-/* eslint-disable react/react-in-jsx-scope */
+/* eslint-disable react/display-name */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@react-navigation/native';
 import { formatDistanceToNow } from 'date-fns';
+import React from 'react';
 import { Modal, Text, TouchableNativeFeedback, View } from 'react-native';
 import HTMLView from 'react-native-htmlview';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import { BOARD_TAB_KEY, CATALOG_KEY } from './app';
+import { BOARD_TAB_KEY, CATALOG_KEY, Ctx } from './app';
 import { Config } from './config';
 import { DarkHtmlTheme, LightHtmlTheme } from './theme';
 
@@ -112,11 +113,16 @@ export const ThemedIcon = ({ name, size, color }) => {
     return <Icon name={name} size={size || 28} color={color || theme.colors.text} />;
 };
 export const HeaderIcon = ({ name, onPress }) => {
-    return <TouchableNativeFeedback onPress={onPress}>
-        <View style={{ padding: 10 }}>
-            <ThemedIcon name={name} />
-        </View>
-    </TouchableNativeFeedback>;
+    return <View style={{
+        overflow: 'hidden',
+        borderRadius: '50%',
+    }}>
+        <TouchableNativeFeedback onPress={onPress}>
+            <View style={{ padding: 10 }}>
+                <ThemedIcon name={name} size={26} />
+            </View>
+        </TouchableNativeFeedback>
+    </View>;
 };
 export const TabIcon = (name) => ({ color }) => {
     return ThemedIcon({ name, size: 24, color });
@@ -125,27 +131,34 @@ export const Fab = ({ onPress, child }) => {
     const theme = useTheme();
     const size = 52;
 
-    return <TouchableNativeFeedback onPress={onPress}>
-        <View style={{
-            position: 'absolute',
-            bottom: 36,
-            right: 32,
-            zIndex: 1,
-            height: size,
-            width: size,
-            borderRadius: '50%',
-            backgroundColor: theme.colors.primary,
-            overflow: 'hidden',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-        }}>
-            {child || <ThemedIcon name={'add'} />}
-        </View>
-    </TouchableNativeFeedback>;
+    return <View style={{
+        position: 'absolute',
+        bottom: 36,
+        right: 32,
+        zIndex: 1,
+        height: size,
+        width: size,
+        borderRadius: '50%',
+        overflow: 'hidden',
+
+    }}>
+        <TouchableNativeFeedback onPress={onPress}>
+            <View style={{
+                backgroundColor: theme.colors.primary,
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: size,
+                width: size,
+            }}>
+                {child || <ThemedIcon name={'add'} />}
+            </View>
+        </TouchableNativeFeedback>
+    </View>;
 };
 export const ModalView = ({ content, visible, onClose }) => {
     const theme = useTheme();
+    const { config } = React.useContext(Ctx);
+
     return <Modal
         animationType='fade'
         transparent
@@ -160,7 +173,8 @@ export const ModalView = ({ content, visible, onClose }) => {
             }}>
             <View style={{
                 width: '90%',
-                borderRadius: 10,
+                maxHeight: '80%',
+                borderRadius: config.borderRadius,
                 backgroundColor: theme.colors.card,
                 justifyContent: 'space-evenly',
                 overflow: 'hidden'
@@ -170,7 +184,7 @@ export const ModalView = ({ content, visible, onClose }) => {
         </View>
     </Modal >;
 };
-export const ModalAlert = ({ msg, visible, cancel, confirm, onClose, onCancel, onConfirm }) => {
+export const ModalAlert = ({ msg, visible, left, right, onClose, onPressLeft, onPressRight }) => {
     const btnStyle = { padding: 10, flex: 1, alignItems: 'center' };
 
     return <ModalView
@@ -183,25 +197,26 @@ export const ModalAlert = ({ msg, visible, cancel, confirm, onClose, onCancel, o
                 </View>
 
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <TouchableNativeFeedback onPress={onCancel}>
+                    {left && <TouchableNativeFeedback onPress={onPressLeft}>
                         <View style={btnStyle}>
-                            <ThemedText content={cancel} />
+                            <ThemedText content={left} />
                         </View>
-                    </TouchableNativeFeedback>
+                    </TouchableNativeFeedback>}
 
-                    <TouchableNativeFeedback onPress={onConfirm}>
+                    {right && <TouchableNativeFeedback onPress={onPressRight}>
                         <View style={btnStyle}>
-                            <ThemedText content={confirm} />
+                            <ThemedText content={right} />
                         </View>
-                    </TouchableNativeFeedback>
+                    </TouchableNativeFeedback>}
 
                 </View>
             </View>
         }
     />
 }
-// content is an array of pairs [name, action]
 export const ModalMenu = ({ visible, onClose, items }) => {
+    // content is an array of pairs [name, action]
+
     const btnStyle = { padding: 15 };
     return <ModalView
         visible={visible}
@@ -223,11 +238,41 @@ export const ThemedText = ({ content, style }) => {
     const theme = useTheme();
     return <Text style={{ ...style, color: theme.colors.text }}>{content}</Text>;
 };
-export const HtmlText = ({ value, onLinkPress }) => {
+export const HtmlText = React.memo(({ value, onLinkPress }) => {
     const theme = useTheme();
     return <HTMLView
         onLinkPress={onLinkPress}
         value={`<p>${value}</p>`}
         stylesheet={theme.dark ? DarkHtmlTheme : LightHtmlTheme}
     />;
+}, (prevProps, nextProps) => prevProps.value === nextProps.value);
+export const HeaderButton = ({ child, isActive, onPress }) => {
+    const theme = useTheme();
+    const { config } = React.useContext(Ctx);
+
+    return <View style={{
+        overflow: 'hidden',
+        borderRadius: config.borderRadius,
+        marginRight: 5,
+        backgroundColor: isActive ? 'gray' : theme.colors.primary
+    }}>
+        <TouchableNativeFeedback onPress={onPress}>
+            <View style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                paddingLeft: 15,
+                paddingRight: 15,
+                paddingTop: 6,
+                paddingBottom: 6,
+            }}>
+                {child}
+            </View>
+        </TouchableNativeFeedback>
+
+
+    </View>;
 };
+export const ListSeparator = () => {
+    const theme = useTheme();
+    return <View style={{ height: 2, backgroundColor: theme.colors.highlight }} />;
+}

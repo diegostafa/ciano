@@ -28,12 +28,15 @@ export const Repo = {
     },
     comments: {
         getLocal: async (boardId, threadId) => {
+            console.log('getLocal', `board/${boardId}/thread/${threadId}`);
             return getLocal(`board/${boardId}/thread/${threadId}`);
         },
         getLocalOrRemote: async (boardId, threadId) => {
+            console.log('getLocalOrRemote', `board/${boardId}/thread/${threadId}`);
             return getLocalOrRemote({ key: `board/${boardId}/thread/${threadId}`, remote: () => api.blu.getComments(boardId, threadId) });
         },
         getRemote: async (boardId, threadId) => {
+            console.log('getRemote', `board/${boardId}/thread/${threadId}`);
             return getRemote({ key: `board/${boardId}/thread/${threadId}`, remote: () => api.blu.getComments(boardId, threadId) });
         },
         create: async (form) => {

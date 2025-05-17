@@ -1,5 +1,5 @@
-import { useNavigation } from '@react-navigation/native';
-import React from 'react';
+/* eslint-disable react/react-in-jsx-scope */
+import { useNavigation, useTheme } from '@react-navigation/native';
 import { Button, TouchableNativeFeedback, View } from 'react-native';
 
 import { Repo } from './repo';
@@ -70,7 +70,25 @@ export const Advanced = () => {
     </View>;
 };
 export const About = () => {
-    return <View>
-        <ThemedText content={'todo: About'} />
+    const theme = useTheme();
+    return <View style={{ padding: 20, flex: 1 }}>
+        <ThemedText content={'Ciano'} style={{
+            fontSize: 20
+        }} />
+        <ThemedText content={'Version: 0.0.1'} />
+
+        <View>
+            <TouchableNativeFeedback onPress={() => { }}>
+                <View style={{ padding: 20, backgroundColor: theme.colors.highlight, borderRadius: 20 }}>
+                    <ThemedText content={'Find us on GitHub!'} />
+                </View>
+            </TouchableNativeFeedback>
+
+            <TouchableNativeFeedback onPress={() => { }}>
+                <View style={{ padding: 20, backgroundColor: theme.colors.highlight, borderRadius: 20 }}>
+                    <ThemedText content={'Report an issue!'} />
+                </View>
+            </TouchableNativeFeedback>
+        </View>
     </View>;
 };

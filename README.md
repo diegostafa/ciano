@@ -11,10 +11,10 @@ run with:
 todo:
 
 - app:
+  - [ ] handle landscape/portrait mode
   - [ ] add app icon
   - [ ] splash screen
   - [ ] storage permissions to download media
-  - [ ] dark and light themes
   - [ ] better error handling and messages
 - history:
   - [ ] add button to clear the history
@@ -22,11 +22,8 @@ todo:
 - settings:
   - [ ] fill the various sections (appearance, accessibility ...)
 - catalog:
-  - [ ] hide FAB when scrolling down
   - [ ] sort and filter the catalog
 - thread:
-  - [ ] hide FAB when scrolling down
-  - [ ] ~~swipe to reply~~ maybe not
   - [ ] sort and filter the thread
 - notifications:
   - [ ] add state.myThreads

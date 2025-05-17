@@ -5,7 +5,7 @@ import { TextInput } from "react-native-gesture-handler";
 
 import { Ctx } from "./app";
 import { loadBoards } from "./state";
-import { arraysDiffer, HeaderIcon, ModalAlert, ThemedText } from "./utils";
+import { arraysDiffer, HeaderButton, HeaderIcon, ModalAlert, ThemedText } from "./utils";
 
 export const SetupBoardsHeaderTitle = () => {
     return <View>
@@ -13,25 +13,23 @@ export const SetupBoardsHeaderTitle = () => {
     </View>;
 };
 export const SetupBoardsHeaderRight = () => {
-    const { state, setState, flags, setFlags } = React.useContext(Ctx);
+    const { state, setState, temp, setTemp } = React.useContext(Ctx);
 
     return <View style={{ flexDirection: 'row' }}>
-        <HeaderIcon name={'refresh'} onPress={() => loadBoards(state, setState, true)} />
+        <HeaderButton
+            isActive={state.activeBoards.length > 0}
+            onPress={() => { loadBoards(state, setState, setTemp, true); }}
+            child={<ThemedText content={'Done'} />}
+        />
 
-        {flags.boardsSetupSearch ?
-            <HeaderIcon name={'close'} onPress={() => {
-                setFlags({ ...flags, boardsSetupSearch: false })
-            }
-            } /> :
-            <HeaderIcon name={'search'} onPress={() => {
-                setFlags({ ...flags, boardsSetupSearch: true });
-            }} />
-
+        {temp.boardsSetupSearch ?
+            <HeaderIcon name={'close'} onPress={() => { setTemp({ ...temp, boardsSetupSearch: false }); }} /> :
+            <HeaderIcon name={'search'} onPress={() => { setTemp({ ...temp, boardsSetupSearch: true }); }} />
         }
     </View>;
 };
 export const SetupBoards = () => {
-    const { state, setState, flags, setFlags } = React.useContext(Ctx);
+    const { state, setState, temp, setTemp } = React.useContext(Ctx);
     const sailor = useNavigation();
     const [activeBoards, setActiveBoards] = React.useState(state.activeBoards);
     const [filterText, setFilterText] = React.useState('');
@@ -44,8 +42,8 @@ export const SetupBoards = () => {
                 e.preventDefault();
                 return;
             }
-            if (flags.boardsSetupSearch) {
-                setFlags({ ...flags, boardsSetupSearch: false });
+            if (temp.boardsSetupSearch) {
+                setTemp({ ...temp, boardsSetupSearch: false });
                 e.preventDefault();
                 return;
             }
@@ -58,11 +56,11 @@ export const SetupBoards = () => {
         });
         return unsubscribe;
 
-    }, [sailor, isDirty, filterText, flags, activeBoards, state.activeBoards, setFlags]);
+    }, [sailor, isDirty, filterText, temp, activeBoards, state.activeBoards, setTemp]);
 
 
     return <View style={{ flex: 1 }}>
-        {flags.boardsSetupSearch &&
+        {temp.boardsSetupSearch &&
             <View style={{ padding: 5, borderWidth: 1, backgroundColor: '#333333', }}>
                 <TextInput onChangeText={text => setFilterText(text)} />
             </View>
@@ -78,15 +76,15 @@ export const SetupBoards = () => {
         {isDirty &&
             <ModalAlert
                 msg={'You are about to go back, but there are unsaved changes'}
-                cancel={'DISCARD'}
-                confirm={'SAVE'}
+                left={'DISCARD'}
+                right={'SAVE'}
                 visible={isDirty}
                 onClose={() => setIsDirty(false)}
-                onCancel={() => {
+                onPressLeft={() => {
                     setIsDirty(false);
                     sailor.goBack();
                 }}
-                onConfirm={() => {
+                onPressRight={() => {
                     setIsDirty(false);
                     setState({ ...state, activeBoards: activeBoards });
                     sailor.goBack();
