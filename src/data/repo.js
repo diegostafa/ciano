@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { getLocal, getLocalOrRemote, getRemote, setLocal } from '../utils';
 import { api } from './api';
-import { getLocal, getLocalOrRemote, getRemote, setLocal } from './utils';
 
 export const Repo = {
     clear: async () => {

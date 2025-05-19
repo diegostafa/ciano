@@ -3,9 +3,12 @@ import React from "react";
 import { FlatList, TouchableNativeFeedback, View } from "react-native";
 import { TextInput } from "react-native-gesture-handler";
 
-import { Ctx } from "./app";
-import { loadBoards } from "./state";
-import { arraysDiffer, HeaderButton, HeaderIcon, ModalAlert, ThemedText } from "./utils";
+import { Ctx } from "../../app";
+import { loadBoards } from "../../context/state";
+import { arraysDiffer, HeaderButton, HeaderIcon, ModalAlert, ThemedText } from "../../utils";
+
+
+export const SETUP_BOARDS_KEY = 'SetupBoards';
 
 export const SetupBoardsHeaderTitle = () => {
     return <View>
@@ -36,6 +39,10 @@ export const SetupBoards = () => {
     const [isDirty, setIsDirty] = React.useState(false);
 
     React.useEffect(() => {
+        if (!temp.boardsSetupSearch && filterText !== '') {
+            setFilterText('');
+        }
+
         const unsubscribe = sailor.addListener('beforeRemove', (e) => {
             if (filterText !== '') {
                 setFilterText('');

@@ -11,7 +11,6 @@ run with:
 todo:
 
 - app:
-  - [ ] handle landscape/portrait mode
   - [ ] add app icon
   - [ ] splash screen
   - [ ] storage permissions to download media
@@ -21,8 +20,6 @@ todo:
   - [ ] add input to filter the history
 - settings:
   - [ ] fill the various sections (appearance, accessibility ...)
-- catalog:
-  - [ ] sort and filter the catalog
 - thread:
   - [ ] sort and filter the thread
 - notifications:

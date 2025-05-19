@@ -1,5 +1,5 @@
-import { Repo } from './repo';
-import { getLocal, setLocal } from './utils';
+import { Repo } from '../data/repo';
+import { getLocal, setLocal } from '../utils';
 
 const defaultState = {
     board: null,
@@ -8,11 +8,13 @@ const defaultState = {
     activeBoards: [],
     history: [],
     myComments: [],
+    threadWatcher: [],
 
     catalogViewMode: 0,
     catalogSort: 0,
     catalogRev: false,
     showNoConnectionNotice: true,
+
 };
 export const State = {
     get: async (key) => getLocal(key),
@@ -30,7 +32,6 @@ export const State = {
         return restored;
     },
 };
-
 export const loadThreads = async (state, setState, setTemp, forceRefresh) => {
     setTemp(temp => ({ ...temp, threadsFetchError: false, isFetchingThreads: true }));
 
@@ -67,4 +68,23 @@ export const numToSort = {
     0: 'created',
     1: 'last reply',
     2: 'replies',
+};
+export const sortThreads = (threads, sortMode, reverse = false) => {
+    switch (sortMode) {
+        case 0:
+            threads.sort((a, b) => b.created_at - a.created_at);
+            break;
+        case 1:
+            threads.sort((a, b) => b.bumped_at - a.bumped_at || b.created_at - a.created_at);
+            break;
+        case 2: // Most replies
+            threads.sort((a, b) => b.replies - a.replies);
+            break;
+        case 3: // Most images
+            threads.sort((a, b) => b.images - a.images);
+            break;
+        default:
+            break;
+    }
+    return reverse ? threads.reverse() : threads;
 };

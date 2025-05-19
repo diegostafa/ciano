@@ -1,4 +1,6 @@
 const defaultTemp = {
+    bottomBarWidth: null,
+
     catalogReflist: null,
     threadReflist: null,
 

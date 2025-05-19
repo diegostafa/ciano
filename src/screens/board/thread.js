@@ -5,30 +5,44 @@ import React, { useCallback, useRef } from 'react';
 import { ActivityIndicator, BackHandler, FlatList, Image, Linking, ScrollView, TextInput, TouchableHighlight, TouchableNativeFeedback, useWindowDimensions, View } from 'react-native';
 import ImageCropPicker from 'react-native-image-crop-picker';
 
-import { Ctx } from './app';
-import { Repo } from './repo';
-import { Fab, getRepliesTo, HeaderIcon, HtmlText, ListSeparator, ModalAlert, ModalMenu, ModalView, quotes, relativeTime, ThemedIcon, ThemedText } from './utils';
+import { Ctx } from '../../app';
+import { Repo } from '../../data/repo';
+import { Fab, getRepliesTo, HeaderIcon, HtmlText, ModalAlert, ModalMenu, ModalView, quotes, relativeTime, ThemedIcon, ThemedText } from '../../utils';
+export const THREAD_KEY = 'Thread';
 
 export const ThreadHeaderTitle = () => {
-    const { state } = React.useContext(Ctx);
+    const { state, config } = React.useContext(Ctx);
     const thread = state.history.at(-1).thread;
 
     return <Marquee
-        speed={0.3}
+        speed={config.disableMovingElements ? 0 : 0}
         spacing={100}
         style={{ flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
-        <ThemedText content={`/${thread.board}/ - ${thread.sub || thread.com}`} />
+        <HtmlText value={`<header>/${thread.board}/ - ${thread.sub || thread.com}</header>`} />
     </Marquee>;
 };
 export const ThreadHeaderRight = () => {
-    const { temp, config } = React.useContext(Ctx);
+    const { state, setState, temp, config } = React.useContext(Ctx);
+    const thread = state.history.at(-1).thread;
+
     const theme = useTheme();
     const [threadActions, setThreadActions] = React.useState(false);
+    const isWatching = state.threadWatcher.includes(thread.id);
+
     const items = [
-        ['Sort...', () => { setThreadActions(false); }],
-        ['Refresh', () => { setThreadActions(false); }],
-        ['View info', () => { setThreadActions(false); }],
-        ['Go top', () => {
+        [isWatching ? 'Unwatch' : 'Watch', isWatching ? 'eye-off' : 'eye', () => {
+            setThreadActions(false);
+            if (isWatching) {
+                setState({ ...state, threadWatcher: state.threadWatcher.filter(item => item !== thread.id) });
+            }
+            else {
+                setState({ ...state, threadWatcher: [...state.threadWatcher, thread.id] });
+            }
+        }],
+        ['Sort...', 'options', () => { setThreadActions(false); }],
+        ['Refresh', 'refresh', () => { setThreadActions(false); }],
+        ['Stats', 'stats-chart', () => { setThreadActions(false); }],
+        ['Go top', 'arrow-up', () => {
             setThreadActions(false);
             temp.threadReflist.current?.scrollToIndex({ animated: true, index: 0 });
         }],
@@ -65,8 +79,8 @@ export const Thread = () => {
     const [selectedComment, setSelectedComment] = React.useState(null);
     const [repliesStack, setRepliesStack] = React.useState([]);
     const [createComment, setCreateComment] = React.useState(false);
-    const [isAutoUpdating, setIsAutoUpdating] = React.useState(false);
     const [isFetchingComments, setIsFetchingComments] = React.useState(false);
+    const [isAutoUpdating, setIsAutoUpdating] = React.useState(false);
     const [autoRefreshSec, setAutoRefreshSec] = React.useState(config.refreshTimeout);
     const [form, setForm] = React.useState({
         data: {
@@ -107,15 +121,18 @@ export const Thread = () => {
         const countdownInterval = setInterval(() => {
             setAutoRefreshSec(async (prev) => {
                 if (prev === 0) {
-                    autoUpdateComments(setComments, setIsAutoUpdating, thread, true);
-                    return config.refreshTimeout;
+                    autoUpdateComments(setComments, setIsAutoUpdating, thread);
+                    setAutoRefreshSec(config.refreshTimeout);
+                    return autoRefreshSec;
                 }
                 if (isAutoUpdating) { return prev; }
-                return prev - 1;
+                setAutoRefreshSec(prev - 1);
+
+                return autoRefreshSec;
             });
         }, 1000);
         return () => clearInterval(countdownInterval);
-    }, [comments, config.refreshTimeout, thread, isAutoUpdating, setIsAutoUpdating]);
+    }, [comments, config.refreshTimeout, thread, isAutoUpdating, setIsAutoUpdating, autoRefreshSec]);
 
     if (isFetchingComments || !comments) {
         return <ScrollView style={{ flex: 1, backgroundColor: theme.colors.card }}>
@@ -138,6 +155,7 @@ export const Thread = () => {
             repliesStack={repliesStack} setRepliesStack={setRepliesStack}
             selectedComment={selectedComment} setSelectedComment={setSelectedComment}
             isFetchingComments={isFetchingComments} setIsFetchingComments={setIsFetchingComments}
+            isAutoUpdating={isAutoUpdating}
         />
         <RepliesModal
             repliesStack={repliesStack} setRepliesStack={setRepliesStack}
@@ -149,10 +167,10 @@ export const Thread = () => {
         />
 
         {createComment ?
-            (thread.max_replies > comments.length ?
+            (thread.max_replies && thread.max_replies > comments.length ?
                 <CreateCommentForm setCreateComment={setCreateComment} setComments={setComments} form={form} setForm={setForm} setIsFetchingComments={setIsFetchingComments} /> :
                 <ModalAlert
-                    msg={'The thread is full! You can no longer comment.'}
+                    msg={'The thread is full! :( \nYou can no longer comment.'}
                     visible={createComment}
                     onClose={() => { setCreateComment(false) }}
                     right={'Ok'}
@@ -183,29 +201,30 @@ const RepliesModal = ({ repliesStack, setRepliesStack, comments, setSelectedComm
         visible={repliesStack.length > 0}
         onClose={() => setRepliesStack(repliesStack.slice(0, -1))}
         content={<View>
-            <FlatList
-                data={currReplies}
-                windowSize={10}
-                initialNumToRender={10}
-                maxToRenderPerBatch={50}
-                updateCellsBatchingPeriod={50}
-                removeClippedSubviews={true}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => {
-                    return <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <View style={{ flex: 1 }}>
-                            <CommentTile
-                                comment={item}
-                                tw={width}
-                                comments={comments}
-                                repliesStack={repliesStack} setRepliesStack={setRepliesStack}
-                                setSelectedComment={setSelectedComment} />
-                        </View>
-                    </View>;
-                }}
-            />
-
-            <View style={{ flexDirection: 'row', borderRadius: config.borderRadius, }}>
+            <View style={{ maxHeight: '90%', }} >
+                <FlatList
+                    data={currReplies}
+                    windowSize={10}
+                    initialNumToRender={10}
+                    maxToRenderPerBatch={50}
+                    updateCellsBatchingPeriod={50}
+                    removeClippedSubviews={true}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => {
+                        return <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <View style={{ flex: 1 }}>
+                                <CommentTile
+                                    comment={item}
+                                    tw={width}
+                                    comments={comments}
+                                    repliesStack={repliesStack} setRepliesStack={setRepliesStack}
+                                    setSelectedComment={setSelectedComment} />
+                            </View>
+                        </View>;
+                    }}
+                />
+            </View>
+            <View style={{ position: 'relative', bottom: 0, flexDirection: 'row', borderRadius: config.borderRadius, }}>
                 {repliesStack.length > 1 &&
                     <View style={btnOuterStyle}>
                         <TouchableNativeFeedback onPress={() => setRepliesStack(repliesStack.slice(0, -1))}>
@@ -237,7 +256,7 @@ const NoComments = () => {
         <ThemedText content={'TODO: THERE ARE NO COMMENTS'} />
     </View>;
 };
-const CommentList = ({ autoRefreshSec, comments, setComments, selectedComment, setSelectedComment, isFetchingComments, setIsFetchingComments, repliesStack, setRepliesStack }) => {
+const CommentList = ({ autoRefreshSec, comments, setComments, selectedComment, setSelectedComment, isFetchingComments, setIsFetchingComments, isAutoUpdating, repliesStack, setRepliesStack }) => {
     const { state, config, temp } = React.useContext(Ctx);
     const { width } = useWindowDimensions();
     const thread = state.history.at(-1).thread;
@@ -258,8 +277,8 @@ const CommentList = ({ autoRefreshSec, comments, setComments, selectedComment, s
     const keyExtractor = useCallback((item) => String(item.id), []);
 
     const FooterComponent = useCallback(() => (
-        <ThreadInfo autoRefreshSec={autoRefreshSec} />
-    ), [autoRefreshSec]);
+        <ThreadInfo autoRefreshSec={autoRefreshSec} isAutoUpdating={isAutoUpdating} />
+    ), [autoRefreshSec, isAutoUpdating]);
     const handleRefresh = useCallback(async () => {
         await loadComments(setComments, setIsFetchingComments, thread, true);
     }, [setComments, setIsFetchingComments, thread]);
@@ -273,7 +292,7 @@ const CommentList = ({ autoRefreshSec, comments, setComments, selectedComment, s
         maxToRenderPerBatch={50}
         updateCellsBatchingPeriod={50}
         removeClippedSubviews={true}
-        ItemSeparatorComponent={ListSeparator}
+        // ItemSeparatorComponent={ListSeparator}
         ListFooterComponent={FooterComponent}
         renderItem={renderItem}
         onRefresh={handleRefresh}
@@ -286,7 +305,7 @@ const CommentTile = React.memo(({ comment, selectedComment, setSelectedComment, 
     const thumbWidth = tw / 4;
     const replies = getRepliesTo(comments, comment);
     const isMine = state.myComments.includes(comment.id);
-    const isQuotingMe = quotes(comments).some(id => state.myComments.includes(id));
+    const isQuotingMe = quotes(comment).some(id => state.myComments.includes(id));
     const img = Repo.media.from(comment);
     const reply = replies.length === 1 ? 'reply' : 'replies';
     const alias = comment.alias || config.alias || 'Anonymous';
@@ -311,7 +330,8 @@ const CommentTile = React.memo(({ comment, selectedComment, setSelectedComment, 
     if (isQuotingMe) {
         style = {
             ...style,
-            backgroundColor: 'rgba(255, 0, 0, 0.5)'
+            borderLeftWidth: 2,
+            borderLeftColor: 'rgba(255, 251, 0, 0.5)'
         };
     }
 
@@ -407,13 +427,8 @@ const CreateCommentForm = ({ setCreateComment, setComments, form, setForm, setIs
         maxHeight: '50%',
     }}>
         {form.media &&
-            <View style={{
-                marginTop: 10,
-                marginLeft: 10,
-                marginRight: 10,
-            }}>
+            <View style={{ marginTop: 10, marginLeft: 10, marginRight: 10, }}>
                 <View style={{ flexDirection: 'row' }}>
-
                     <TouchableHighlight onPress={() => { }}>
                         <Image src={form.media.path} style={{ width: 100, height: 100, borderRadius: config.borderRadius, }} />
                     </TouchableHighlight>
@@ -434,7 +449,6 @@ const CreateCommentForm = ({ setCreateComment, setComments, form, setForm, setIs
                     </View>
                 </View>
             </View>
-
         }
 
         <View >
@@ -497,6 +511,9 @@ const CreateCommentForm = ({ setCreateComment, setComments, form, setForm, setIs
                         console.log(form);
                         const comment = await Repo.comments.create(form);
                         setState({ ...state, myComments: [...state.myComments, comment.id] })
+                        if (config.autoWatchThreads) {
+                            setState({ ...state, threadWatcher: [...state.threadWatcher, thread.id] })
+                        }
                         setCreateComment(false);
                         await loadComments(setComments, setIsFetchingComments, thread, true);
                     }}>
@@ -526,27 +543,28 @@ const ThreadInfo = ({ autoRefreshSec, isAutoUpdating }) => {
 };
 const CommentMenu = ({ selectedComment, setSelectedComment, comments }) => {
     const { state, setState, temp, config } = React.useContext(Ctx);
+    console.log(selectedComment);
     const items = [
-        ['Mark as yours', () => {
+        [selectedComment.id && state.myComments.includes(selectedComment.id) ? 'Unmark as yours' : 'Mark as yours', state.myComments.includes(selectedComment.id) ? 'arrow-undo' : 'checkmark', () => {
             setState({ ...state, myComments: [...state.myComments, selectedComment.id] })
             setSelectedComment(null)
         }],
-        ['Quote', () => {
+        ['Quote', 'comment-text', () => {
             //   setQuoteList([...quoteList, selectedComment.id])
             setSelectedComment(null)
         }],
-        ['Quote whole comment', () => {
+        ['Quote whole comment', 'comment-text-multiple', () => {
             //  setQuoteList([...quoteList, selectedComment.id])
             setSelectedComment(null)
         }],
-        ['Copy', () => {
+        ['Copy', 'copy', () => {
             // todo
             setSelectedComment(null)
         }],
     ];
 
     if (!config.loadFaster) {
-        items.push(['Jump to comment', () => {
+        items.push(['Jump to comment', 'arrow-right', () => {
             const index = comments.findIndex(item => item.id === selectedComment.id);
             if (index >= 0) {
                 temp.threadReflist.current?.scrollToIndex({ animated: true, index: 0 });
@@ -572,11 +590,9 @@ const loadComments = async (setComments, setIsFetchingComments, thread, refresh)
     setIsFetchingComments(false);
 };
 
-const autoUpdateComments = async (setComments, setIsAutoUpdating, thread, refresh) => {
+const autoUpdateComments = async (setComments, setIsAutoUpdating, thread) => {
     setIsAutoUpdating(true);
-    const comments = refresh ?
-        await Repo.comments.getRemote(thread.board, thread.id) :
-        await Repo.comments.getLocalOrRemote(thread.board, thread.id);
+    const comments = await Repo.comments.getRemote(thread.board, thread.id);
     setComments(comments);
     setIsAutoUpdating(false);
 };

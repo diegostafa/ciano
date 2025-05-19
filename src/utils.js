@@ -3,15 +3,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@react-navigation/native';
 import { formatDistanceToNow } from 'date-fns';
 import React from 'react';
-import { Modal, Text, TouchableNativeFeedback, View } from 'react-native';
+import { Modal, Text, TouchableNativeFeedback, useWindowDimensions, View } from 'react-native';
 import HTMLView from 'react-native-htmlview';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import { BOARD_TAB_KEY, CATALOG_KEY, Ctx } from './app';
-import { Config } from './config';
+import { BOARD_NAV_KEY, CATALOG_KEY, Ctx } from './app';
+import { Config } from './context/config';
 import { DarkHtmlTheme, LightHtmlTheme } from './theme';
 
-// --- functions
+// --- helper functions
 
 export const setLocal = async (key, value) => {
     return AsyncStorage.setItem(key, JSON.stringify(value));
@@ -61,8 +61,8 @@ export const quotes = (comment) => {
     if (!comment.com) {
         return [];
     }
-    const matches = comment.com.match(/>>\S+/g) || [];
-    return matches.map(str => str.slice(2));
+    const matches = comment.com.match(/&gt;&gt;\d+/g) || [];
+    return matches.map(match => Number(match.slice(8)));
 }
 export const getThreadSignature = (thread) => {
     const board = `<info>/${thread.board}/ - </info>`;
@@ -73,7 +73,7 @@ export const getThreadSignature = (thread) => {
     }
 }
 export const currRoute = (state) => {
-    const tabRoute = state.routes.find(r => r.name === BOARD_TAB_KEY);
+    const tabRoute = state.routes.find(r => r.name === BOARD_NAV_KEY);
     const stackState = tabRoute?.state;
     const currentRoute = stackState?.routes?.[stackState.index]?.name;
     return currentRoute || CATALOG_KEY;
@@ -85,25 +85,8 @@ export const arraysDiffer = (a, b) => {
     }
     return false;
 };
-export const sortThreads = (threads, sortMode, reverse = false) => {
-    let sorted = [...threads];
-    switch (sortMode) {
-        case 0:
-            sorted.sort((a, b) => b.created_at - a.created_at);
-            break;
-        case 1:
-            sorted.sort((a, b) => b.bumped_at - a.bumped_at || b.created_at - a.created_at);
-            break;
-        case 2: // Most replies
-            sorted.sort((a, b) => b.replies - a.replies);
-            break;
-        case 3: // Most images
-            sorted.sort((a, b) => b.images - a.images);
-            break;
-        default:
-            break;
-    }
-    return reverse ? sorted.reverse() : sorted;
+export const capitalize = (str) => {
+    return str.charAt(0).toUpperCase() + str.slice(1);
 };
 
 // --- components
@@ -156,6 +139,8 @@ export const Fab = ({ onPress, child }) => {
     </View>;
 };
 export const ModalView = ({ content, visible, onClose }) => {
+    const { width, height } = useWindowDimensions();
+    const isVertical = width < height;
     const theme = useTheme();
     const { config } = React.useContext(Ctx);
 
@@ -172,8 +157,8 @@ export const ModalView = ({ content, visible, onClose }) => {
                 backgroundColor: 'rgba(0, 0, 0, 0.5)',
             }}>
             <View style={{
-                width: '90%',
-                maxHeight: '80%',
+                width: isVertical ? '90%' : '50%',
+                maxHeight: isVertical ? '80%' : '90%',
                 borderRadius: config.borderRadius,
                 backgroundColor: theme.colors.card,
                 justifyContent: 'space-evenly',
@@ -217,16 +202,17 @@ export const ModalAlert = ({ msg, visible, left, right, onClose, onPressLeft, on
 export const ModalMenu = ({ visible, onClose, items }) => {
     // content is an array of pairs [name, action]
 
-    const btnStyle = { padding: 15 };
+    const btnStyle = { padding: 15, flexDirection: 'row' };
     return <ModalView
         visible={visible}
         onClose={onClose}
         content={
             <View>
-                {items.map(([value, action]) => {
+                {items.map(([value, icon, action]) => {
                     return <TouchableNativeFeedback key={value} onPress={action}>
                         <View style={btnStyle}>
-                            <ThemedText content={value} />
+                            {icon && <ThemedIcon name={icon} size={20} />}
+                            <ThemedText content={capitalize(value)} style={{ marginLeft: 15, }} />
                         </View>
                     </TouchableNativeFeedback>
                 })}

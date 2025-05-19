@@ -4,10 +4,13 @@ import { TouchableNativeFeedback, View } from "react-native";
 import { TextInput } from "react-native-gesture-handler";
 import ImageCropPicker from "react-native-image-crop-picker";
 
-import { Ctx } from "./app";
-import { Repo } from "./repo";
-import { loadThreads } from "./state";
-import { Fab, HeaderButton, ModalAlert, ThemedIcon, ThemedText } from "./utils";
+import { Ctx } from "../../app";
+import { loadThreads } from "../../context/state";
+import { Repo } from "../../data/repo";
+import { Fab, HeaderButton, ModalAlert, ThemedIcon, ThemedText } from "../../utils";
+
+export const CREATE_THREAD_KEY = 'CreateThread';
+
 
 export const CreateThreadHeaderTitle = () => {
     const { state } = React.useContext(Ctx);

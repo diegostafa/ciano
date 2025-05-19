@@ -31,6 +31,12 @@ export const DarkTheme = {
     fonts: DefaultDark.fonts,
 };
 export const DarkHtmlTheme = StyleSheet.create({
+    header: {
+        fontWeight: 'bold',
+        fontSize: 18,
+        color: DarkTheme.colors.text,
+    },
+
     // quote
     span: {
         color: '#98971a',

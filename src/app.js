@@ -3,19 +3,17 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
-import { ActivityIndicator, AppState, Keyboard, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, AppState, Platform, useColorScheme, useWindowDimensions, View } from 'react-native';
 import { enableScreens } from 'react-native-screens';
 
-import { SetupBoards, SetupBoardsHeaderRight, SetupBoardsHeaderTitle } from './boards_setup';
-import { Catalog, CatalogHeaderLeft, CatalogHeaderRight, CatalogHeaderTitle } from './catalog';
-import { Config } from './config';
-import { CreateThread, CreateThreadHeaderRight, CreateThreadHeaderTitle } from './create_thread';
-import { Notifications } from './notifications';
-import { About, ABOUT_KEY, Accessibility, ACCESSIBILITY_KEY, Advanced, ADVANCED_KEY, Appearance, APPEARANCE_KEY, Downloads, DOWNLOADS_KEY, SETTINGS_MENU_KEY, SettingsMenu } from './settings';
-import { State } from './state';
-import { Temp } from './temp.js';
-import { DarkTheme, LightTheme } from './theme';
-import { Thread, ThreadHeaderRight, ThreadHeaderTitle } from './thread';
+import { Config } from './context/config.js';
+import { State } from './context/state.js';
+import { Temp } from './context/temp.js';
+import { BOARD_TAB_KEY, BoardTab } from './screens/board/tab.js';
+import { THREAD_KEY } from './screens/board/thread.js';
+import { SETTINGS_TAB_KEY, SettingsTab } from './screens/settings/tab.js';
+import { NotificationsTab, WATCHER_TAB_KEY } from './screens/watcher/tab.js';
+import { DarkTheme, LightTheme } from './theme.js';
 import { TabIcon } from './utils';
 
 enableScreens();
@@ -24,17 +22,9 @@ export const Tab = createBottomTabNavigator();
 export const Stack = createStackNavigator();
 export const Ctx = React.createContext();
 export const Drawer = createDrawerNavigator();
-
 export const BAR_HEIGHT = 48;
-
+export const BAR_WIDTH = 128;
 export const BOTTOM_NAV_KEY = 'BottomNav';
-export const BOARD_TAB_KEY = 'Board';
-export const SETTINGS_TAB_KEY = 'Settings';
-export const THREAD_KEY = 'Thread';
-export const CATALOG_KEY = 'Catalog';
-export const CREATE_THREAD_KEY = 'CreateThread';
-export const NOTIFICATIONS_TAB_KEY = 'Notifications';
-export const SETUP_BOARDS_KEY = 'SetupBoards';
 
 export const App = () => {
     const theme = useColorScheme();
@@ -69,55 +59,46 @@ export const App = () => {
                 screenOptions={{ headerShown: false }}
                 initialRouteName={BOTTOM_NAV_KEY}
                 drawerContent={DrawerScreen} >
-                <Drawer.Screen name={BOTTOM_NAV_KEY} component={BottomTab} />
+                <Drawer.Screen name={BOTTOM_NAV_KEY} component={BottomNav} />
             </Drawer.Navigator>
         </NavigationContainer></Ctx.Provider>;
 };
 const DrawerScreen = () => {
     return <View />;
 }
-const BottomTab = () => {
-    const [isKeyboardVisible, setKeyboardVisible] = React.useState(false);
-
-    React.useEffect(() => {
-        const keyboardDidShowListener = Keyboard.addListener(
-            'keyboardDidShow',
-            () => setKeyboardVisible(true)
-        );
-        const keyboardDidHideListener = Keyboard.addListener(
-            'keyboardDidHide',
-            () => setKeyboardVisible(false)
-        );
-
-        return () => {
-            keyboardDidShowListener.remove();
-            keyboardDidHideListener.remove();
-        };
-    }, []);
-
+const BottomNav = () => {
+    const { width, height } = useWindowDimensions();
+    const isVertical = width < height;
+    const isAndroid = Platform.OS === 'android';
 
     return <Tab.Navigator
         initialRouteName={BOARD_TAB_KEY}
         screenOptions={{
+            tabBarVariant: isAndroid && !isVertical ? 'material' : undefined,
             height: BAR_HEIGHT,
-            tabBarStyle: { display: isKeyboardVisible ? 'none' : 'flex' }
+            tabBarPosition: isVertical ? 'bottom' : 'left',
+            tabBarHideOnKeyboard: true,
+            tabBarLabelPosition: !isVertical ? 'below-icon' : undefined,
+            tabBarStyle: { width: !isVertical ? BAR_WIDTH : undefined },
         }}>
 
         <Tab.Screen
-            name={NOTIFICATIONS_TAB_KEY}
-            component={Notifications}
+            name={WATCHER_TAB_KEY}
+            component={NotificationsTab}
             options={{
                 tabBarIcon: TabIcon('notifications'),
                 headerStyle: { height: BAR_HEIGHT },
-
+                title: 'Thread Watcher'
             }}
         />
         <Tab.Screen
             name={BOARD_TAB_KEY}
-            component={Board}
+            component={BoardTab}
             options={{
                 tabBarIcon: TabIcon('home'),
-                headerShown: false
+                headerShown: false,
+                title: 'Boards',
+
             }}
             listeners={({ navigation, route }) => ({
                 tabPress: e => {
@@ -133,90 +114,12 @@ const BottomTab = () => {
         />
         <Tab.Screen
             name={SETTINGS_TAB_KEY}
-            component={Settings}
+            component={SettingsTab}
             options={{
                 headerShown: false,
                 tabBarIcon: TabIcon('settings'),
+                title: 'Settings',
             }}
         />
     </Tab.Navigator>;
-};
-const Board = () => {
-    return <Stack.Navigator>
-        <Stack.Screen
-            name={CATALOG_KEY}
-            component={Catalog}
-            options={{
-                headerLeft: CatalogHeaderLeft,
-                headerTitle: CatalogHeaderTitle,
-                headerRight: CatalogHeaderRight,
-                headerStyle: { height: BAR_HEIGHT },
-            }}
-        />
-        <Stack.Screen
-            name={THREAD_KEY}
-            component={Thread}
-            options={{
-                headerTitle: ThreadHeaderTitle,
-                headerRight: ThreadHeaderRight,
-                headerStyle: { height: BAR_HEIGHT },
-                animation: 'slide_from_right',
-            }}
-        />
-        <Stack.Screen
-            name={CREATE_THREAD_KEY}
-            component={CreateThread}
-            options={{
-                animation: 'slide_from_bottom',
-                headerStyle: { height: BAR_HEIGHT },
-                headerTitle: CreateThreadHeaderTitle,
-                headerRight: CreateThreadHeaderRight
-            }}
-        />
-        <Stack.Screen
-            name={SETUP_BOARDS_KEY}
-            component={SetupBoards}
-            options={{
-                animation: 'slide_from_bottom',
-                headerStyle: { height: BAR_HEIGHT },
-                headerTitle: SetupBoardsHeaderTitle,
-                headerRight: SetupBoardsHeaderRight
-            }}
-        />
-    </Stack.Navigator>;
-};
-const Settings = () => {
-    const style = {
-        headerStyle: { height: BAR_HEIGHT },
-    }
-    return <Stack.Navigator>
-        <Stack.Screen
-            name={SETTINGS_MENU_KEY}
-            component={SettingsMenu}
-            options={{
-                ...style,
-                headerTitle: 'Settings',
-            }}
-        />
-        <Stack.Screen
-            name={APPEARANCE_KEY}
-            component={Appearance}
-            options={style} />
-        <Stack.Screen
-            name={ACCESSIBILITY_KEY}
-            component={Accessibility}
-            options={style} />
-        <Stack.Screen
-            name={DOWNLOADS_KEY}
-            component={Downloads}
-            options={style} />
-        <Stack.Screen
-            name={ADVANCED_KEY}
-            component={Advanced}
-            options={style} />
-        <Stack.Screen
-            name={ABOUT_KEY}
-            component={About}
-            options={style} />
-    </Stack.Navigator>;
 };

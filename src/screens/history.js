@@ -2,9 +2,9 @@ import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { FlatList, Image, Text, TouchableNativeFeedback, useWindowDimensions, View } from 'react-native';
 
+import { BOARD_TAB_KEY, BOTTOM_NAV_KEY, Ctx, THREAD_KEY } from '../app';
+import { getThreadSignature, HeaderIcon, historyAdd, HtmlText, ThemedText } from '../utils';
 import { api } from './api';
-import { BOARD_TAB_KEY, BOTTOM_NAV_KEY, Ctx, THREAD_KEY } from './app';
-import { getThreadSignature, HeaderIcon, historyAdd, HtmlText, ThemedText } from './utils';
 
 export const History = () => {
     const { state } = React.useContext(Ctx);

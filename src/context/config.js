@@ -1,4 +1,4 @@
-import { getLocal, setLocal } from './utils';
+import { getLocal, setLocal } from "../utils";
 
 const defaultConfig = {
     // appearance
@@ -17,7 +17,8 @@ const defaultConfig = {
     swipeToReply: false,
     refreshTimeout: 30,
     showCatalogThumbnails: true,
-    loadFaster: true
+    loadFaster: true,
+    autoWatchThreads: false,
 };
 export const Config = {
     get: async (key) => getLocal(key),

@@ -4,10 +4,15 @@ import { ActivityIndicator, Button, FlatList, Image, TouchableNativeFeedback, us
 import Gallery from 'react-native-awesome-gallery';
 import { TextInput } from 'react-native-gesture-handler';
 
-import { BAR_HEIGHT, CREATE_THREAD_KEY, Ctx, SETUP_BOARDS_KEY, THREAD_KEY } from './app';
-import { Repo } from './repo';
-import { loadBoards, loadThreads, numToMode, numToSort, State } from './state';
-import { Fab, HeaderIcon, historyAdd, HtmlText, ListSeparator, ModalAlert, ModalMenu, ModalView, sortThreads, ThemedIcon, ThemedText } from './utils';
+import { BAR_HEIGHT, BAR_WIDTH, Ctx } from '../../app';
+import { loadBoards, loadThreads, numToMode, numToSort, sortThreads, State } from '../../context/state';
+import { Repo } from '../../data/repo';
+import { Fab, HeaderIcon, historyAdd, HtmlText, ModalAlert, ModalMenu, ModalView, ThemedIcon, ThemedText } from '../../utils';
+import { CREATE_THREAD_KEY } from './create_thread';
+import { SETUP_BOARDS_KEY } from './setup_boards';
+import { THREAD_KEY } from './thread';
+
+export const CATALOG_KEY = 'Catalog';
 
 export const CatalogHeaderLeft = () => {
     const navigation = useNavigation();
@@ -108,24 +113,24 @@ export const CatalogHeaderRight = () => {
                 visible={threadsActions}
                 onClose={() => setThreadsActions(false)}
                 items={[
-                    ['Refresh', async () => {
+                    ['Refresh', 'refresh', async () => {
                         setThreadsActions(false);
                         await loadThreads(state, setState, setTemp, true);
-                    }],
-                    ['Sort...', () => {
+                    },],
+                    ['Sort...', "options", () => {
                         setThreadsActions(false);
                         setSortActions(true);
                     }],
-                    [`View as ${numToMode[nextCatalogMode]}`, async () => {
+                    [`View as ${numToMode[nextCatalogMode]}`, numToMode[nextCatalogMode], async () => {
                         setThreadsActions(false);
                         setState({ ...state, catalogViewMode: nextCatalogMode });
                         await State.set('catalogViewMode', nextCatalogMode);
                     }],
-                    ['Go top', async () => {
+                    ['Go top', 'arrow-up', async () => {
                         setThreadsActions(false);
                         temp.catalogReflist.current?.scrollToIndex({ animated: true, index: 0 });
                     }],
-                    ['Go bottom', async () => {
+                    ['Go bottom', 'arrow-down', async () => {
                         setThreadsActions(false);
                         temp.catalogReflist.current?.scrollToEnd({ animated: true, index: state.threads.length - 1 });
                     }],
@@ -138,9 +143,10 @@ export const CatalogHeaderRight = () => {
                 items={
                     [0, 1, 2].map(sortId => {
                         const sortName = numToSort[sortId];
+                        console.log("sorting with", sortId, sortName)
                         return [sortName, async () => {
                             setSortActions(false);
-                            setState({ ...state, catalogSort: sortId });
+                            setState({ ...state, catalogSort: sortId, threads: sortThreads(state.threads, sortId) });
                             await State.set('catalogSort', sortId);
                         }];
                     })} />}
@@ -269,8 +275,18 @@ const NoThreads = () => {
 };
 const GridCatalog = ({ width, height }) => {
     const { state, setState, temp, setTemp, config } = React.useContext(Ctx);
-    const tw = width / config.catalogGridCols;
-    const th = (height - (BAR_HEIGHT * 2)) / config.catalogGridRows;
+
+    let tw;
+    let th;
+
+    if (width < height) {
+        tw = width / config.catalogGridCols;
+        th = (height - (BAR_HEIGHT * 2)) / config.catalogGridRows;
+    } else {
+        tw = (width - BAR_WIDTH) / config.catalogGridCols;
+        th = (height - BAR_HEIGHT) / 2;
+    }
+
     return <FlatList
         key={0}
         ref={temp.catalogReflist}
@@ -280,16 +296,17 @@ const GridCatalog = ({ width, height }) => {
         updateCellsBatchingPeriod={50}
         removeClippedSubviews={true}
         numColumns={config.catalogGridCols}
-        data={sortThreads(state.threads, config.sortMode, config.reverse)}
+        data={state.threads}
         renderItem={({ item, index }) => <GridTile thread={item} index={index} tw={tw} th={th} />}
         keyExtractor={(item) => item.id}
         onRefresh={async () => await loadThreads(state, setState, setTemp, true)}
         refreshing={temp.isFetchingThreads}
         ListEmptyComponent={<NoThreads />}
+        ListFooterComponent={CatalogFooter}
     />;
 }
 const ListCatalog = ({ width, height }) => {
-    const { state, setState, temp, setTemp, config } = React.useContext(Ctx);
+    const { state, setState, temp, setTemp } = React.useContext(Ctx);
     const tw = width;
     const th = (height - (BAR_HEIGHT * 2)) / 7;
     return <FlatList
@@ -300,13 +317,14 @@ const ListCatalog = ({ width, height }) => {
         maxToRenderPerBatch={50}
         updateCellsBatchingPeriod={50}
         removeClippedSubviews={true}
-        data={sortThreads(state.threads, config.sortMode, config.reverse)}
+        data={state.threads}
         renderItem={({ item, index }) => <ListTile thread={item} index={index} tw={tw} th={th} />}
         keyExtractor={(item) => item.id}
         onRefresh={async () => await loadThreads(state, setState, setTemp, true)}
         refreshing={temp.isFetchingThreads}
-        ItemSeparatorComponent={ListSeparator}
+        // ItemSeparatorComponent={ListSeparator}
         ListEmptyComponent={<NoThreads />}
+        ListFooterComponent={CatalogFooter}
     />;
 };
 const GridTile = ({ thread, index, tw, th }) => {
@@ -422,3 +440,15 @@ const ListTile = ({ thread, index, tw, th }) => {
         </View>
     </View>;
 };
+const CatalogFooter = () => {
+    const { state, config } = React.useContext(Ctx);
+    return <View style={{
+        flex: 1,
+        height: 150,
+        padding: 10,
+        borderRadius: config.borderRadius,
+        backgroundColor: config.card
+    }}>
+        <ThemedText content={`${state.threads.length} Threads`} />
+    </View>;
+}
