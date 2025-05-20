@@ -8,8 +8,11 @@ export const Repo = {
         return AsyncStorage.clear();
     },
     media: {
-        from: (comment) => {
-            return api.blu.media(comment);
+        thumb: (comment) => {
+            return api.blu.thumb(comment);
+        },
+        full: (comment) => {
+            return api.blu.full(comment);
         }
     },
     threads: {

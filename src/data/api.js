@@ -5,7 +5,13 @@ const chan = 'https://a.4cdn.org';
 
 export const api = {
     ciano: {
-        media: (comment) => {
+        thumnb: (comment) => {
+            if (!comment || !comment.media_name) {
+                return null;
+            }
+            return `${blu}/media/${comment.media_name}`;
+        },
+        full: (comment) => {
             if (!comment || !comment.media_name) {
                 return null;
             }
@@ -41,7 +47,7 @@ export const api = {
                 multipart.append('data', JSON.stringify(data));
             }
             if (media) {
-                multipart.append('media', "@" + media.path);
+                multipart.append('media', media.path);
             }
             return axios({
                 method: 'post',
@@ -52,11 +58,18 @@ export const api = {
         }
     },
     blu: {
-        media: (comment) => {
+        thumb: (comment) => {
             if (!comment || !comment.media_name) {
                 return null;
             }
             const url = `https://i.4cdn.org/${comment.board}/${comment.media_name}s.jpg`;
+            return url;
+        },
+        full: (comment) => {
+            if (!comment || !comment.media_name) {
+                return null;
+            }
+            const url = `https://i.4cdn.org/${comment.board}/${comment.media_name}${comment.ext}`;
             return url;
         },
         getBoards: () => {
@@ -98,7 +111,8 @@ export const api = {
                         op: thread.resto,
                         media_name: thread.tim,
                         board: boardId,
-                        created_at: thread.time
+                        created_at: thread.time,
+                        ext: thread.ext,
                     };
                 }));
         },
@@ -115,7 +129,8 @@ export const api = {
                     op: thread.resto,
                     media_name: thread.tim,
                     board: boardId,
-                    created_at: thread.time
+                    created_at: thread.time,
+                    ext: thread.ext,
                 };
             }));
         },

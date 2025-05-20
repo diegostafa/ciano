@@ -5,6 +5,7 @@ import { TouchableNativeFeedback, View } from 'react-native';
 import { ThemedText } from '../../utils';
 import { ABOUT_KEY } from './about';
 import { ACCESSIBILITY_KEY } from './accessibility';
+import { ADVANCED_KEY } from './advanced';
 import { APPEARANCE_KEY } from './appearance';
 import { BEHAVIOUR_KEY } from './behaviour';
 import { MEDIA_KEY } from './media';
@@ -36,6 +37,11 @@ export const Menu = () => {
         <TouchableNativeFeedback onPress={() => { sailor.navigate(BEHAVIOUR_KEY); }}>
             <View style={style}>
                 <ThemedText content={BEHAVIOUR_KEY} />
+            </View>
+        </TouchableNativeFeedback>
+        <TouchableNativeFeedback onPress={() => { sailor.navigate(ADVANCED_KEY); }}>
+            <View style={style}>
+                <ThemedText content={ADVANCED_KEY} />
             </View>
         </TouchableNativeFeedback>
         <TouchableNativeFeedback onPress={() => { sailor.navigate(ABOUT_KEY); }}>

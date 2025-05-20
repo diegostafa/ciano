@@ -31,12 +31,6 @@ export const DarkTheme = {
     fonts: DefaultDark.fonts,
 };
 export const DarkHtmlTheme = StyleSheet.create({
-    header: {
-        fontWeight: 'bold',
-        fontSize: 18,
-        color: DarkTheme.colors.text,
-    },
-
     // quote
     span: {
         color: '#98971a',
@@ -68,5 +62,20 @@ export const DarkHtmlTheme = StyleSheet.create({
 export const LightHtmlTheme = StyleSheet.create({
     p: {
         color: 'black',
+    },
+});
+
+export const DarkHtmlHeaderTheme = StyleSheet.create({
+    header: {
+        fontWeight: 'bold',
+        fontSize: 18,
+        color: DarkTheme.colors.text,
+    },
+});
+export const LightHtmlHeaderTheme = StyleSheet.create({
+    header: {
+        fontWeight: 'bold',
+        fontSize: 18,
+        color: DarkTheme.colors.text,
     },
 });

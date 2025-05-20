@@ -7,6 +7,10 @@ const defaultConfig = {
     borderRadius: 10,
     catalogGridCols: 3,
     catalogGridRows: 4,
+    catalogGridColsLandscape: 5,
+    catalogGridRowsLandscape: 2,
+    catalogListRows: 7,
+    catalogListRowsLandscape: 3,
     relativeTime: false,
 
     // accessibility
@@ -19,6 +23,10 @@ const defaultConfig = {
     showCatalogThumbnails: true,
     loadFaster: true,
     autoWatchThreads: false,
+
+    // advanced
+    backedn: 0,
+
 };
 export const Config = {
     get: async (key) => getLocal(key),

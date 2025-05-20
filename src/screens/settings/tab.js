@@ -3,6 +3,7 @@
 import { BAR_HEIGHT, Stack } from '../../app.js';
 import { About, ABOUT_KEY } from './about.js';
 import { Accessibility, ACCESSIBILITY_KEY } from './accessibility.js';
+import { Advanced, ADVANCED_KEY } from './advanced.js';
 import { Appearance, APPEARANCE_KEY } from './appearance.js';
 import { Behaviour, BEHAVIOUR_KEY } from './behaviour.js';
 import { Media, MEDIA_KEY } from './media.js';
@@ -38,6 +39,10 @@ export const SettingsTab = () => {
         <Stack.Screen
             name={MEDIA_KEY}
             component={Media}
+            options={style} />
+        <Stack.Screen
+            name={ADVANCED_KEY}
+            component={Advanced}
             options={style} />
         <Stack.Screen
             name={ABOUT_KEY}

@@ -3,11 +3,13 @@ import { Marquee } from '@animatereactnative/marquee';
 import { useFocusEffect, useTheme } from '@react-navigation/native';
 import React, { useCallback, useRef } from 'react';
 import { ActivityIndicator, BackHandler, FlatList, Image, Linking, ScrollView, TextInput, TouchableHighlight, TouchableNativeFeedback, useWindowDimensions, View } from 'react-native';
+import { State } from 'react-native-gesture-handler';
 import ImageCropPicker from 'react-native-image-crop-picker';
 
 import { Ctx } from '../../app';
+import { catalogSortIdToName } from '../../context/state';
 import { Repo } from '../../data/repo';
-import { Fab, getRepliesTo, HeaderIcon, HtmlText, ModalAlert, ModalMenu, ModalView, quotes, relativeTime, ThemedIcon, ThemedText } from '../../utils';
+import { Fab, getRepliesTo, HeaderIcon, HtmlHeader, HtmlText, ModalAlert, ModalMenu, ModalView, quotes, relativeTime, ThemedIcon, ThemedText } from '../../utils';
 export const THREAD_KEY = 'Thread';
 
 export const ThreadHeaderTitle = () => {
@@ -18,15 +20,16 @@ export const ThreadHeaderTitle = () => {
         speed={config.disableMovingElements ? 0 : 0}
         spacing={100}
         style={{ flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
-        <HtmlText value={`<header>/${thread.board}/ - ${thread.sub || thread.com}</header>`} />
+        <HtmlHeader value={`/${thread.board}/ - ${thread.sub || thread.com}`} />
     </Marquee>;
 };
 export const ThreadHeaderRight = () => {
-    const { state, setState, temp, config } = React.useContext(Ctx);
+    const { state, setState, temp, setTemp, config } = React.useContext(Ctx);
     const thread = state.history.at(-1).thread;
 
     const theme = useTheme();
     const [threadActions, setThreadActions] = React.useState(false);
+    const [sortActions, setSortActions] = React.useState(false);
     const isWatching = state.threadWatcher.includes(thread.id);
 
     const items = [
@@ -39,8 +42,14 @@ export const ThreadHeaderRight = () => {
                 setState({ ...state, threadWatcher: [...state.threadWatcher, thread.id] });
             }
         }],
-        ['Sort...', 'options', () => { setThreadActions(false); }],
-        ['Refresh', 'refresh', () => { setThreadActions(false); }],
+        ['Sort...', 'options', () => {
+            setThreadActions(false);
+            setSortActions(true);
+        }],
+        ['Refresh', 'refresh', () => {
+            setThreadActions(false);
+            temp.threadReflist.current?.refresh();
+        }],
         ['Stats', 'stats-chart', () => { setThreadActions(false); }],
         ['Go top', 'arrow-up', () => {
             setThreadActions(false);
@@ -48,7 +57,7 @@ export const ThreadHeaderRight = () => {
         }],
     ];
     if (!config.loadFaster) {
-        items.push(['Go Bottom', () => {
+        items.push(['Go Bottom', 'arrow-down', () => {
             setThreadActions(false);
             setTimeout(() => {
                 temp.threadReflist.current?.scrollToEnd();
@@ -67,6 +76,22 @@ export const ThreadHeaderRight = () => {
                 items={items}
             />
         }
+
+        {sortActions &&
+            <ModalMenu
+                visible={sortActions}
+                onClose={() => setSortActions(false)}
+                items={
+                    [0, 1, 2].map(sortId => {
+                        const sortName = catalogSortIdToName[sortId];
+                        console.log("sorting with", sortId, sortName)
+                        return [sortName, async () => {
+                            setSortActions(false);
+                            setState({ ...state, threadSort: sortId });
+                            setTemp({ ...temp, comments: [] });
+                            await State.set('threadSort', sortId);
+                        }];
+                    })} />}
     </View>;
 };
 export const Thread = () => {
@@ -162,9 +187,9 @@ export const Thread = () => {
             comments={comments}
             setSelectedComment={setSelectedComment}
         />
-        <CommentMenu comments={comments}
+        {selectedComment && <CommentMenu comments={comments}
             selectedComment={selectedComment} setSelectedComment={setSelectedComment}
-        />
+        />}
 
         {createComment ?
             (thread.max_replies && thread.max_replies > comments.length ?
@@ -306,7 +331,7 @@ const CommentTile = React.memo(({ comment, selectedComment, setSelectedComment, 
     const replies = getRepliesTo(comments, comment);
     const isMine = state.myComments.includes(comment.id);
     const isQuotingMe = quotes(comment).some(id => state.myComments.includes(id));
-    const img = Repo.media.from(comment);
+    const img = Repo.media.thumb(comment);
     const reply = replies.length === 1 ? 'reply' : 'replies';
     const alias = comment.alias || config.alias || 'Anonymous';
 
@@ -359,8 +384,8 @@ const CommentTile = React.memo(({ comment, selectedComment, setSelectedComment, 
 
                             {img &&
                                 <View>
-                                    <HtmlText value={`<info>filename</info>`} />
-                                    <HtmlText value={`<info>filesize</info>`} />
+                                    <HtmlText value={`<info>file: ${comment.media_name}</info>`} />
+                                    <HtmlText value={`<info>size: ${comment.media_size}</info>`} />
                                 </View>
                             }
                         </View>
@@ -543,9 +568,9 @@ const ThreadInfo = ({ autoRefreshSec, isAutoUpdating }) => {
 };
 const CommentMenu = ({ selectedComment, setSelectedComment, comments }) => {
     const { state, setState, temp, config } = React.useContext(Ctx);
-    console.log(selectedComment);
+    const isMine = state.myComments.includes(selectedComment.id);
     const items = [
-        [selectedComment.id && state.myComments.includes(selectedComment.id) ? 'Unmark as yours' : 'Mark as yours', state.myComments.includes(selectedComment.id) ? 'arrow-undo' : 'checkmark', () => {
+        [isMine ? 'Unmark as yours' : 'Mark as yours', isMine ? 'arrow-undo' : 'checkmark', () => {
             setState({ ...state, myComments: [...state.myComments, selectedComment.id] })
             setSelectedComment(null)
         }],

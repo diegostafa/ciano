@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
 import { ActivityIndicator, AppState, Platform, useColorScheme, useWindowDimensions, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
 
 import { Config } from './context/config.js';
@@ -71,55 +72,57 @@ const BottomNav = () => {
     const isVertical = width < height;
     const isAndroid = Platform.OS === 'android';
 
-    return <Tab.Navigator
-        initialRouteName={BOARD_TAB_KEY}
-        screenOptions={{
-            tabBarVariant: isAndroid && !isVertical ? 'material' : undefined,
-            height: BAR_HEIGHT,
-            tabBarPosition: isVertical ? 'bottom' : 'left',
-            tabBarHideOnKeyboard: true,
-            tabBarLabelPosition: !isVertical ? 'below-icon' : undefined,
-            tabBarStyle: { width: !isVertical ? BAR_WIDTH : undefined },
-        }}>
+    return <SafeAreaView style={{ flex: 1 }}>
+        <Tab.Navigator
+            initialRouteName={BOARD_TAB_KEY}
+            screenOptions={{
+                tabBarVariant: isAndroid && !isVertical ? 'material' : undefined,
+                height: BAR_HEIGHT,
+                tabBarPosition: isVertical ? 'bottom' : 'left',
+                tabBarHideOnKeyboard: true,
+                tabBarLabelPosition: !isVertical ? 'below-icon' : undefined,
+                tabBarStyle: { width: !isVertical ? BAR_WIDTH : undefined },
+            }}>
 
-        <Tab.Screen
-            name={WATCHER_TAB_KEY}
-            component={NotificationsTab}
-            options={{
-                tabBarIcon: TabIcon('notifications'),
-                headerStyle: { height: BAR_HEIGHT },
-                title: 'Thread Watcher'
-            }}
-        />
-        <Tab.Screen
-            name={BOARD_TAB_KEY}
-            component={BoardTab}
-            options={{
-                tabBarIcon: TabIcon('home'),
-                headerShown: false,
-                title: 'Boards',
+            <Tab.Screen
+                name={WATCHER_TAB_KEY}
+                component={NotificationsTab}
+                options={{
+                    tabBarIcon: TabIcon('notifications'),
+                    headerStyle: { height: BAR_HEIGHT },
+                    title: 'Thread Watcher'
+                }}
+            />
+            <Tab.Screen
+                name={BOARD_TAB_KEY}
+                component={BoardTab}
+                options={{
+                    tabBarIcon: TabIcon('home'),
+                    headerShown: false,
+                    title: 'Boards',
 
-            }}
-            listeners={({ navigation, route }) => ({
-                tabPress: e => {
-                    const isBoardFocused = navigation.isFocused();
-                    if (isBoardFocused) {
-                        const stackKey = route?.state?.routes?.[route.state.index]?.name;
-                        if (stackKey === THREAD_KEY) {
-                            e.preventDefault();
+                }}
+                listeners={({ navigation, route }) => ({
+                    tabPress: e => {
+                        const isBoardFocused = navigation.isFocused();
+                        if (isBoardFocused) {
+                            const stackKey = route?.state?.routes?.[route.state.index]?.name;
+                            if (stackKey === THREAD_KEY) {
+                                e.preventDefault();
+                            }
                         }
-                    }
-                },
-            })}
-        />
-        <Tab.Screen
-            name={SETTINGS_TAB_KEY}
-            component={SettingsTab}
-            options={{
-                headerShown: false,
-                tabBarIcon: TabIcon('settings'),
-                title: 'Settings',
-            }}
-        />
-    </Tab.Navigator>;
+                    },
+                })}
+            />
+            <Tab.Screen
+                name={SETTINGS_TAB_KEY}
+                component={SettingsTab}
+                options={{
+                    headerShown: false,
+                    tabBarIcon: TabIcon('settings'),
+                    title: 'Settings',
+                }}
+            />
+        </Tab.Navigator>
+    </SafeAreaView>;
 };

@@ -3,7 +3,6 @@ import { getLocal, setLocal } from '../utils';
 
 const defaultState = {
     board: null,
-    threads: null,
     boards: null,
     activeBoards: [],
     history: [],
@@ -14,7 +13,6 @@ const defaultState = {
     catalogSort: 0,
     catalogRev: false,
     showNoConnectionNotice: true,
-
 };
 export const State = {
     get: async (key) => getLocal(key),
@@ -32,20 +30,6 @@ export const State = {
         return restored;
     },
 };
-export const loadThreads = async (state, setState, setTemp, forceRefresh) => {
-    setTemp(temp => ({ ...temp, threadsFetchError: false, isFetchingThreads: true }));
-
-    const threads = forceRefresh ?
-        await Repo.threads.getRemote(state.board) :
-        await Repo.threads.getLocalOrRemote(state.board);
-
-    if (!threads) {
-        setTemp(temp => ({ ...temp, threadsFetchError: true, isFetchingThreads: false }));
-        return;
-    }
-    setTemp(temp => ({ ...temp, isFetchingThreads: false }));
-    setState({ ...state, threads });
-}
 export const loadBoards = async (state, setState, setTemp, forceRefresh) => {
     setTemp(temp => ({ ...temp, boardsFetchError: false, isFetchingBoards: true }));
 
@@ -60,14 +44,21 @@ export const loadBoards = async (state, setState, setTemp, forceRefresh) => {
     setTemp(temp => ({ ...temp, isFetchingBoards: false }));
     setState({ ...state, boards });
 };
-export const numToMode = {
+export const catalogModeIdToName = {
     0: 'list',
     1: 'grid',
 };
-export const numToSort = {
+export const catalogSortIdToName = {
     0: 'created',
     1: 'last reply',
     2: 'replies',
+};
+export const threadSortIdToName = {
+    0: 'time',
+    1: 'Number of replies',
+    3: 'Number of replies to you',
+    4: 'Image first',
+    5: 'Video first',
 };
 export const sortThreads = (threads, sortMode, reverse = false) => {
     switch (sortMode) {

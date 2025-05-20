@@ -3,13 +3,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@react-navigation/native';
 import { formatDistanceToNow } from 'date-fns';
 import React from 'react';
-import { Modal, Text, TouchableNativeFeedback, useWindowDimensions, View } from 'react-native';
+import { Modal, Text, TouchableNativeFeedback, TouchableWithoutFeedback, useWindowDimensions, View } from 'react-native';
 import HTMLView from 'react-native-htmlview';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import { BOARD_NAV_KEY, CATALOG_KEY, Ctx } from './app';
 import { Config } from './context/config';
-import { DarkHtmlTheme, LightHtmlTheme } from './theme';
+import { DarkHtmlHeaderTheme, DarkHtmlTheme, LightHtmlHeaderTheme, LightHtmlTheme } from './theme';
 
 // --- helper functions
 
@@ -88,7 +88,9 @@ export const arraysDiffer = (a, b) => {
 export const capitalize = (str) => {
     return str.charAt(0).toUpperCase() + str.slice(1);
 };
-
+export const isImg = (ext) => {
+    return ext === 'jpg' || ext === 'jpeg' || ext === 'png' || ext === 'gif';
+}
 // --- components
 
 export const ThemedIcon = ({ name, size, color }) => {
@@ -138,7 +140,7 @@ export const Fab = ({ onPress, child }) => {
         </TouchableNativeFeedback>
     </View>;
 };
-export const ModalView = ({ content, visible, onClose }) => {
+export const ModalView = ({ content, visible, onClose, fullscreen }) => {
     const { width, height } = useWindowDimensions();
     const isVertical = width < height;
     const theme = useTheme();
@@ -149,24 +151,26 @@ export const ModalView = ({ content, visible, onClose }) => {
         transparent
         visible={visible}
         onRequestClose={onClose}>
-        <View
-            style={{
-                flex: 1,
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            }}>
-            <View style={{
-                width: isVertical ? '90%' : '50%',
-                maxHeight: isVertical ? '80%' : '90%',
-                borderRadius: config.borderRadius,
-                backgroundColor: theme.colors.card,
-                justifyContent: 'space-evenly',
-                overflow: 'hidden'
-            }}>
-                {content}
+        <TouchableWithoutFeedback onPress={onClose}>
+            <View
+                style={{
+                    flex: 1,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                }}>
+                <View style={{
+                    width: fullscreen ? '100%' : isVertical ? '90%' : '50%',
+                    maxHeight: fullscreen ? '100%' : isVertical ? '80%' : '90%',
+                    borderRadius: config.borderRadius,
+                    backgroundColor: theme.colors.card,
+                    justifyContent: 'space-evenly',
+                    overflow: 'hidden'
+                }}>
+                    {content}
+                </View>
             </View>
-        </View>
+        </TouchableWithoutFeedback>
     </Modal >;
 };
 export const ModalAlert = ({ msg, visible, left, right, onClose, onPressLeft, onPressRight }) => {
@@ -224,6 +228,13 @@ export const ThemedText = ({ content, style }) => {
     const theme = useTheme();
     return <Text style={{ ...style, color: theme.colors.text }}>{content}</Text>;
 };
+export const HtmlHeader = ({ value }) => {
+    const theme = useTheme();
+    return <HTMLView
+        value={`<header>${value}</header>`}
+        stylesheet={theme.dark ? DarkHtmlHeaderTheme : LightHtmlHeaderTheme}
+    />;
+}
 export const HtmlText = React.memo(({ value, onLinkPress }) => {
     const theme = useTheme();
     return <HTMLView

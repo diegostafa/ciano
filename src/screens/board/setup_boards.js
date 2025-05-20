@@ -5,7 +5,7 @@ import { TextInput } from "react-native-gesture-handler";
 
 import { Ctx } from "../../app";
 import { loadBoards } from "../../context/state";
-import { arraysDiffer, HeaderButton, HeaderIcon, ModalAlert, ThemedText } from "../../utils";
+import { arraysDiffer, HeaderButton, ModalAlert, ThemedText } from "../../utils";
 
 
 export const SETUP_BOARDS_KEY = 'SetupBoards';
@@ -16,7 +16,7 @@ export const SetupBoardsHeaderTitle = () => {
     </View>;
 };
 export const SetupBoardsHeaderRight = () => {
-    const { state, setState, temp, setTemp } = React.useContext(Ctx);
+    const { state, setState, setTemp } = React.useContext(Ctx);
 
     return <View style={{ flexDirection: 'row' }}>
         <HeaderButton
@@ -25,32 +25,22 @@ export const SetupBoardsHeaderRight = () => {
             child={<ThemedText content={'Done'} />}
         />
 
-        {temp.boardsSetupSearch ?
-            <HeaderIcon name={'close'} onPress={() => { setTemp({ ...temp, boardsSetupSearch: false }); }} /> :
-            <HeaderIcon name={'search'} onPress={() => { setTemp({ ...temp, boardsSetupSearch: true }); }} />
-        }
+        {/* {temp.setupBoardsFilter !== null ?
+            <HeaderIcon name={'close'} onPress={() => { setTemp({ ...temp, setupBoardsFilter: null }); }} /> :
+            <HeaderIcon name={'search'} onPress={() => { setTemp({ ...temp, setupBoardsFilter: '' }); }} />
+        } */}
     </View>;
 };
 export const SetupBoards = () => {
     const { state, setState, temp, setTemp } = React.useContext(Ctx);
     const sailor = useNavigation();
     const [activeBoards, setActiveBoards] = React.useState(state.activeBoards);
-    const [filterText, setFilterText] = React.useState('');
     const [isDirty, setIsDirty] = React.useState(false);
 
     React.useEffect(() => {
-        if (!temp.boardsSetupSearch && filterText !== '') {
-            setFilterText('');
-        }
-
         const unsubscribe = sailor.addListener('beforeRemove', (e) => {
-            if (filterText !== '') {
-                setFilterText('');
-                e.preventDefault();
-                return;
-            }
-            if (temp.boardsSetupSearch) {
-                setTemp({ ...temp, boardsSetupSearch: false });
+            if (temp.setupBoardsFilter !== null) {
+                setTemp({ ...temp, setupBoardsFilter: null });
                 e.preventDefault();
                 return;
             }
@@ -63,18 +53,18 @@ export const SetupBoards = () => {
         });
         return unsubscribe;
 
-    }, [sailor, isDirty, filterText, temp, activeBoards, state.activeBoards, setTemp]);
+    }, [sailor, isDirty, temp, activeBoards, state.activeBoards, setTemp]);
 
 
     return <View style={{ flex: 1 }}>
-        {temp.boardsSetupSearch &&
+        {temp.setupBoardsFilter !== null &&
             <View style={{ padding: 5, borderWidth: 1, backgroundColor: '#333333', }}>
-                <TextInput onChangeText={text => setFilterText(text)} />
+                <TextInput onChangeText={text => setTemp({ ...temp, setupBoardsFilter: text })} />
             </View>
         }
 
         <FlatList
-            data={state.boards.filter(item => item.name.toLowerCase().includes(filterText.toLowerCase()))}
+            data={state.boards.filter(item => item.name.toLowerCase().includes((temp.setupBoardsFilter || '').toLowerCase()))}
             keyExtractor={(item) => item.code}
             renderItem={({ item }) => <BoardItem item={item} activeBoards={activeBoards} setActiveBoards={setActiveBoards} />}
             ListEmptyComponent={<ThemedText content={'No boards found'} />}
@@ -83,8 +73,8 @@ export const SetupBoards = () => {
         {isDirty &&
             <ModalAlert
                 msg={'You are about to go back, but there are unsaved changes'}
-                left={'DISCARD'}
-                right={'SAVE'}
+                left={'discard'}
+                right={'save'}
                 visible={isDirty}
                 onClose={() => setIsDirty(false)}
                 onPressLeft={() => {

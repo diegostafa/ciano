@@ -35,7 +35,7 @@ const HistoryTile = ({ item, tw, th }) => {
     const sailor = useNavigation();
     const { state, setState } = React.useContext(Ctx);
     const thread = item.thread;
-    const img = api.blu.media(thread);
+    const img = api.blu.thumb(thread);
 
     return <TouchableNativeFeedback
         onPress={async () => {
