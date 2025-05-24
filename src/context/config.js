@@ -19,13 +19,14 @@ const defaultConfig = {
     // behaviour
     alias: null,
     swipeToReply: false,
-    refreshTimeout: 30,
     showCatalogThumbnails: true,
     loadFaster: true,
-    autoWatchThreads: false,
+    autoWatchThreads: true,
+    startVideoMuted: false,
+    autoLoopVideo: false,
 
     // advanced
-    backedn: 0,
+    backend: 0,
 
 };
 export const Config = {

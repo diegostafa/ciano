@@ -38,6 +38,7 @@ export const DarkHtmlTheme = StyleSheet.create({
     // link
     a: {
         color: DarkTheme.colors.primary,
+        textDecorationLine: 'underline',
     },
     sub: {
         color: '#b294bb',

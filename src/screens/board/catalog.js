@@ -1,14 +1,13 @@
 import { useFocusEffect, useNavigation, useTheme } from '@react-navigation/native';
 import React, { useCallback, useRef } from 'react';
 import { ActivityIndicator, BackHandler, Button, FlatList, Image, TouchableNativeFeedback, useWindowDimensions, View } from 'react-native';
-import Gallery from 'react-native-awesome-gallery';
 import { TextInput } from 'react-native-gesture-handler';
 
 import { BAR_HEIGHT, BAR_WIDTH, Ctx } from '../../app';
-import { catalogModeIdToName, catalogSortIdToName, loadBoards, sortThreads, State } from '../../context/state';
+import { catalogModes, catalogSorts, loadBoards, State } from '../../context/state';
 import { loadThreads } from '../../context/temp';
 import { Repo } from '../../data/repo';
-import { Fab, HeaderIcon, historyAdd, HtmlText, isImg, ModalAlert, ModalMenu, ModalView, ThemedIcon, ThemedText } from '../../utils';
+import { Fab, getCurrBoard, HeaderIcon, historyAdd, HtmlText, ModalAlert, ModalGallery, ModalMenu, ModalView, ThemedIcon, ThemedText } from '../../utils';
 import { CREATE_THREAD_KEY } from './create_thread';
 import { SETUP_BOARDS_KEY } from './setup_boards';
 import { THREAD_KEY } from './thread';
@@ -30,8 +29,7 @@ export const CatalogHeaderTitle = () => {
         return <View style={{ flex: 1 }}>
             <TouchableNativeFeedback onPress={() => { sailor.navigate(SETUP_BOARDS_KEY) }}>
                 <View style={{ flex: 1 }}>
-                    <ThemedText content={'Setup boards'} />
-                    <ThemedText content={'Tap here'} />
+                    <ThemedText content={'Setup boards\nTap here'} />
                 </View>
             </TouchableNativeFeedback></View>;
     }
@@ -40,7 +38,7 @@ export const CatalogHeaderTitle = () => {
         return undefined;
     }
 
-    const board = state.boards.find(item => item.code === state.board);
+    const board = getCurrBoard(state);
     const activeBoards = state.activeBoards.map(boardId => state.boards.find(item => item.code === boardId));
     const inputStyle = {
         flex: 1,
@@ -87,8 +85,9 @@ export const CatalogHeaderTitle = () => {
                         renderItem={({ item }) => {
                             return <TouchableNativeFeedback onPress={async () => {
                                 const newState = { ...state, board: item.code };
+                                setState(newState);
                                 setSelectBoard(false);
-                                await loadThreads(newState, setState, setTemp);
+                                await loadThreads(newState, setTemp, true);
                             }}>
                                 <View style={{ padding: 15 }}>
                                     <ThemedText content={`/${item.code}/ - ${item.name}`} />
@@ -101,40 +100,45 @@ export const CatalogHeaderTitle = () => {
 };
 export const CatalogHeaderRight = () => {
     const { state, setState, temp, setTemp } = React.useContext(Ctx);
-    const [threadsActions, setThreadsActions] = React.useState(false);
+    const [catalogActions, setCatalogActions] = React.useState(false);
     const [sortActions, setSortActions] = React.useState(false);
 
     if (!state.board) { return undefined; }
 
     const nextCatalogMode = (state.catalogViewMode + 1) % 2;
-    return <View style={{ flexDirection: 'row', borderWidth: 1, borderColor: 'red' }}>
+    return <View style={{ flexDirection: 'row' }}>
         <HeaderIcon name={'search'} onPress={() => setTemp({ ...temp, catalogFilter: '' })} />
-        <HeaderIcon name='ellipsis-vertical' onPress={() => setThreadsActions(true)} />
+        <HeaderIcon name='ellipsis-vertical' onPress={() => setCatalogActions(true)} />
 
-        {threadsActions &&
+        {catalogActions &&
             <ModalMenu
-                visible={threadsActions}
-                onClose={() => setThreadsActions(false)}
+                visible={catalogActions}
+                onClose={() => setCatalogActions(false)}
                 items={[
                     ['Refresh', 'refresh', async () => {
-                        setThreadsActions(false);
-                        await loadThreads(state.board, setTemp, true);
+                        setCatalogActions(false);
+                        await loadThreads(state, setTemp, true);
                     },],
                     ['Sort...', "options", () => {
-                        setThreadsActions(false);
+                        setCatalogActions(false);
                         setSortActions(true);
                     }],
-                    [`View as ${catalogModeIdToName[nextCatalogMode]}`, catalogModeIdToName[nextCatalogMode], async () => {
-                        setThreadsActions(false);
+                    ['reverse...', 'reverse', () => {
+                        setCatalogActions(false);
+                        setState({ ...state, catalogRev: !state.catalogRev });
+                        setTemp({ ...temp, comments: temp.comments.reverse() });
+                    }],
+                    [`View as ${catalogModes[nextCatalogMode]}`, catalogModes[nextCatalogMode], async () => {
+                        setCatalogActions(false);
                         setState({ ...state, catalogViewMode: nextCatalogMode });
                         await State.set('catalogViewMode', nextCatalogMode);
                     }],
                     ['Go top', 'arrow-up', async () => {
-                        setThreadsActions(false);
+                        setCatalogActions(false);
                         temp.catalogReflist.current?.scrollToIndex({ animated: true, index: 0 });
                     }],
                     ['Go bottom', 'arrow-down', async () => {
-                        setThreadsActions(false);
+                        setCatalogActions(false);
                         temp.catalogReflist.current?.scrollToEnd({ animated: true, index: temp.threads.length - 1 });
                     }],
                 ]} />}
@@ -143,17 +147,15 @@ export const CatalogHeaderRight = () => {
             <ModalMenu
                 visible={sortActions}
                 onClose={() => setSortActions(false)}
-                items={
-                    [0, 1, 2].map(sortId => {
-                        const sortName = catalogSortIdToName[sortId];
-                        console.log("sorting with", sortId, sortName)
-                        return [sortName, async () => {
-                            setSortActions(false);
-                            setState({ ...state, catalogSort: sortId });
-                            setTemp({ ...temp, threads: sortThreads(temp.threads, sortId) });
-                            await State.set('catalogSort', sortId);
-                        }];
-                    })} />}
+                items={catalogSorts.map(({ name, sort, icon }, index) => {
+                    return [name, icon, async () => {
+                        setSortActions(false);
+                        setState({ ...state, catalogSort: index });
+                        setTemp({ ...temp, threads: temp.threads.sort(sort) });
+                        await State.set('catalogSort', index);
+                    }]
+                })}
+            />}
     </View>;
 };
 export const Catalog = () => {
@@ -185,7 +187,7 @@ export const Catalog = () => {
     }, [state.catalogViewMode, setTemp]);
 
     React.useEffect(() => {
-        if (!state.boards) {
+        if (!state.boards && !temp.isFetchingBoards) {
             console.log('loading boards');
             loadBoards(state, setState, setTemp, true);
             return;
@@ -197,9 +199,10 @@ export const Catalog = () => {
             }
             return;
         }
-        if (!temp.threads) {
+
+        if (!temp.threads && !temp.isFetchingThreads) {
             console.log('loading threads');
-            loadThreads(state.board, setTemp, true);
+            loadThreads(state, setTemp, true);
             return;
         }
     }, [state, setState, setTemp, temp.threads, temp]);
@@ -226,7 +229,7 @@ export const Catalog = () => {
         return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
             <ThemedText content={'FETCH ERROR'} />
             <ThemedText content={'TODO: SAD IMAGE'} />
-            <Button title={'Retry'} onPress={async () => { await loadThreads(state.board, setTemp, true); }} />
+            <Button title={'Retry'} onPress={async () => { await loadThreads(state, setTemp, true); }} />
         </View>;
     }
     if (temp.isFetchingThreads || !temp.threads) {
@@ -259,28 +262,18 @@ export const Catalog = () => {
         }
 
 
-        {catalogModeIdToName[state.catalogViewMode] === 'list' ?
+        {catalogModes[state.catalogViewMode] === 'list' ?
             <ListCatalog width={width} height={height} /> :
             <GridCatalog width={width} height={height} />}
         <Fab onPress={() => { sailor.navigate(CREATE_THREAD_KEY); }} />
-        <ModalView
-            fullscreen={true}
-            visible={temp.selectedImageIndex !== null}
-            onClose={() => setTemp({ ...temp, selectedImageIndex: null })}
-            content={
-                <View style={{ width, height, backgroundColor: 'rgba(0, 0, 0, 0' }}>
-                    <Gallery
-                        doubleTapEnabled={false}
-                        keyExtractor={(item) => item.id}
-                        numToRender={4}
-                        initialIndex={temp.selectedImageIndex}
-                        renderItem={GalleryItem}
-                        data={temp.threads}
-                        containerDimensions={{ width, height }}
-                    />
-                </View>
-            }
+
+        <ModalGallery
+            visible={temp.selectedImgIdx !== null}
+            onClose={() => setTemp({ ...temp, selectedImgIdx: null })}
+            initialIndex={temp.selectedImgIdx}
+            data={temp.threads}
         />
+
         <ModalMenu
             visible={showImageActions}
             onClose={() => setShowImageActions(false)}
@@ -311,9 +304,6 @@ const NoThreads = () => {
     </View>;
 
 };
-
-
-
 const GridCatalog = ({ width, height }) => {
     const { state, temp, setTemp, config } = React.useContext(Ctx);
     const isVertical = width < height;
@@ -341,7 +331,7 @@ const GridCatalog = ({ width, height }) => {
             data={temp.threads}
             renderItem={({ item, index }) => <GridTile thread={item} index={index} tw={tw} th={th} />}
             keyExtractor={(item) => item.id}
-            onRefresh={async () => await loadThreads(state.board, setTemp, true)}
+            onRefresh={async () => await loadThreads(state, setTemp, true)}
             refreshing={temp.isFetchingThreads}
             ListEmptyComponent={<NoThreads />}
             ListFooterComponent={CatalogFooter}
@@ -360,7 +350,7 @@ const GridCatalog = ({ width, height }) => {
         data={temp.threads}
         renderItem={({ item, index }) => <GridTile thread={item} index={index} tw={tw} th={th} />}
         keyExtractor={(item) => item.id}
-        onRefresh={async () => await loadThreads(state.board, setTemp, true)}
+        onRefresh={async () => await loadThreads(state, setTemp, true)}
         refreshing={temp.isFetchingThreads}
         ListEmptyComponent={<NoThreads />}
         ListFooterComponent={CatalogFooter}
@@ -370,6 +360,7 @@ const ListCatalog = ({ width, height }) => {
     const { state, temp, setTemp, config } = React.useContext(Ctx);
     const tw = width;
     const th = (height - (BAR_HEIGHT * 2)) / config.catalogListRows;
+    console.log(temp.threads);
     return <FlatList
         key={1}
         ref={temp.catalogReflist}
@@ -381,7 +372,7 @@ const ListCatalog = ({ width, height }) => {
         data={temp.threads}
         renderItem={({ item, index }) => <ListTile thread={item} index={index} tw={tw} th={th} />}
         keyExtractor={(item) => item.id}
-        onRefresh={async () => await loadThreads(state.board, setTemp, true)}
+        onRefresh={async () => await loadThreads(state, setTemp, true)}
         refreshing={temp.isFetchingThreads}
         // ItemSeparatorComponent={ListSeparator}
         ListEmptyComponent={<NoThreads />}
@@ -403,15 +394,17 @@ const GridTile = ({ thread, index, tw, th }) => {
     }}>
         {config.showCatalogThumbnails &&
             <TouchableNativeFeedback
-                onPress={() => { setTemp({ ...temp, selectedImageIndex: index }); }}>
-                <Image src={img} style={{
-                    width: '100%',
-                    height: th / 3,
-                    borderTopLeftRadius: config.borderRadius,
-                    borderTopRightRadius: config.borderRadius,
-                    borderBottomLeftRadius: 0,
-                    borderBottomRightRadius: 0,
-                }} />
+                onPress={() => { setTemp({ ...temp, selectedImgIdx: index }); }}>
+                <Image src={img}
+                    resizeMode="contain"
+                    style={{
+                        width: '100%',
+                        height: th / 3,
+                        borderTopLeftRadius: config.borderRadius,
+                        borderTopRightRadius: config.borderRadius,
+                        borderBottomLeftRadius: 0,
+                        borderBottomRightRadius: 0,
+                    }} />
             </TouchableNativeFeedback>
         }
 
@@ -463,8 +456,10 @@ const ListTile = ({ thread, index, tw, th }) => {
     }}>
         {config.showCatalogThumbnails &&
             <TouchableNativeFeedback
-                onPress={() => { setTemp({ ...temp, selectedImageIndex: index }); }}>
-                <Image src={img} style={{ borderRadius: config.borderRadius, width: imgH, height: imgH }} />
+                onPress={() => { setTemp({ ...temp, selectedImgIdx: index }); }}>
+                <Image src={img}
+                    resizeMode="contain"
+                    style={{ borderRadius: config.borderRadius, width: imgH, height: imgH }} />
             </TouchableNativeFeedback>
         }
 
@@ -513,35 +508,3 @@ const CatalogFooter = () => {
         <ThemedText content={`${temp.threads.length} Threads`} />
     </View>;
 }
-const GalleryItem = ({ item, setImageDimensions }) => {
-    const isImage = isImg(item.ext.slice(1));
-    const url = isImage ? Repo.media.full(item) : Repo.media.thumb(item);
-    const { width, height } = useWindowDimensions();
-
-    return <View
-        style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignContent: 'center',
-        }}>
-        <Image
-            src={url}
-            resizeMode="contain"
-            style={{ width, height }}
-            onLoad={e => {
-                const { w, h } = e.nativeEvent.source
-                setImageDimensions({ width: w, height: h })
-            }}
-        />
-
-        {!isImage &&
-            <View
-                style={{
-                    position: 'absolute',
-                    flex: 1,
-                    margin: 10,
-                }}>
-                <Button title="Play" onPress={() => { }} />
-            </View>}
-    </View>
-};

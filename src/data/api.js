@@ -1,38 +1,38 @@
 import axios from 'axios';
 
-const blu = `http://192.168.4.5:3000`;
-const chan = 'https://a.4cdn.org';
+const BLU_SERVER = `http://192.168.4.5:3000`;
+const CHAN_SERVER = 'https://a.4cdn.org';
 
 export const api = {
     ciano: {
-        thumnb: (comment) => {
+        thumb: (comment) => {
             if (!comment || !comment.media_name) {
                 return null;
             }
-            return `${blu}/media/${comment.media_name}`;
+            return `${BLU_SERVER}/media/${comment.media_name}`;
         },
         full: (comment) => {
             if (!comment || !comment.media_name) {
                 return null;
             }
-            return `${blu}/media/${comment.media_name}`;
+            return `${BLU_SERVER}/media/${comment.media_name}`;
         },
         getBoards: () => {
             return axios({
                 method: 'get',
-                url: `${blu}/boards`,
+                url: `${BLU_SERVER}/boards`,
             }).then(res => res.data);
         },
         getThreads: (boardId) => {
             return axios({
                 method: 'get',
-                url: `${blu}/${boardId}`,
+                url: `${BLU_SERVER}/${boardId}`,
             }).then(res => res.data);
         },
         getComments: (boardId, threadId) => {
             return axios({
                 method: 'get',
-                url: `${blu}/${boardId}/thread/${threadId}`,
+                url: `${BLU_SERVER}/${boardId}/thread/${threadId}`,
             }).then(res => res.data);
         },
         postComment: (form) => {
@@ -51,7 +51,7 @@ export const api = {
             }
             return axios({
                 method: 'post',
-                url: `${blu}/create_comment`,
+                url: `${BLU_SERVER}/create_comment`,
                 headers: { 'Content-Type': 'multipart/form-data' },
                 data: multipart,
             }).then(res => res.data.Ok);
@@ -69,13 +69,13 @@ export const api = {
             if (!comment || !comment.media_name) {
                 return null;
             }
-            const url = `https://i.4cdn.org/${comment.board}/${comment.media_name}${comment.ext}`;
+            const url = `https://i.4cdn.org/${comment.board}/${comment.media_name}.${comment.media_ext}`;
             return url;
         },
         getBoards: () => {
             return axios({
                 method: 'get',
-                url: `${chan}/boards.json`,
+                url: `${CHAN_SERVER}/boards.json`,
             }).then(res => res.data.boards
                 .map(board => {
                     return {
@@ -99,7 +99,7 @@ export const api = {
         getThreads: (boardId) => {
             return axios({
                 method: 'get',
-                url: `${chan}/${boardId}/catalog.json`,
+                url: `${CHAN_SERVER}/${boardId}/catalog.json`,
             })
                 .then(res => res.data.flatMap(page => page.threads).map(thread => {
                     return {
@@ -110,27 +110,29 @@ export const api = {
                         images: thread.images,
                         op: thread.resto,
                         media_name: thread.tim,
+                        media_size: thread.fsize,
+                        media_ext: thread.ext ? thread.ext.slice(1) : null,
                         board: boardId,
                         created_at: thread.time,
-                        ext: thread.ext,
                     };
                 }));
         },
         getComments: (boardId, threadId) => {
             return axios({
                 method: 'get',
-                url: `${chan}/${boardId}/thread/${threadId}.json`
-            }).then(res => res.data.posts.map(thread => {
+                url: `${CHAN_SERVER}/${boardId}/thread/${threadId}.json`
+            }).then(res => res.data.posts.map(comment => {
                 return {
-                    id: thread.no,
-                    alias: thread.alias || 'Anonymous',
-                    sub: thread.sub,
-                    com: thread.com,
-                    op: thread.resto,
-                    media_name: thread.tim,
+                    id: comment.no,
+                    alias: comment.alias || 'Anonymous',
+                    sub: comment.sub,
+                    com: comment.com,
+                    op: comment.resto,
+                    media_name: comment.tim,
+                    media_size: comment.fsize,
+                    media_ext: comment.ext ? comment.ext.slice(1) : null,
                     board: boardId,
-                    created_at: thread.time,
-                    ext: thread.ext,
+                    created_at: comment.time,
                 };
             }));
         },

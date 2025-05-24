@@ -1,5 +1,5 @@
 import { Repo } from '../data/repo';
-import { getLocal, setLocal } from '../utils';
+import { getLocal, getRepliesTo, isImg, quotes, setLocal } from '../utils';
 
 const defaultState = {
     board: null,
@@ -10,8 +10,13 @@ const defaultState = {
     threadWatcher: [],
 
     catalogViewMode: 0,
+
     catalogSort: 0,
+    threadSort: 0,
+
     catalogRev: false,
+    threadRev: false,
+
     showNoConnectionNotice: true,
 };
 export const State = {
@@ -44,38 +49,86 @@ export const loadBoards = async (state, setState, setTemp, forceRefresh) => {
     setTemp(temp => ({ ...temp, isFetchingBoards: false }));
     setState({ ...state, boards });
 };
-export const catalogModeIdToName = {
-    0: 'list',
-    1: 'grid',
-};
-export const catalogSortIdToName = {
-    0: 'created',
-    1: 'last reply',
-    2: 'replies',
-};
-export const threadSortIdToName = {
-    0: 'time',
-    1: 'Number of replies',
-    3: 'Number of replies to you',
-    4: 'Image first',
-    5: 'Video first',
-};
-export const sortThreads = (threads, sortMode, reverse = false) => {
-    switch (sortMode) {
-        case 0:
-            threads.sort((a, b) => b.created_at - a.created_at);
-            break;
-        case 1:
-            threads.sort((a, b) => b.bumped_at - a.bumped_at || b.created_at - a.created_at);
-            break;
-        case 2: // Most replies
-            threads.sort((a, b) => b.replies - a.replies);
-            break;
-        case 3: // Most images
-            threads.sort((a, b) => b.images - a.images);
-            break;
-        default:
-            break;
-    }
-    return reverse ? threads.reverse() : threads;
-};
+export const catalogModes = [
+    'list',
+    'grid',
+];
+export const catalogSorts = [
+    {
+        name: 'created',
+        icon: 'calendar',
+        sort: (a, b) => a.created_at - b.created_at
+    },
+    {
+        name: 'last reply',
+        icon: 'time',
+        sort: (a, b) => b.bumped_at - a.bumped_at || b.created_at - a.created_at
+    },
+    {
+        name: 'replies',
+        icon: 'comment',
+        sort: (a, b) => b.replies - a.replies
+    },
+    {
+        name: 'images',
+        icon: 'image',
+        sort: (a, b) => b.images - a.images
+    },
+];
+export const threadSorts = [
+    {
+        name: 'time',
+        icon: 'time',
+        sort: () => (a, b) => a.created_at - b.created_at
+    },
+    {
+        name: 'Number of replies',
+        icon: 'comment',
+        sort: () => (a, b) => b.bumped_at - a.bumped_at || b.created_at - a.created_at
+    },
+    {
+        name: 'Number of replies to you',
+        icon: 'comment',
+        sort: ({ comments }) => (a, b) => {
+            const repliesA = getRepliesTo(comments, a).length;
+            const repliesB = getRepliesTo(comments, b).length;
+            return repliesB - repliesA;
+        }
+    },
+    {
+        name: 'Yours first',
+        icon: 'user',
+        sort: (state) => (a, b) => {
+            const isMineA = state.myComments.includes(a.id) ? 1 : 0;
+            const isMineB = state.myComments.includes(b.id) ? 1 : 0;
+            return isMineB - isMineA;
+        }
+    },
+    {
+        name: 'Replies to you first',
+        icon: 'user',
+        sort: (state) => (a, b) => {
+            const isQuotingMeA = quotes(a).some(id => state.myComments.includes(id)) ? 1 : 0;
+            const isQuotingMeB = quotes(b).some(id => state.myComments.includes(id)) ? 1 : 0;
+            return isQuotingMeB - isQuotingMeA;
+        }
+    },
+    {
+        name: 'Image first',
+        icon: 'image',
+        sort: () => (a, b) => {
+            const hasImgA = isImg(a.media_ext) ? 1 : 0;
+            const hasImgB = isImg(b.media_ext) ? 1 : 0;
+            return hasImgB - hasImgA;
+        }
+    },
+    {
+        name: 'Video first',
+        icon: 'film',
+        sort: () => (a, b) => {
+            const hasVideoA = a.media_ext !== null && !isImg(a.media_ext) ? 1 : 0;
+            const hasVideoB = a.media_ext !== null && !isImg(b.media_ext) ? 1 : 0;
+            return hasVideoB - hasVideoA;
+        }
+    },
+];

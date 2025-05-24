@@ -5,7 +5,7 @@ import { TextInput } from "react-native-gesture-handler";
 
 import { Ctx } from "../../app";
 import { loadBoards } from "../../context/state";
-import { arraysDiffer, HeaderButton, ModalAlert, ThemedText } from "../../utils";
+import { arraysDiffer, Fab, HeaderButton, HeaderIcon, ModalAlert, ThemedIcon, ThemedText } from "../../utils";
 
 
 export const SETUP_BOARDS_KEY = 'SetupBoards';
@@ -58,10 +58,12 @@ export const SetupBoards = () => {
 
     return <View style={{ flex: 1 }}>
         {temp.setupBoardsFilter !== null &&
-            <View style={{ padding: 5, borderWidth: 1, backgroundColor: '#333333', }}>
-                <TextInput onChangeText={text => setTemp({ ...temp, setupBoardsFilter: text })} />
-            </View>
-        }
+            <View style={{ padding: 5, borderWidth: 1, backgroundColor: '#333333', flexDirection: 'row', justifyContent: 'space-between' }}>
+                <View style={{ flex: 1 }}>
+                    <TextInput placeholder="Search..." onChangeText={text => setTemp({ ...temp, setupBoardsFilter: text })} />
+                </View>
+                <HeaderIcon name={'close'} onPress={() => { setTemp({ ...temp, setupBoardsFilter: null }); }} />
+            </View>}
 
         <FlatList
             data={state.boards.filter(item => item.name.toLowerCase().includes((temp.setupBoardsFilter || '').toLowerCase()))}
@@ -70,29 +72,32 @@ export const SetupBoards = () => {
             ListEmptyComponent={<ThemedText content={'No boards found'} />}
         />
 
-        {isDirty &&
-            <ModalAlert
-                msg={'You are about to go back, but there are unsaved changes'}
-                left={'discard'}
-                right={'save'}
-                visible={isDirty}
-                onClose={() => setIsDirty(false)}
-                onPressLeft={() => {
-                    setIsDirty(false);
-                    sailor.goBack();
-                }}
-                onPressRight={() => {
-                    setIsDirty(false);
-                    setState({ ...state, activeBoards: activeBoards });
-                    sailor.goBack();
-                }}
-            />
+        {isDirty && <ModalAlert
+            msg={'You are about to go back, but there are unsaved changes'}
+            left={'discard'}
+            right={'save'}
+            visible={isDirty}
+            onClose={() => setIsDirty(false)}
+            onPressLeft={() => {
+                setIsDirty(false);
+                sailor.goBack();
+            }}
+            onPressRight={() => {
+                setIsDirty(false);
+                setState({ ...state, activeBoards: activeBoards });
+                sailor.goBack();
+            }}
+        />
         }
+
+        {temp.setupBoardsFilter === null && <Fab
+            onPress={() => { setTemp({ ...temp, setupBoardsFilter: '' }); }}
+            child={<ThemedIcon name={'search'} />} />}
     </View>;
 };
 const BoardItem = ({ item, activeBoards, setActiveBoards }) => {
     const theme = useTheme();
-
+    const { config } = React.useContext(Ctx);
     const style = {
         borderRadius: 10,
         padding: 10,
@@ -105,7 +110,7 @@ const BoardItem = ({ item, activeBoards, setActiveBoards }) => {
         backgroundColor: 'darkgreen'
     };
 
-    return <View style={{ margin: 5 }}>
+    return <View style={{ margin: 5, overflow: 'hidden', borderRadius: config.borderRadius }}>
         <TouchableNativeFeedback onPress={() => {
             setActiveBoards(prev => {
                 const index = prev.indexOf(item.code);
