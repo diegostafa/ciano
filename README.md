@@ -20,12 +20,6 @@ todo:
   - [ ] add input to filter the history
 - settings:
   - [ ] fill the various sections (appearance, accessibility ...)
-- thread:
-  - [ ] sort and filter the thread
-  - [ ] when opening a thread, reset the notification counter
 - notifications:
-    - show notification indicator in bottom nav
-    - keep a list of threads, each items should only shows a signature
-    - watcher { threadId, new,}
-- gallery:
-  - [ ] tap and hold for a menu (download, copy name, copy link, share)
+  - show indicator in bottom nav
+  - when opening a thread, reset the notification counter
