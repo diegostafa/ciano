@@ -27,6 +27,7 @@ export const DarkTheme = {
         notification: 'rgb(255, 69, 58)',
         highlight: 'rgba(255, 255, 255, 0.1)',
         formBg: 'rgb(50, 50, 55)',
+        overlayBg: 'rgba(0, 0, 0, 0.5)'
     },
     fonts: DefaultDark.fonts,
 };

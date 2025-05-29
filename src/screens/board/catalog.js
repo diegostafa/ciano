@@ -7,7 +7,7 @@ import { BAR_HEIGHT, BAR_WIDTH, Ctx } from '../../app';
 import { catalogModes, catalogSorts, loadBoards, State } from '../../context/state';
 import { loadThreads } from '../../context/temp';
 import { Repo } from '../../data/repo';
-import { Fab, getCurrBoard, HeaderIcon, historyAdd, HtmlText, ModalAlert, ModalGallery, ModalMenu, ModalView, ThemedIcon, ThemedText } from '../../utils';
+import { Fab, getCurrBoard, HeaderIcon, historyAdd, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, ThemedIcon, ThemedText } from '../../utils';
 import { CREATE_THREAD_KEY } from './create_thread';
 import { SETUP_BOARDS_KEY } from './setup_boards';
 import { THREAD_KEY } from './thread';
@@ -126,7 +126,7 @@ export const CatalogHeaderRight = () => {
                     ['reverse...', 'reverse', () => {
                         setCatalogActions(false);
                         setState({ ...state, catalogRev: !state.catalogRev });
-                        setTemp({ ...temp, comments: temp.comments.reverse() });
+                        setTemp({ ...temp, threads: temp.threads.reverse() });
                     }],
                     [`View as ${catalogModes[nextCatalogMode]}`, catalogModes[nextCatalogMode], async () => {
                         setCatalogActions(false);
@@ -267,12 +267,7 @@ export const Catalog = () => {
             <GridCatalog width={width} height={height} />}
         <Fab onPress={() => { sailor.navigate(CREATE_THREAD_KEY); }} />
 
-        <ModalGallery
-            visible={temp.selectedImgIdx !== null}
-            onClose={() => setTemp({ ...temp, selectedImgIdx: null })}
-            initialIndex={temp.selectedImgIdx}
-            data={temp.threads}
-        />
+        <ModalMediaPreview />
 
         <ModalMenu
             visible={showImageActions}
@@ -394,7 +389,7 @@ const GridTile = ({ thread, index, tw, th }) => {
     }}>
         {config.showCatalogThumbnails &&
             <TouchableNativeFeedback
-                onPress={() => { setTemp({ ...temp, selectedImgIdx: index }); }}>
+                onPress={() => { setTemp({ ...temp, selectedMediaComment: thread }); }}>
                 <Image src={img}
                     resizeMode="contain"
                     style={{
@@ -456,7 +451,7 @@ const ListTile = ({ thread, index, tw, th }) => {
     }}>
         {config.showCatalogThumbnails &&
             <TouchableNativeFeedback
-                onPress={() => { setTemp({ ...temp, selectedImgIdx: index }); }}>
+                onPress={() => { setTemp({ ...temp, selectedMediaComment: thread }); }}>
                 <Image src={img}
                     resizeMode="contain"
                     style={{ borderRadius: config.borderRadius, width: imgH, height: imgH }} />

@@ -4,9 +4,10 @@ import { catalogSorts, threadSorts } from "./state";
 const defaultTemp = {
     noConnection: false,
 
+    thread: null,
     threads: null,
     comments: null,
-    selectedImgIdx: null,
+    selectedMediaComment: null,
     commentsBoard: null,
 
 

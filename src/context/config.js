@@ -22,8 +22,8 @@ const defaultConfig = {
     showCatalogThumbnails: true,
     loadFaster: true,
     autoWatchThreads: true,
-    startVideoMuted: false,
-    autoLoopVideo: false,
+    muteVideos: false,
+    loopVideos: true,
 
     // advanced
     backend: 0,

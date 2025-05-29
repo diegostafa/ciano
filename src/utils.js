@@ -4,12 +4,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@react-navigation/native';
 import { formatDistanceToNow } from 'date-fns';
 import { filesize } from 'filesize';
-import React from 'react';
-import { ActivityIndicator, Modal, Text, TouchableNativeFeedback, TouchableWithoutFeedback, useWindowDimensions, View } from 'react-native';
-import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
+import React, { useRef } from 'react';
+import { ActivityIndicator, Modal, Pressable, Text, TouchableNativeFeedback, TouchableWithoutFeedback, useWindowDimensions, View } from 'react-native';
+import RNBlobUtil from 'react-native-blob-util';
+import FastImage from 'react-native-fast-image';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import HTMLView from 'react-native-htmlview';
 import Icon from 'react-native-vector-icons/Ionicons';
-import VideoPlayer from 'react-native-video-player';
+import Video from 'react-native-video';
 
 import { BOARD_NAV_KEY, CATALOG_KEY, Ctx } from './app';
 import { Config } from './context/config';
@@ -94,12 +96,47 @@ export const arraysDiffer = (a, b) => {
 export const capitalize = (str) => {
     return str.charAt(0).toUpperCase() + str.slice(1);
 };
-export const isImg = (ext) => {
-    return ext === 'jpg' || ext === 'jpeg' || ext === 'png' || ext === 'gif';
+export const isImage = (ext) => {
+    return ext === 'jpg' || ext === 'jpeg' || ext === 'png';
+}
+export const isGif = (ext) => {
+    return ext === 'gif';
+}
+export const isVideo = (ext) => {
+    return ext === 'mp4' || ext === 'webm';
 }
 export const getCurrBoard = (state) => {
     return state.boards.find(item => item.code === state.board);
 }
+const downloadMedia = async (comment) => {
+    try {
+        const url = Repo.media.full(comment);
+        const savepath = `${RNBlobUtil.fs.dirs.DownloadDir}/${comment.file_name}.${comment.media_ext}`;
+
+        const result = await RNBlobUtil.config({
+            fileCache: true,
+            addAndroidDownloads: {
+                useDownloadManager: true,
+                notification: true,
+                path: savepath,
+                description: 'Downloading media file',
+            },
+        }).fetch('GET', url);
+
+        console.log('Downloaded to:', result.path());
+
+
+        if (result.statusCode === 200) {
+            console.log('File downloaded to:', savepath);
+        } else {
+            console.log('Download failed:', result.statusCode);
+        }
+
+    } catch (error) {
+        console.error('Download failed:', error);
+    }
+};
+
 // --- components
 
 export const ThemedIcon = ({ name, size, color }) => {
@@ -149,14 +186,14 @@ export const Fab = ({ onPress, child }) => {
         </TouchableNativeFeedback>
     </View>;
 };
-export const ModalView = ({ content, visible, onClose, fullscreen, noBackdrop }) => {
+export const ModalView = ({ content, visible, onClose, fullscreen, noBackdrop, animation }) => {
     const { width, height } = useWindowDimensions();
     const isVertical = width < height;
     const theme = useTheme();
     const { config } = React.useContext(Ctx);
 
     return <Modal
-        animationType='fade'
+        animationType={animation || 'fade'}
         transparent
         visible={visible}
         onRequestClose={onClose}>
@@ -282,60 +319,133 @@ export const ListSeparator = () => {
     const theme = useTheme();
     return <View style={{ height: 2, backgroundColor: theme.colors.highlight }} />;
 }
-
-export const ModalGallery = ({ visible, onClose, initialIndex, data }) => {
+export const ModalMediaPreview = () => {
     const { width, height } = useWindowDimensions();
+    const { temp, setTemp } = React.useContext(Ctx);
 
     return <ModalView
         fullscreen={true}
-        visible={visible}
-        onClose={onClose}
+        visible={temp.selectedMediaComment !== null}
+        onClose={() => { setTemp({ ...temp, selectedMediaComment: null }); }}
         noBackdrop={true}
+        animation={'slide'}
         content={
             <View style={{ width, height, backgroundColor: 'rgba(0,0,0,0)' }}>
-                <MediaPreview comment={data[initialIndex]} onClose={onClose} />
+                <MediaPreview
+                    comment={temp.selectedMediaComment}
+                    onClose={() => { setTemp({ ...temp, selectedMediaComment: null }); }}
+                />
             </View>
         }
     />;
 };
 export const MediaPreview = ({ comment, onClose }) => {
     const theme = useTheme();
-    React.useContext(Ctx);
+    const { config } = React.useContext(Ctx);
     const { width, height } = useWindowDimensions();
-    const isImage = isImg(comment.media_ext);
+    const smallest = Math.min(width, height);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [showHeader, setShowHeader] = React.useState(true);
+    const is_image = isImage(comment.media_ext);
+    const is_gif = isGif(comment.media_ext);
+    const is_video = isVideo(comment.media_ext);
     const full = Repo.media.full(comment);
     const thumb = Repo.media.thumb(comment);
-    const [isImageLoading, setIsImageLoading] = React.useState(isImage);
-    const [showHeader, setShowHeader] = React.useState(true);
+    const videoref = useRef(null);
 
 
-    if (!isImage) {
-        return <View style={{ flex: 1, borderWidth: 1, borderColor: 'red', justifyContent: 'center', alignItems: 'center', }}>
-            <VideoPlayer
-                customStyles={{
-                }}
-                fullscreen={true}
-                disableControlsAutoHide={true}
-                hideControlsOnStart={true}
-                style={{ width, height }}
-                preventsDisplaySleepDuringVideoPlayback={true}
-                source={{ uri: full }}
-                thumbnail={{ uri: thumb }}
-                videoWidth={width}
-                autoplay={true}
-                repeat={true}
-                showDuration={true}
-                onError={(e) => console.log(e)}
-            />
-        </View>;
-    }
 
-    return <PanGestureHandler onHandlerStateChange={() => {
-        console.log('onHandlerStateChange');
-    }}>
-        <View style={{ flex: 1, borderWidth: 1, borderColor: 'red' }}>
-            {isImageLoading && <View style={{
+    return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        {showHeader &&
+            <View style={{
+                top: 0,
                 flex: 1,
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                zIndex: 4,
+                width: '100%',
+                position: 'absolute',
+                flexDirection: 'row',
+                padding: 10,
+                backgroundColor: theme.colors.overlayBg,
+            }}>
+                <ThemedText
+                    style={{ fontWeight: 'bold', }}
+                    content={`${comment.file_name}.${comment.media_ext}  (${filesize(comment.media_size)})`}
+                />
+
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <HeaderIcon name={'download'} onPress={async () => {
+                        await downloadMedia(comment);
+                    }} />
+                    <HeaderIcon name={'close'} onPress={onClose} />
+                </View>
+            </View>
+        }
+
+        {is_image &&
+            <GestureHandlerRootView style={{ flex: 1 }}>
+                <ImageZoom
+                    onLoad={() => setIsLoading(false)}
+                    onSingleTap={() => setShowHeader(!showHeader)}
+                    uri={full}
+                    width={smallest}
+                    height={smallest}
+                    minScale={0.5}
+                    maxScale={3}
+                    doubleTapScale={3}
+                    isSingleTapEnabled={true}
+                    isDoubleTapEnabled={true}
+                />
+            </GestureHandlerRootView>}
+
+        {is_gif &&
+            <Pressable onPress={() => setShowHeader(!showHeader)}>
+                <FastImage
+                    source={{ uri: full }}
+                    onLoad={() => setIsLoading(false)}
+                    style={{ width: smallest, height: smallest }}
+                />
+            </Pressable>}
+
+        {is_video &&
+            <Video
+                ref={videoref}
+                enterPictureInPictureOnLeave={false}
+                controls={true}
+                muted={config.muteVideos}
+                repeat={config.loopVideos}
+                controlsStyles={{
+                    hideSettingButton: false,
+                    hideNotificationBarOnFullScreenMode: true,
+                    hideNavigationBarOnFullScreenMode: true,
+                }}
+                source={{ uri: full }}
+                style={{ width: width, height: height }}
+                onLoad={() => { setIsLoading(false); }}
+            />}
+
+
+        {isLoading && <View style={{
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 2,
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
+            gap: 10,
+        }}>
+            <ImageZoom
+                uri={thumb}
+                width={smallest}
+                height={smallest}
+                minScale={0.5}
+                maxScale={3}
+                doubleTapScale={3}
+                isSingleTapEnabled={true}
+                isDoubleTapEnabled={true}
+            />
+            <View style={{
                 justifyContent: 'center',
                 alignItems: 'center',
                 zIndex: 2,
@@ -345,55 +455,15 @@ export const MediaPreview = ({ comment, onClose }) => {
             }}>
                 <View style={{
                     flexDirection: 'row',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    zIndex: 3,
-                    position: 'absolute',
-                    width: '100%',
-                    height: '100%',
+                    backgroundColor: theme.colors.background,
+                    borderRadius: config.borderRadius,
+                    padding: 15,
                     gap: 10,
                 }}>
                     <ActivityIndicator size='large' color='white' />
-                    <ThemedText content={`Loading ${comment.media_name}.${comment.media_ext}...\nThis might take a while`} />
+                    <ThemedText content={`Loading: ${comment.file_name}.${comment.media_ext}...\nThis might take a while`} />
                 </View>
             </View>
-            }
-            {showHeader && <View style={{
-                flex: 1,
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                zIndex: 2,
-                width: '100%',
-                position: 'absolute',
-                flexDirection: 'row',
-                padding: 10,
-                backgroundColor: theme.colors.background,
-            }}>
-                <ThemedText content={`${comment.media_name}.${comment.media_ext}  (${filesize(comment.media_size)})`}
-                    style={{ fontWeight: 'bold', }} />
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                    <HeaderIcon name={'download'} size={30} onPress={() => {
-                        // todo
-                    }} />
-                    <HeaderIcon name={'close'} size={30} onPress={onClose} />
-                </View>
-            </View>}
-
-            <GestureHandlerRootView style={{ flex: 1 }}>
-                <ImageZoom
-                    onLoad={() => setIsImageLoading(false)}
-                    onSingleTap={() => setShowHeader(!showHeader)}
-                    uri={full}
-                    width={width}
-                    height={height}
-                    minScale={0.5}
-                    maxScale={3}
-                    doubleTapScale={3}
-                    isSingleTapEnabled={true}
-                    isDoubleTapEnabled={true}
-                />
-            </GestureHandlerRootView>
-        </View>
-
-    </PanGestureHandler>;
+        </View >}
+    </View>;
 };

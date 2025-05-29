@@ -11,7 +11,7 @@ import { Ctx } from '../../app';
 import { threadSorts } from '../../context/state';
 import { loadComments } from '../../context/temp';
 import { Repo } from '../../data/repo';
-import { Fab, getCurrBoard, getRepliesTo, HeaderIcon, HtmlHeader, HtmlText, ModalAlert, ModalGallery, ModalMenu, ModalView, quotes, relativeTime, ThemedIcon, ThemedText } from '../../utils';
+import { Fab, getCurrBoard, getRepliesTo, HeaderIcon, HtmlHeader, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, quotes, relativeTime, ThemedIcon, ThemedText } from '../../utils';
 export const THREAD_KEY = 'Thread';
 
 export const ThreadHeaderTitle = () => {
@@ -38,10 +38,10 @@ export const ThreadHeaderRight = () => {
         [isWatching ? 'Unwatch' : 'Watch', isWatching ? 'eye-off' : 'eye', () => {
             setThreadActions(false);
             if (isWatching) {
-                setState({ ...state, threadWatcher: state.threadWatcher.filter(item => item !== thread.id) });
+                setState(prev => ({ ...prev, threadWatcher: prev.threadWatcher.filter(item => item !== thread.id) }));
             }
             else {
-                setState({ ...state, threadWatcher: [...state.threadWatcher, thread.id] });
+                setState(prev => ({ ...prev, threadWatcher: [...prev.threadWatcher, thread.id] }));
             }
         }],
         ['Sort...', 'options', () => {
@@ -51,7 +51,7 @@ export const ThreadHeaderRight = () => {
         ['reverse...', 'reverse', () => {
             setThreadActions(false);
             setState({ ...state, threadRev: !state.threadRev });
-            setTemp({ ...temp, comments: temp.comments.reverse() });
+            setTemp(prev => ({ ...prev, comments: [...prev.comments].reverse() }));
         }],
         ['Refresh', 'refresh', () => {
             setThreadActions(false);
@@ -66,10 +66,7 @@ export const ThreadHeaderRight = () => {
     if (!config.loadFaster) {
         items.push(['Go Bottom', 'arrow-down', () => {
             setThreadActions(false);
-            setTimeout(() => {
-                temp.threadReflist.current?.scrollToEnd();
-            }, 100);
-
+            temp.threadReflist.current?.scrollToEnd();
         }]);
     }
     return <View style={{ flexDirection: 'row', backgroundColor: theme.colors.card }}>
@@ -153,12 +150,7 @@ export const Thread = () => {
             <ThemedText content={'FETCHING COMMENTS'} />
             <ThreadInfo />
 
-            <ModalGallery
-                visible={temp.selectedImgIdx !== null}
-                onClose={() => setTemp({ ...temp, selectedImgIdx: null })}
-                initialIndex={temp.selectedImgIdx}
-                data={[thread]}
-            />
+            <ModalMediaPreview />
         </ScrollView>;
     }
 
@@ -168,12 +160,7 @@ export const Thread = () => {
             selectedComment={selectedComment} setSelectedComment={setSelectedComment}
         />
 
-        <ModalGallery
-            visible={temp.selectedImgIdx !== null}
-            onClose={() => setTemp({ ...temp, selectedImgIdx: null })}
-            initialIndex={temp.selectedImgIdx}
-            data={temp.comments}
-        />
+        <ModalMediaPreview />
 
         <RepliesModal
             repliesStack={repliesStack} setRepliesStack={setRepliesStack}
@@ -268,22 +255,17 @@ const RepliesModal = ({ repliesStack, setRepliesStack, setSelectedComment }) => 
     />;
 };
 const NoComments = () => {
-    const { state, temp, setTemp } = React.useContext(Ctx);
+    const { state } = React.useContext(Ctx);
     const thread = state.history.at(-1).thread;
     const tw = useWindowDimensions().width;
 
     return <View>
         <CommentTile comment={thread} tw={tw} index={0} />
         <ThemedText content={'TODO: THERE ARE NO COMMENTS'} />
-        <ModalGallery
-            visible={temp.selectedImgIdx !== null}
-            onClose={() => setTemp({ ...temp, selectedImgIdx: null })}
-            initialIndex={temp.selectedImgIdx}
-            data={[thread]}
-        />
+        <ModalMediaPreview />
     </View>;
 };
-const CommentList = ({ selectedComment, setSelectedComment, isAutoUpdating, repliesStack, setRepliesStack }) => {
+const CommentList = ({ selectedComment, setSelectedComment, repliesStack, setRepliesStack }) => {
     const { state, config, temp, setTemp } = React.useContext(Ctx);
     const { width } = useWindowDimensions();
 
@@ -369,7 +351,7 @@ const CommentTile = React.memo(({ comment, index, selectedComment, setSelectedCo
                     <View style={{ flexDirection: 'row' }}>
                         {img &&
                             <TouchableNativeFeedback
-                                onPress={() => { setTemp(prev => ({ ...prev, selectedImgIdx: index })); }}>
+                                onPress={() => { setTemp(prev => ({ ...prev, selectedMediaComment: index })); }}>
                                 <Image src={img} resizeMode="contain" style={{ borderRadius: config.borderRadius, width: thumbWidth, height: thumbWidth, marginRight: 8 }} />
                             </TouchableNativeFeedback>}
 
@@ -383,7 +365,7 @@ const CommentTile = React.memo(({ comment, index, selectedComment, setSelectedCo
 
                             {img &&
                                 <View>
-                                    <HtmlText value={`<info>File: ${comment.media_name}.${comment.media_ext}</info>`} />
+                                    <HtmlText value={`<info>File: ${comment.filename}.${comment.media_ext}</info>`} />
                                     {comment.media_size && <HtmlText value={`<info>Size: ${filesize(comment.media_size)} </info>`} />}
                                 </View>}
                         </View>
@@ -431,7 +413,10 @@ const CommentTile = React.memo(({ comment, index, selectedComment, setSelectedCo
         </View>
     </View>;
 }, (prevProps, nextProps) => {
-    return prevProps.index === nextProps.index;
+    return prevProps.index === nextProps.index &&
+        prevProps.comment === nextProps.comment &&
+        prevProps.comments === nextProps.comments &&
+        prevProps.selectedComment === nextProps.selectedComment;
 });
 const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
     const { state, setState, setTemp, config } = React.useContext(Ctx);
@@ -529,9 +514,10 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                     <TouchableNativeFeedback onPress={async () => {
                         console.log(form);
                         const comment = await Repo.comments.create(form);
-                        setState({ ...state, myComments: [...state.myComments, comment.id] })
+
+                        setState(prev => ({ ...prev, myComments: [...prev.myComments, comment.id] }))
                         if (config.autoWatchThreads) {
-                            setState({ ...state, threadWatcher: [...state.threadWatcher, thread.id] })
+                            setState(prev => ({ ...prev, threadWatcher: [...prev.threadWatcher, thread.id] }))
                         }
                         setCreateComment(false);
                         await loadComments(state, setTemp, true);
@@ -559,7 +545,12 @@ const CommentMenu = ({ selectedComment, setSelectedComment }) => {
     const isMine = state.myComments.includes(selectedComment.id);
     const items = [
         [isMine ? 'Unmark as yours' : 'Mark as yours', isMine ? 'arrow-undo' : 'checkmark', () => {
-            setState({ ...state, myComments: [...state.myComments, selectedComment.id] })
+            if (isMine) {
+                setState({ ...state, myComments: state.myComments.filter(item => item !== selectedComment.id) })
+            }
+            else {
+                setState({ ...state, myComments: [...state.myComments, selectedComment.id] })
+            }
             setSelectedComment(null)
         }],
         ['Quote', 'comment-text', () => {
@@ -580,7 +571,7 @@ const CommentMenu = ({ selectedComment, setSelectedComment }) => {
         items.push(['Jump to comment', 'arrow-right', () => {
             const index = temp.comments.findIndex(item => item.id === selectedComment.id);
             if (index >= 0) {
-                temp.threadReflist.current?.scrollToIndex({ animated: true, index: 0 });
+                temp.threadReflist.current?.scrollToIndex({ animated: true, index });
             }
             setSelectedComment(null)
         }]);

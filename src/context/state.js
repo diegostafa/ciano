@@ -1,5 +1,5 @@
 import { Repo } from '../data/repo';
-import { getLocal, getRepliesTo, isImg, quotes, setLocal } from '../utils';
+import { getLocal, getRepliesTo, isImage, quotes, setLocal } from '../utils';
 
 const defaultState = {
     board: null,
@@ -117,8 +117,8 @@ export const threadSorts = [
         name: 'Image first',
         icon: 'image',
         sort: () => (a, b) => {
-            const hasImgA = isImg(a.media_ext) ? 1 : 0;
-            const hasImgB = isImg(b.media_ext) ? 1 : 0;
+            const hasImgA = isImage(a.media_ext) ? 1 : 0;
+            const hasImgB = isImage(b.media_ext) ? 1 : 0;
             return hasImgB - hasImgA;
         }
     },
@@ -126,8 +126,8 @@ export const threadSorts = [
         name: 'Video first',
         icon: 'film',
         sort: () => (a, b) => {
-            const hasVideoA = a.media_ext !== null && !isImg(a.media_ext) ? 1 : 0;
-            const hasVideoB = a.media_ext !== null && !isImg(b.media_ext) ? 1 : 0;
+            const hasVideoA = a.media_ext !== null && !isImage(a.media_ext) ? 1 : 0;
+            const hasVideoB = a.media_ext !== null && !isImage(b.media_ext) ? 1 : 0;
             return hasVideoB - hasVideoA;
         }
     },
