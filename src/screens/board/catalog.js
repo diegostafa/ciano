@@ -4,9 +4,10 @@ import { ActivityIndicator, BackHandler, Button, FlatList, Image, TouchableNativ
 import { TextInput } from 'react-native-gesture-handler';
 
 import { BAR_HEIGHT, BAR_WIDTH, Ctx } from '../../app';
-import { catalogModes, catalogSorts, loadBoards, State } from '../../context/state';
-import { loadThreads } from '../../context/temp';
+import { catalogModes, catalogSorts, State } from '../../context/state';
+import { hasBoardsErrors, hasThreadsErrors, isOffline } from '../../context/temp';
 import { Repo } from '../../data/repo';
+import { loadBoards, loadThreads } from '../../data/utils';
 import { Fab, getCurrBoard, HeaderIcon, historyAdd, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, ThemedIcon, ThemedText } from '../../utils';
 import { CREATE_THREAD_KEY } from './create_thread';
 import { SETUP_BOARDS_KEY } from './setup_boards';
@@ -48,9 +49,9 @@ export const CatalogHeaderTitle = () => {
         color: theme.colors.text,
     };
 
-    return <View style={{ flex: 1, flexDirection: 'row', overflow: 'hidden' }}>
+    return <View style={{ flex: 1, width: '100%', margin: 0, flexDirection: 'row', overflow: 'hidden' }}>
         <TouchableNativeFeedback onPress={() => setSelectBoard(true)}>
-            <View>
+            <View style={{ flex: 1 }}>
                 <ThemedText content={`/${board.code}/`} />
                 <ThemedText content={`${board.name}`} />
             </View>
@@ -74,22 +75,26 @@ export const CatalogHeaderTitle = () => {
                             setSelectBoard(false);
                             sailor.navigate(SETUP_BOARDS_KEY);
                         }}>
-                            <View style={{ padding: 15 }}>
+                            <View style={{ padding: 10 }}>
                                 <ThemedIcon name={'settings'} />
                             </View>
                         </TouchableNativeFeedback>
                     </View>
                     <FlatList
+                        ListEmptyComponent={<View style={{ padding: 10 }}>
+                            <ThemedText content={'No boards found'} />
+                        </View>}
                         keyExtractor={item => item.code}
                         data={activeBoards.filter(item => item.name.toLowerCase().includes(filter.toLowerCase()))}
                         renderItem={({ item }) => {
+
                             return <TouchableNativeFeedback onPress={async () => {
                                 const newState = { ...state, board: item.code };
                                 setState(newState);
                                 setSelectBoard(false);
                                 await loadThreads(newState, setTemp, true);
                             }}>
-                                <View style={{ padding: 15 }}>
+                                <View style={{ padding: 15, backgroundColor: item.code === state.board ? theme.colors.highlight : undefined }}>
                                     <ThemedText content={`/${item.code}/ - ${item.name}`} />
                                 </View>
                             </TouchableNativeFeedback>
@@ -99,14 +104,14 @@ export const CatalogHeaderTitle = () => {
     </View >;
 };
 export const CatalogHeaderRight = () => {
-    const { state, setState, temp, setTemp } = React.useContext(Ctx);
+    const { state, setState, temp, setTemp, config, } = React.useContext(Ctx);
     const [catalogActions, setCatalogActions] = React.useState(false);
     const [sortActions, setSortActions] = React.useState(false);
 
     if (!state.board) { return undefined; }
 
     const nextCatalogMode = (state.catalogViewMode + 1) % 2;
-    return <View style={{ flexDirection: 'row' }}>
+    return <View style={{ flexDirection: 'row', }}>
         <HeaderIcon name={'search'} onPress={() => setTemp({ ...temp, catalogFilter: '' })} />
         <HeaderIcon name='ellipsis-vertical' onPress={() => setCatalogActions(true)} />
 
@@ -117,13 +122,13 @@ export const CatalogHeaderRight = () => {
                 items={[
                     ['Refresh', 'refresh', async () => {
                         setCatalogActions(false);
-                        await loadThreads(state, setTemp, true);
+                        await loadThreads(config, state, setTemp, true);
                     },],
                     ['Sort...', "options", () => {
                         setCatalogActions(false);
                         setSortActions(true);
                     }],
-                    ['reverse...', 'reverse', () => {
+                    ['reverse', 'swap-vertical', () => {
                         setCatalogActions(false);
                         setState({ ...state, catalogRev: !state.catalogRev });
                         setTemp({ ...temp, threads: temp.threads.reverse() });
@@ -153,16 +158,15 @@ export const CatalogHeaderRight = () => {
                         setState({ ...state, catalogSort: index });
                         setTemp({ ...temp, threads: temp.threads.sort(sort) });
                         await State.set('catalogSort', index);
-                    }]
+                    }, state.catalogSort === index]
                 })}
             />}
     </View>;
 };
 export const Catalog = () => {
     const { width, height } = useWindowDimensions();
-    const { state, setState, temp, setTemp, } = React.useContext(Ctx);
-    const [showImageActions, setShowImageActions] = React.useState(false);
-    const [noConnectionModal, setNotConnectionModal] = React.useState(false);
+    const { state, setState, temp, config, setTemp, } = React.useContext(Ctx);
+    const [noConnectionModal, setNotConnectionModal] = React.useState(true);
     const sailor = useNavigation();
     const theme = useTheme();
     const listref = useRef();
@@ -183,30 +187,127 @@ export const Catalog = () => {
     );
 
     React.useEffect(() => {
-        setTemp(prev => ({ ...prev, catalogReflist: state.catalogViewMode === 0 ? listref : gridref }))
+        setTemp(prev => ({
+            ...prev,
+            catalogReflist: state.catalogViewMode === 0 ? listref : gridref
+        }))
     }, [state.catalogViewMode, setTemp]);
 
     React.useEffect(() => {
-        if (!state.boards && !temp.isFetchingBoards) {
-            console.log('loading boards');
-            loadBoards(state, setState, setTemp, true);
+        if (hasBoardsErrors(temp) || hasThreadsErrors(temp)) {
+            return;
+        }
+        if (temp.isFetchingBoards) {
+            return;
+        }
+        if (!state.boards) {
+            loadBoards(config, state, setState, setTemp, true);
             return;
         }
         if (!state.board) {
             if (state.activeBoards.length > 0) {
-                console.log('selecting first board');
                 setState({ ...state, board: state.activeBoards[0] });
             }
             return;
         }
-
-        if (!temp.threads && !temp.isFetchingThreads) {
-            console.log('loading threads');
-            loadThreads(state, setTemp, true);
+        if (temp.isFetchingThreads) {
             return;
         }
-    }, [state, setState, setTemp, temp.threads, temp]);
+        if (!temp.threads) {
+            loadThreads(config, state, setTemp, true);
+            return;
+        }
+    }, [state, setState, setTemp, temp.threads, temp, config]);
 
+    if (isOffline(temp) && noConnectionModal && state.showNoConnectionNotice) {
+        return <ModalAlert
+            msg={'It looks like you are offline :(\nYou can still use the app, but with limited functionalities'}
+            noBackdrop={true}
+            visible={noConnectionModal && state.showNoConnectionNotice}
+            onClose={() => { setNotConnectionModal(false); }}
+            left={'Ok, remember this'}
+            right={'Ok'}
+            onPressLeft={async () => {
+                setNotConnectionModal(false);
+                setState({ ...state, showNoConnectionNotice: false });
+                await State.save(state);
+            }}
+            onPressRight={() => { setNotConnectionModal(false); }}
+        />
+    }
+    if (hasBoardsErrors(temp)) {
+        return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
+            {temp.boardsFetchErrorTimeout &&
+                <View>
+                    <ThemedText content={'boardsfetcherror'} />
+                    <ThemedText content={'The server is unreachable'} />
+                    <ThemedText content={'TODO: SAD IMAGE'} />
+                    <Button title={'Retry'} onPress={async () => { await loadThreads(config, state, setTemp, true); }} />
+                </View>
+            }
+            {temp.boardsFetchErrorRequest &&
+                <View>
+                    <ThemedText content={'boardsfetcherror'} />
+                    <ThemedText content={'Malformed request'} />
+                    <ThemedText content={'TODO: SAD IMAGE'} />
+                    <Button title={'Retry'} onPress={async () => { await loadThreads(config, state, setTemp, true); }} />
+                </View>
+            }
+            {temp.boardsFetchErrorResponse &&
+                <View>
+                    <ThemedText content={'boardsfetcherror'} />
+                    <ThemedText content={'The server returned an error'} />
+                    <ThemedText content={'TODO: SAD IMAGE'} />
+                    <Button title={'Retry'} onPress={async () => { await loadThreads(config, state, setTemp, true); }} />
+                </View>
+            }
+            {temp.boardsFetchErrorUnknown &&
+                <View>
+                    <ThemedText content={'boardsfetcherror'} />
+                    <ThemedText content={'The server returned an unknown error'} />
+                    <ThemedText content={'TODO: SAD IMAGE'} />
+                    <Button title={'Retry'} onPress={async () => { await loadThreads(config, state, setTemp, true); }} />
+                </View>
+            }
+        </View>;
+    }
+    if (hasThreadsErrors(temp)) {
+        return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
+            {temp.threadsFetchErrorTimeout &&
+                <View>
+                    <ThemedText content={'threadsfetcherror'} />
+                    <ThemedText content={'The server is unreachable'} />
+                    <ThemedText content={'TODO: SAD IMAGE'} />
+                    <Button title={'Retry'} onPress={async () => { await loadThreads(config, state, setTemp, true); }} />
+                </View>
+            }
+            {temp.threadsFetchErrorRequest &&
+                <View>
+                    <ThemedText content={'threadsfetcherror'} />
+                    <ThemedText content={'Malformed request'} />
+                    <ThemedText content={'TODO: SAD IMAGE'} />
+                    <Button title={'Retry'} onPress={async () => { await loadThreads(config, state, setTemp, true); }} />
+                </View>
+            }
+            {temp.threadsFetchErrorResponse &&
+                <View>
+                    <ThemedText content={'threadsfetcherror'} />
+                    <ThemedText content={'The server returned an error'} />
+                    <ThemedText content={'TODO: SAD IMAGE'} />
+                    <Button title={'Retry'} onPress={async () => { await loadThreads(config, state, setTemp, true); }} />
+                </View>
+            }{
+                temp.threadsFetchErrorUnknown &&
+                <View>
+                    <ThemedText content={'threadsfetcherror'} />
+                    <ThemedText content={'The server returned an unknown error'} />
+                    <ThemedText content={'TODO: SAD IMAGE'} />
+                    <Button title={'Retry'} onPress={async () => { await loadThreads(config, state, setTemp, true); }} />
+                </View>
+            }
+        </View>;
+
+    }
     if (temp.isFetchingBoards) {
         return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
             <ThemedText content={'FETCHING BOARDS'} />
@@ -214,25 +315,7 @@ export const Catalog = () => {
             <ActivityIndicator />
         </View>;
     }
-    if (temp.noConnection && !state.boards) {
-        return <View>
-            <ThemedText content={'This board doesn\'t have any cached thread, try another board'} />
-        </View>
-    }
-    if (state.activeBoards.length === 0) {
-        return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
-            <ThemedText content={'Uhmm, it\'s rather empty in here...'} />
-            <ThemedText content={'You should try to enable at least one board'} />
-        </View>
-    }
-    if (temp.threadsFetchError) {
-        return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
-            <ThemedText content={'FETCH ERROR'} />
-            <ThemedText content={'TODO: SAD IMAGE'} />
-            <Button title={'Retry'} onPress={async () => { await loadThreads(state, setTemp, true); }} />
-        </View>;
-    }
-    if (temp.isFetchingThreads || !temp.threads) {
+    if (temp.isFetchingThreads) {
         return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
             <ActivityIndicator />
             <View>
@@ -243,53 +326,50 @@ export const Catalog = () => {
 
         </View>;
     }
-
+    if (state.activeBoards.length === 0) {
+        return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
+            <ThemedText content={'Uhmm, it\'s rather empty in here...'} />
+            <ThemedText content={'You should try to enable at least one board'} />
+        </View>
+    }
+    if (temp.threads === null) {
+        return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator />
+        </View>;
+    }
     return <View style={{ flex: 1, backgroundColor: theme.colors.card }}>
         {temp.catalogFilter !== null &&
-            <View style={{ height: 30, flex: 1, borderWidth: 1, borderColor: 'red', flexDirection: 'row', justifyContent: 'space-between' }}>
+            <View style={{
+                position: 'absolute',
+                top: 0,
+                backgroundColor: theme.colors.background,
+                width: width,
+                height: BAR_HEIGHT,
+                zIndex: 2,
+                flexDirection: 'row', justifyContent: 'space-between'
+            }}>
                 <TextInput
+                    placeholder='Search...'
                     value={temp.catalogFilter}
                     onChangeText={text => setTemp({ ...temp, catalogFilter: text })}
                     style={{
-                        backgroundColor: theme.colors.highlight,
                         fontSize: 16,
                         padding: 10,
                         color: theme.colors.text,
                         flex: 1,
                     }}
                 />
+                <HeaderIcon name={'close'} onPress={() => { setTemp({ ...temp, catalogFilter: null }); }} />
+
             </View>
         }
-
 
         {catalogModes[state.catalogViewMode] === 'list' ?
             <ListCatalog width={width} height={height} /> :
             <GridCatalog width={width} height={height} />}
+
         <Fab onPress={() => { sailor.navigate(CREATE_THREAD_KEY); }} />
-
         <ModalMediaPreview />
-
-        <ModalMenu
-            visible={showImageActions}
-            onClose={() => setShowImageActions(false)}
-            items={[
-                ['Save...', () => { }],
-                ['Download', () => { }],
-                ['Download', () => { }],
-                ['Download', () => { }],
-            ]} />
-        <ModalAlert
-            msg={'It seems like there is no connection :(\n\nYou can still use the app but you won\'t be able to get or create new content.'}
-            visible={noConnectionModal && state.showNoConnectionNotice}
-            onClose={() => { setNotConnectionModal(false); }}
-            left={'Don\'t show this again'}
-            right={'Ok'}
-            onPressLeft={() => {
-                setNotConnectionModal(false);
-                setState({ ...state, showNoConnectionNotice: false });
-            }}
-            onPressRight={() => { setNotConnectionModal(false); }}
-        />
     </View>;
 };
 
@@ -326,7 +406,7 @@ const GridCatalog = ({ width, height }) => {
             data={temp.threads}
             renderItem={({ item, index }) => <GridTile thread={item} index={index} tw={tw} th={th} />}
             keyExtractor={(item) => item.id}
-            onRefresh={async () => await loadThreads(state, setTemp, true)}
+            onRefresh={async () => await loadThreads(config, state, setTemp, true)}
             refreshing={temp.isFetchingThreads}
             ListEmptyComponent={<NoThreads />}
             ListFooterComponent={CatalogFooter}
@@ -345,7 +425,7 @@ const GridCatalog = ({ width, height }) => {
         data={temp.threads}
         renderItem={({ item, index }) => <GridTile thread={item} index={index} tw={tw} th={th} />}
         keyExtractor={(item) => item.id}
-        onRefresh={async () => await loadThreads(state, setTemp, true)}
+        onRefresh={async () => await loadThreads(config, state, setTemp, true)}
         refreshing={temp.isFetchingThreads}
         ListEmptyComponent={<NoThreads />}
         ListFooterComponent={CatalogFooter}
@@ -355,7 +435,6 @@ const ListCatalog = ({ width, height }) => {
     const { state, temp, setTemp, config } = React.useContext(Ctx);
     const tw = width;
     const th = (height - (BAR_HEIGHT * 2)) / config.catalogListRows;
-    console.log(temp.threads);
     return <FlatList
         key={1}
         ref={temp.catalogReflist}
@@ -367,7 +446,7 @@ const ListCatalog = ({ width, height }) => {
         data={temp.threads}
         renderItem={({ item, index }) => <ListTile thread={item} index={index} tw={tw} th={th} />}
         keyExtractor={(item) => item.id}
-        onRefresh={async () => await loadThreads(state, setTemp, true)}
+        onRefresh={async () => await loadThreads(config, state, setTemp, true)}
         refreshing={temp.isFetchingThreads}
         // ItemSeparatorComponent={ListSeparator}
         ListEmptyComponent={<NoThreads />}
@@ -378,7 +457,7 @@ const GridTile = ({ thread, index, tw, th }) => {
     const { state, setState, temp, setTemp, config } = React.useContext(Ctx);
     const theme = useTheme();
     const sailor = useNavigation();
-    const img = Repo.media.thumb(thread);
+    const img = Repo(config.api).media.thumb(thread);
     const lastThread = state.history.at(-1);
 
     return <View style={{
@@ -436,7 +515,7 @@ const GridTile = ({ thread, index, tw, th }) => {
 const ListTile = ({ thread, index, tw, th }) => {
     const { state, setState, temp, setTemp, config } = React.useContext(Ctx);
     const sailor = useNavigation();
-    const img = Repo.media.thumb(thread);
+    const img = Repo(config.api).media.thumb(thread);
     const theme = useTheme();
     const lastThread = state.history.at(-1);
     const imgH = th - 10;

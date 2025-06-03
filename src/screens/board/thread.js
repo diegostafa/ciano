@@ -9,8 +9,9 @@ import ImageCropPicker from 'react-native-image-crop-picker';
 
 import { Ctx } from '../../app';
 import { threadSorts } from '../../context/state';
-import { loadComments } from '../../context/temp';
+import { hasCommentsErrors } from '../../context/temp';
 import { Repo } from '../../data/repo';
+import { loadComments } from '../../data/utils';
 import { Fab, getCurrBoard, getRepliesTo, HeaderIcon, HtmlHeader, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, quotes, relativeTime, ThemedIcon, ThemedText } from '../../utils';
 export const THREAD_KEY = 'Thread';
 
@@ -32,23 +33,23 @@ export const ThreadHeaderRight = () => {
     const theme = useTheme();
     const [threadActions, setThreadActions] = React.useState(false);
     const [sortActions, setSortActions] = React.useState(false);
-    const isWatching = state.threadWatcher.includes(thread.id);
+    const isWatching = state.watching.includes(thread.id);
 
     const items = [
         [isWatching ? 'Unwatch' : 'Watch', isWatching ? 'eye-off' : 'eye', () => {
             setThreadActions(false);
             if (isWatching) {
-                setState(prev => ({ ...prev, threadWatcher: prev.threadWatcher.filter(item => item !== thread.id) }));
+                setState(prev => ({ ...prev, watching: prev.watching.filter(item => item !== thread.id) }));
             }
             else {
-                setState(prev => ({ ...prev, threadWatcher: [...prev.threadWatcher, thread.id] }));
+                setState(prev => ({ ...prev, watching: [...prev.watching, thread.id] }));
             }
         }],
         ['Sort...', 'options', () => {
             setThreadActions(false);
             setSortActions(true);
         }],
-        ['reverse...', 'reverse', () => {
+        ['reverse', 'swap-vertical', () => {
             setThreadActions(false);
             setState({ ...state, threadRev: !state.threadRev });
             setTemp(prev => ({ ...prev, comments: [...prev.comments].reverse() }));
@@ -129,14 +130,19 @@ export const Thread = () => {
         }, [createComment])
     );
     React.useEffect(() => {
+        if (hasCommentsErrors(temp)) {
+            return;
+        }
         if (!temp.threadReflist) {
             setTemp({ ...temp, threadReflist: reflist });
         }
-        if (!temp.comments && !temp.isFetchingComments || (temp.commentsBoard !== thread.id && !temp.isFetchingComments)) {
-            console.log('loading comments');
-            loadComments(state, setTemp, false);
+        if (temp.isFetchingComments) {
+            return;
         }
-    }, [temp.comments, setTemp, state, temp.isFetchingComments, temp, thread.id])
+        if (!temp.comments || temp.commentsBoard !== thread.id) {
+            loadComments(config, state, setTemp, false);
+        }
+    }, [temp.comments, setTemp, state, temp.isFetchingComments, temp, thread.id, config])
 
     if (temp.isFetchingComments || !temp.comments) {
         return <ScrollView style={{ flex: 1, backgroundColor: theme.colors.card }}>
@@ -159,18 +165,16 @@ export const Thread = () => {
             repliesStack={repliesStack} setRepliesStack={setRepliesStack}
             selectedComment={selectedComment} setSelectedComment={setSelectedComment}
         />
-
-        <ModalMediaPreview />
-
         <RepliesModal
             repliesStack={repliesStack} setRepliesStack={setRepliesStack}
             setSelectedComment={setSelectedComment}
         />
-        {selectedComment && <CommentMenu
-            selectedComment={selectedComment} setSelectedComment={setSelectedComment}
-        />}
+        <ModalMediaPreview />
 
-
+        {selectedComment &&
+            <CommentMenu
+                selectedComment={selectedComment} setSelectedComment={setSelectedComment}
+            />}
         {createComment ?
             (board.max_replies && thread.replies >= board.max_replies ?
                 <ModalAlert
@@ -285,8 +289,8 @@ const CommentList = ({ selectedComment, setSelectedComment, repliesStack, setRep
     const keyExtractor = useCallback((item) => String(item.id), []);
 
     const handleRefresh = useCallback(async () => {
-        await loadComments(state, setTemp, true);
-    }, [setTemp, state]);
+        await loadComments(config, state, setTemp, true);
+    }, [config, setTemp, state]);
 
     return <FlatList
         ref={temp.threadReflist}
@@ -312,7 +316,7 @@ const CommentTile = React.memo(({ comment, index, selectedComment, setSelectedCo
     const replies = getRepliesTo(comments, comment);
     const isMine = state.myComments.includes(comment.id);
     const isQuotingMe = quotes(comment).some(id => state.myComments.includes(id));
-    const img = Repo.media.thumb(comment);
+    const img = Repo(config.api).media.thumb(comment);
     const reply = replies.length === 1 ? 'reply' : 'replies';
     const alias = comment.alias || config.alias || 'Anonymous';
     let style = {
@@ -513,14 +517,14 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                 <View style={{ justifyContent: 'flex-end' }}>
                     <TouchableNativeFeedback onPress={async () => {
                         console.log(form);
-                        const comment = await Repo.comments.create(form);
+                        const comment = await Repo(config.api).comments.create(form);
 
                         setState(prev => ({ ...prev, myComments: [...prev.myComments, comment.id] }))
                         if (config.autoWatchThreads) {
-                            setState(prev => ({ ...prev, threadWatcher: [...prev.threadWatcher, thread.id] }))
+                            setState(prev => ({ ...prev, watching: [...prev.watching, thread.id] }))
                         }
                         setCreateComment(false);
-                        await loadComments(state, setTemp, true);
+                        await loadComments(config, state, setTemp, true);
                     }}>
                         <View style={{ padding: 10, backgroundColor: theme.colors.highlight }}>
                             <ThemedIcon name={'send'} size={22} />
@@ -553,12 +557,10 @@ const CommentMenu = ({ selectedComment, setSelectedComment }) => {
             }
             setSelectedComment(null)
         }],
-        ['Quote', 'comment-text', () => {
-            //   setQuoteList([...quoteList, selectedComment.id])
+        ['Quote', 'chatbox', () => {
             setSelectedComment(null)
         }],
-        ['Quote whole comment', 'comment-text-multiple', () => {
-            //  setQuoteList([...quoteList, selectedComment.id])
+        ['Quote whole comment', 'chatbox-ellipses', () => {
             setSelectedComment(null)
         }],
         ['Copy', 'copy', () => {

@@ -1,8 +1,16 @@
 /* eslint-disable react/react-in-jsx-scope */
-import { View } from 'react-native';
+import { useContext } from 'react';
+import { FlatList } from 'react-native';
+
+import { Ctx } from '../../app';
 
 export const WATCHER_TAB_KEY = 'WatcherTab';
 
-export const NotificationsTab = () => {
-    return <View />
+export const WatcherTab = () => {
+    const { state } = useContext(Ctx);
+
+    return <FlatList
+        data={state.watching}
+        renderItem={({ item }) => item}
+    />
 };

@@ -40,7 +40,6 @@ const HistoryTile = ({ item, tw, th }) => {
     return <TouchableNativeFeedback
         onPress={async () => {
             setState({ ...state, history: await historyAdd(state, thread) });
-            console.log('open thread');
             sailor.navigate(BOTTOM_NAV_KEY, {
                 screen: BOARD_TAB_KEY,
                 params: { screen: THREAD_KEY },

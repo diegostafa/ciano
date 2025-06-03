@@ -1,3 +1,4 @@
+import { addEventListener } from "@react-native-community/netinfo";
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
@@ -13,10 +14,9 @@ import { Temp } from './context/temp.js';
 import { BOARD_TAB_KEY, BoardTab } from './screens/board/tab.js';
 import { THREAD_KEY } from './screens/board/thread.js';
 import { SETTINGS_TAB_KEY, SettingsTab } from './screens/settings/tab.js';
-import { NotificationsTab, WATCHER_TAB_KEY } from './screens/watcher/tab.js';
+import { WATCHER_TAB_KEY, WatcherTab } from './screens/watcher/tab.js';
 import { DarkTheme, LightTheme } from './theme.js';
 import { TabIcon } from './utils';
-
 enableScreens();
 
 export const Tab = createBottomTabNavigator();
@@ -50,6 +50,13 @@ export const App = () => {
         };
         const subscription = AppState.addEventListener('change', handleAppStateChange);
         return () => { subscription.remove(); };
+    }, [config, state]);
+
+    React.useEffect(() => {
+        const unsubscribe = addEventListener(ctx => {
+            setTemp(prev => ({ ...prev, connType: ctx.type }));
+        });
+        return () => { unsubscribe(); };
     }, [config, state]);
 
     if (!state || !config) { return <View><ActivityIndicator /></View>; }
@@ -86,7 +93,7 @@ const BottomNav = () => {
 
             <Tab.Screen
                 name={WATCHER_TAB_KEY}
-                component={NotificationsTab}
+                component={WatcherTab}
                 options={{
                     tabBarIcon: TabIcon('notifications'),
                     headerStyle: { height: BAR_HEIGHT },

@@ -1,15 +1,17 @@
 /* eslint-disable react/display-name */
+import { Marquee } from '@animatereactnative/marquee';
 import { ImageZoom } from '@likashefqet/react-native-image-zoom';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@react-navigation/native';
 import { formatDistanceToNow } from 'date-fns';
 import { filesize } from 'filesize';
 import React, { useRef } from 'react';
-import { ActivityIndicator, Modal, Pressable, Text, TouchableNativeFeedback, TouchableWithoutFeedback, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, Switch, Text, TouchableNativeFeedback, TouchableWithoutFeedback, useWindowDimensions, View } from 'react-native';
 import RNBlobUtil from 'react-native-blob-util';
 import FastImage from 'react-native-fast-image';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import HTMLView from 'react-native-htmlview';
+import Snackbar from 'react-native-snackbar';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
 
@@ -21,28 +23,14 @@ import { DarkHtmlHeaderTheme, DarkHtmlTheme, LightHtmlHeaderTheme, LightHtmlThem
 
 // --- helper functions
 
+const handleStorageError = (err) => {
+    console.log(err);
+};
 export const setLocal = async (key, value) => {
-    return AsyncStorage.setItem(key, JSON.stringify(value));
+    return AsyncStorage.setItem(key, JSON.stringify(value)).catch(handleStorageError);
 };
 export const getLocal = async (key) => {
-    return AsyncStorage.getItem(key).then(res => JSON.parse(res));
-};
-export const getRemote = async ({ key, remote }) => {
-    const newValue = await remote().catch(console.error);
-    await setLocal(key, newValue).catch(console.error);
-    return newValue;
-};
-export const getLocalOrRemote = async ({ key, remote }) => {
-    const value = await getLocal(key).catch(console.error);
-    if (value !== null) {
-        return value;
-    }
-    if (!remote) {
-        return null;
-    }
-    const newValue = await remote().catch(console.error);
-    await setLocal(key, newValue).catch(console.error);
-    return newValue;
+    return AsyncStorage.getItem(key).then(res => { JSON.parse(res) }).catch(handleStorageError);
 };
 export const relativeTime = (tstamp) => {
     return formatDistanceToNow(Number(tstamp) * 1000, { addSuffix: true });
@@ -108,11 +96,10 @@ export const isVideo = (ext) => {
 export const getCurrBoard = (state) => {
     return state.boards.find(item => item.code === state.board);
 }
-const downloadMedia = async (comment) => {
+const downloadMedia = async (setTemp, config, comment) => {
     try {
-        const url = Repo.media.full(comment);
+        const url = Repo(config.api).media.full(comment);
         const savepath = `${RNBlobUtil.fs.dirs.DownloadDir}/${comment.file_name}.${comment.media_ext}`;
-
         const result = await RNBlobUtil.config({
             fileCache: true,
             addAndroidDownloads: {
@@ -122,20 +109,28 @@ const downloadMedia = async (comment) => {
                 description: 'Downloading media file',
             },
         }).fetch('GET', url);
-
-        console.log('Downloaded to:', result.path());
-
-
         if (result.statusCode === 200) {
-            console.log('File downloaded to:', savepath);
-        } else {
-            console.log('Download failed:', result.statusCode);
+            setTemp(prev => ({
+                ...prev,
+                mediaDownloadSuccess: true,
+            }));
         }
-
+        else {
+            setTemp(prev => ({
+                ...prev,
+                mediaDownloadError: "Returned status code " + result.statusCode,
+            }));
+        }
     } catch (error) {
-        console.error('Download failed:', error);
+        setTemp(prev => ({
+            ...prev,
+            mediaDownloadError: "Returned error: " + error,
+        }));
     }
 };
+export const isString = (x) => {
+    return typeof x === 'string';
+}
 
 // --- components
 
@@ -143,14 +138,14 @@ export const ThemedIcon = ({ name, size, color }) => {
     const theme = useTheme();
     return <Icon name={name} size={size || 28} color={color || theme.colors.text} />;
 };
-export const HeaderIcon = ({ name, onPress }) => {
+export const HeaderIcon = ({ name, onPress, size }) => {
     return <View style={{
         overflow: 'hidden',
         borderRadius: '50%',
     }}>
         <TouchableNativeFeedback onPress={onPress}>
             <View style={{ padding: 10 }}>
-                <ThemedIcon name={name} size={26} />
+                <ThemedIcon name={name} size={size || 26} />
             </View>
         </TouchableNativeFeedback>
     </View>;
@@ -206,6 +201,8 @@ export const ModalView = ({ content, visible, onClose, fullscreen, noBackdrop, a
                     backgroundColor: 'rgba(0, 0, 0, 0.5)',
                 }}>
                 <View style={{
+                    borderWidth: fullscreen ? 0 : 1,
+                    borderColor: theme.colors.highlight,
                     width: fullscreen ? '100%' : isVertical ? '90%' : '50%',
                     maxHeight: fullscreen ? '100%' : isVertical ? '80%' : '90%',
                     borderRadius: config.borderRadius,
@@ -219,10 +216,11 @@ export const ModalView = ({ content, visible, onClose, fullscreen, noBackdrop, a
         </TouchableWithoutFeedback>
     </Modal >;
 };
-export const ModalAlert = ({ msg, visible, left, right, onClose, onPressLeft, onPressRight }) => {
+export const ModalAlert = ({ msg, visible, left, right, onClose, onPressLeft, onPressRight, noBackdrop }) => {
     const btnStyle = { padding: 10, flex: 1, alignItems: 'center' };
 
     return <ModalView
+        noBackdrop={noBackdrop}
         visible={visible}
         onClose={onClose}
         content={
@@ -250,17 +248,21 @@ export const ModalAlert = ({ msg, visible, left, right, onClose, onPressLeft, on
     />
 }
 export const ModalMenu = ({ visible, onClose, items }) => {
+    const theme = useTheme();
     const btnStyle = { padding: 15, flexDirection: 'row' };
+    const textStyle = { marginLeft: 15 };
+    const activeTextStyle = { ...textStyle, color: theme.colors.primary };
+
     return <ModalView
         visible={visible}
         onClose={onClose}
         content={
             <View>
-                {items.map(([value, icon, action]) => {
+                {items.map(([value, icon, action, isActive]) => {
                     return <TouchableNativeFeedback key={value} onPress={action}>
                         <View style={btnStyle}>
                             {icon && <ThemedIcon name={icon} size={20} />}
-                            <ThemedText content={capitalize(value)} style={{ marginLeft: 15, }} />
+                            <ThemedText content={capitalize(value)} style={isActive ? activeTextStyle : textStyle} />
                         </View>
                     </TouchableNativeFeedback>
                 })}
@@ -289,7 +291,7 @@ export const HtmlText = React.memo(({ value, onLinkPress }) => {
         stylesheet={theme.dark ? DarkHtmlTheme : LightHtmlTheme}
     />;
 }, (prevProps, nextProps) => prevProps.value === nextProps.value);
-export const HeaderButton = ({ child, isActive, onPress }) => {
+export const HeaderButton = ({ child, enabled, onPress }) => {
     const theme = useTheme();
     const { config } = React.useContext(Ctx);
 
@@ -297,7 +299,7 @@ export const HeaderButton = ({ child, isActive, onPress }) => {
         overflow: 'hidden',
         borderRadius: config.borderRadius,
         marginRight: 5,
-        backgroundColor: isActive ? 'gray' : theme.colors.primary
+        backgroundColor: enabled ? theme.colors.primary : 'gray',
     }}>
         <TouchableNativeFeedback onPress={onPress}>
             <View style={{
@@ -323,6 +325,15 @@ export const ModalMediaPreview = () => {
     const { width, height } = useWindowDimensions();
     const { temp, setTemp } = React.useContext(Ctx);
 
+    React.useEffect(() => {
+        if (temp.mediaDownloadSuccess !== null) {
+            Snackbar.show({
+                text: 'Media downloaded successfully',
+                duration: Snackbar.LENGTH_SHORT,
+            });
+        }
+    }, [temp.mediaDownloadSuccess]);
+
     return <ModalView
         fullscreen={true}
         visible={temp.selectedMediaComment !== null}
@@ -339,9 +350,9 @@ export const ModalMediaPreview = () => {
         }
     />;
 };
-export const MediaPreview = ({ comment, onClose }) => {
+const MediaPreview = ({ comment, onClose }) => {
     const theme = useTheme();
-    const { config } = React.useContext(Ctx);
+    const { temp, setTemp, config } = React.useContext(Ctx);
     const { width, height } = useWindowDimensions();
     const smallest = Math.min(width, height);
     const [isLoading, setIsLoading] = React.useState(true);
@@ -349,13 +360,19 @@ export const MediaPreview = ({ comment, onClose }) => {
     const is_image = isImage(comment.media_ext);
     const is_gif = isGif(comment.media_ext);
     const is_video = isVideo(comment.media_ext);
-    const full = Repo.media.full(comment);
-    const thumb = Repo.media.thumb(comment);
+    const full = Repo(config.api).media.full(comment);
+    const thumb = Repo(config.api).media.thumb(comment);
     const videoref = useRef(null);
 
-
-
     return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+
+        <ModalAlert
+            visible={temp.mediaDownloadError !== null}
+            msg={'The file could not be downloaded'}
+            left={'OK'}
+            onPressLeft={() => { setTemp({ ...temp, mediaDownloadError: null }); }}
+        />
+
         {showHeader &&
             <View style={{
                 top: 0,
@@ -369,14 +386,20 @@ export const MediaPreview = ({ comment, onClose }) => {
                 padding: 10,
                 backgroundColor: theme.colors.overlayBg,
             }}>
-                <ThemedText
-                    style={{ fontWeight: 'bold', }}
-                    content={`${comment.file_name}.${comment.media_ext}  (${filesize(comment.media_size)})`}
-                />
+
+                <Marquee
+                    speed={config.disableMovingElements ? 0 : 0.3}
+                    spacing={100}
+                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
+                    <ThemedText
+                        style={{ fontWeight: 'bold', }}
+                        content={`${comment.file_name}.${comment.media_ext}  (${filesize(comment.media_size)})`}
+                    />
+                </Marquee>
 
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                     <HeaderIcon name={'download'} onPress={async () => {
-                        await downloadMedia(comment);
+                        await downloadMedia(setTemp, config, comment);
                     }} />
                     <HeaderIcon name={'close'} onPress={onClose} />
                 </View>
@@ -454,6 +477,7 @@ export const MediaPreview = ({ comment, onClose }) => {
                 height: '100%',
             }}>
                 <View style={{
+                    maxWidth: '80%',
                     flexDirection: 'row',
                     backgroundColor: theme.colors.background,
                     borderRadius: config.borderRadius,
@@ -461,9 +485,39 @@ export const MediaPreview = ({ comment, onClose }) => {
                     gap: 10,
                 }}>
                     <ActivityIndicator size='large' color='white' />
-                    <ThemedText content={`Loading: ${comment.file_name}.${comment.media_ext}...\nThis might take a while`} />
+                    <ThemedText content={`Loading...\nThis might take a while`} />
                 </View>
             </View>
         </View >}
     </View>;
+};
+export const BooleanConfig = ({ title, description, isEnabled, onToggle }) => {
+    return <View style={{ flexDirection: 'row', padding: 10 }}>
+        <View>
+            <ThemedText content={title} style={{ fontWeight: 'bold' }} />
+            <ThemedText content={description} />
+        </View>
+        <Switch
+            trackColor={{ false: '#767577', true: '#81b0ff' }}
+            thumbColor={isEnabled ? '#f5dd4b' : '#f4f3f4'}
+            ios_backgroundColor="#3e3e3e"
+            onValueChange={onToggle}
+            value={isEnabled}
+        />
+    </View>;
+};
+
+export const Row = ({ children, style, ...rest }) => {
+    return (
+        <View style={[{ flexDirection: 'row' }, style]} {...rest}>
+            {children}
+        </View>
+    );
+};
+export const Col = ({ children, style, ...rest }) => {
+    return (
+        <View style={[{ flexDirection: 'column' }, style]} {...rest}>
+            {children}
+        </View>
+    );
 };

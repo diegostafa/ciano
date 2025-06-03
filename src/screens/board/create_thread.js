@@ -1,16 +1,14 @@
 import { useNavigation, useTheme } from "@react-navigation/native";
 import React from "react";
-import { TouchableNativeFeedback, View } from "react-native";
+import { KeyboardAvoidingView, Platform, TouchableNativeFeedback, View } from "react-native";
 import { TextInput } from "react-native-gesture-handler";
-import ImageCropPicker from "react-native-image-crop-picker";
 
 import { Ctx } from "../../app";
-import { loadThreads } from "../../context/state";
 import { Repo } from "../../data/repo";
-import { Fab, HeaderButton, ModalAlert, ThemedIcon, ThemedText } from "../../utils";
+import { loadThreads } from "../../data/utils";
+import { HeaderButton, ModalAlert, ThemedText } from "../../utils";
 
 export const CREATE_THREAD_KEY = 'CreateThread';
-
 
 export const CreateThreadHeaderTitle = () => {
     const { state } = React.useContext(Ctx);
@@ -25,16 +23,14 @@ export const CreateThreadHeaderRight = () => {
     const form = temp.createThreadForm;
     const sailor = useNavigation();
     const [needsConfirmation, setNeedsConfirmation] = React.useState(false);
-    const theme = useTheme();
 
     return <View style={{
         overflow: 'hidden',
         borderRadius: config.borderRadius,
         marginRight: 5,
-        backgroundColor: needsConfirmation ? 'gray' : theme.colors.primary
     }}>
         <HeaderButton
-            isActive={!needsConfirmation}
+            enabled={true}
             onPress={() => { setNeedsConfirmation(true); }}
             child={<ThemedText content={'Post'} />}
         />
@@ -43,14 +39,13 @@ export const CreateThreadHeaderRight = () => {
             <ModalAlert
                 msg={`You are about to post a thread in /${state.board}/\nThis can't be reversed`}
                 left={'Cancel'}
-                right={'Post'}
+                right={'Submit'}
                 visible={true}
                 onClose={() => { setNeedsConfirmation(false); }}
                 onPressLeft={() => { setNeedsConfirmation(false); }}
                 onPressRight={async () => {
-                    console.log(form);
                     setTemp({ ...temp, creatingThread: true });
-                    await Repo.threads.create(form);
+                    await Repo(config.api).threads.create(form);
                     await loadThreads(state, setState, null, true);
                     sailor.goBack();
                     setTemp({ ...temp, creatingThread: false });
@@ -72,80 +67,67 @@ export const CreateThread = () => {
     });
     const theme = useTheme();
 
-    return <View style={{ flex: 1 }}>
-        <Fab onPress={() => { }} />
-        {form.media && <View />}
+    const outerStyle = {
+        backgroundColor: theme.colors.card,
+        borderBottomLeftRadius: config.borderRadius,
+        borderBottomRightRadius: config.borderRadius,
+        overflow: 'hidden',
+        margin: 10,
+    };
+    const inputStyle = {
+        backgroundColor: theme.colors.highlight,
+        fontSize: 16,
+        paddingLeft: 10,
+        paddingRight: 10,
+        color: theme.colors.text
+    };
 
-        <View>
-            <ThemedText content={'Subject'} />
-            <TextInput
-                value={form.data.alias || ''}
-                style={{
-                    backgroundColor: theme.colors.highlight,
-                    fontSize: 16,
-                    paddingLeft: 20,
-                    color: theme.colors.text
-                }}
-                placeholder='Name (Optional)'
-                onChangeText={(text) => setForm({ ...form, data: { ...form.data, alias: text } })}
-            />
-        </View>
-        <View >
-            <View style={{
-                margin: 10,
-                borderRadius: config.borderRadius,
-                overflow: 'hidden',
-            }}>
+    return <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }} >
+        <View style={{ flex: 1 }}>
+            {form.media &&
+                <View>
+                    <ThemedText content={form.media} />
+                </View>
+            }
+
+            <View style={outerStyle} >
+                <View style={{ padding: 10, }}>
+                    <ThemedText content={'Name'} />
+                </View>
                 <TextInput
                     value={form.data.alias || ''}
-                    style={{
-                        backgroundColor: theme.colors.highlight,
-                        fontSize: 16,
-                        paddingLeft: 20,
-                        color: theme.colors.text
-                    }}
+                    style={inputStyle}
                     placeholder='Name (Optional)'
                     onChangeText={(text) => setForm({ ...form, data: { ...form.data, alias: text } })}
                 />
             </View>
-            <View style={{
-                flexDirection: 'row',
-                marginLeft: 10,
-                marginRight: 10,
-                marginBottom: 10,
-                borderRadius: config.borderRadius,
-                overflow: 'hidden',
-            }}>
-                <View style={{ justifyContent: 'flex-end' }}>
-                    <TouchableNativeFeedback onPress={() => {
-                        ImageCropPicker.openPicker({
-                            mediaType: "video",
-                        }).then((video) => {
-                            // todo: validation
-                            setForm({ ...form, media: video });
-                            console.log(video);
-                        });
-                    }}>
-                        <View style={{ padding: 10, backgroundColor: theme.colors.highlight }}>
-                            <ThemedIcon name={'attach'} size={22} />
-                        </View>
-                    </TouchableNativeFeedback>
-
+            <View style={outerStyle} >
+                <View style={{ padding: 10, }}>
+                    <ThemedText content={'Subject'} />
                 </View>
                 <TextInput
+                    value={form.data.sub || ''}
+                    style={inputStyle}
+                    placeholder='Subject'
+                    multiline
+                    onChangeText={(text) => setForm({ ...form, data: { ...form.data, sub: text } })}
+                />
+            </View>
+            <View style={{
+                ...outerStyle,
+                flex: 1
+            }} >
+                <View style={{ padding: 10, }}>
+                    <ThemedText content={'Comment'} />
+                </View>
+                <TextInput
+                    placeholder="Comment"
                     value={form.data.com || ''}
-                    style={{
-                        flex: 1,
-                        padding: 5,
-                        fontSize: 16,
-                        color: theme.colors.text,
-                        backgroundColor: theme.colors.highlight
-                    }}
-                    placeholder='Comment (max 2000 chars)'
+                    style={{ ...inputStyle, flex: 1, borderWidth: 1, borderColor: 'red' }}
                     multiline
                     onChangeText={(text) => setForm({ ...form, data: { ...form.data, com: text } })}
                 />
             </View>
         </View>
-    </View>;
+    </KeyboardAvoidingView>;
 };

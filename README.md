@@ -13,7 +13,6 @@ todo:
 - app:
   - [ ] add app icon
   - [ ] splash screen
-  - [ ] storage permissions to download media
   - [ ] better error handling and messages
 - history:
   - [ ] add button to clear the history

@@ -1,4 +1,3 @@
-import { Repo } from '../data/repo';
 import { getLocal, getRepliesTo, isImage, quotes, setLocal } from '../utils';
 
 const defaultState = {
@@ -7,7 +6,7 @@ const defaultState = {
     activeBoards: [],
     history: [],
     myComments: [],
-    threadWatcher: [],
+    watching: [],
 
     catalogViewMode: 0,
 
@@ -30,24 +29,10 @@ export const State = {
     restore: async () => {
         const restored = {};
         for (const [key, defaultValue] of Object.entries(defaultState)) {
-            restored[key] = await getLocal(key).catch(() => null) || defaultValue
+            restored[key] = (await getLocal(key).catch(() => null)) || defaultValue
         }
         return restored;
     },
-};
-export const loadBoards = async (state, setState, setTemp, forceRefresh) => {
-    setTemp(temp => ({ ...temp, boardsFetchError: false, isFetchingBoards: true }));
-
-    const boards = forceRefresh ?
-        await Repo.boards.getRemote() :
-        await Repo.boards.getLocalOrRemote();
-
-    if (!boards) {
-        setTemp(temp => ({ ...temp, boardsFetchError: true, isFetchingBoards: false }));
-        return;
-    }
-    setTemp(temp => ({ ...temp, isFetchingBoards: false }));
-    setState({ ...state, boards });
 };
 export const catalogModes = [
     'list',

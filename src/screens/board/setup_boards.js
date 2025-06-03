@@ -3,9 +3,8 @@ import React from "react";
 import { FlatList, TouchableNativeFeedback, View } from "react-native";
 import { TextInput } from "react-native-gesture-handler";
 
-import { Ctx } from "../../app";
-import { loadBoards } from "../../context/state";
-import { arraysDiffer, Fab, HeaderButton, HeaderIcon, ModalAlert, ThemedIcon, ThemedText } from "../../utils";
+import { BAR_HEIGHT, Ctx } from "../../app";
+import { HeaderIcon, ModalView, ThemedText } from "../../utils";
 
 
 export const SETUP_BOARDS_KEY = 'SetupBoards';
@@ -16,26 +15,31 @@ export const SetupBoardsHeaderTitle = () => {
     </View>;
 };
 export const SetupBoardsHeaderRight = () => {
-    const { state, setState, setTemp } = React.useContext(Ctx);
+    const { state, setState, temp, setTemp } = React.useContext(Ctx);
 
     return <View style={{ flexDirection: 'row' }}>
-        <HeaderButton
-            isActive={state.activeBoards.length > 0}
-            onPress={() => { loadBoards(state, setState, setTemp, true); }}
-            child={<ThemedText content={'Done'} />}
-        />
-
-        {/* {temp.setupBoardsFilter !== null ?
+        {temp.setupBoardsFilter !== null ?
             <HeaderIcon name={'close'} onPress={() => { setTemp({ ...temp, setupBoardsFilter: null }); }} /> :
-            <HeaderIcon name={'search'} onPress={() => { setTemp({ ...temp, setupBoardsFilter: '' }); }} />
-        } */}
+            <View style={{ flexDirection: 'row' }}>
+                <HeaderIcon name={'reload'} onPress={async () => {
+                    await loadBoards(state, setState, setTemp, true);
+                }} />
+                <HeaderIcon name={'search'} onPress={() => { setTemp({ ...temp, setupBoardsFilter: '' }); }} />
+            </View>
+        }
     </View>;
 };
 export const SetupBoards = () => {
     const { state, setState, temp, setTemp } = React.useContext(Ctx);
+    const theme = useTheme();
     const sailor = useNavigation();
     const [activeBoards, setActiveBoards] = React.useState(state.activeBoards);
-    const [isDirty, setIsDirty] = React.useState(false);
+    const [showInfo, setShowInfo] = React.useState(null);
+    const infoOuter = {
+        flexDirection: 'row', justifyContent: 'space-between',
+        paddingRight: 15,
+        paddingLeft: 15,
+    };
 
     React.useEffect(() => {
         const unsubscribe = sailor.addListener('beforeRemove', (e) => {
@@ -44,84 +48,135 @@ export const SetupBoards = () => {
                 e.preventDefault();
                 return;
             }
-            if (arraysDiffer(activeBoards, state.activeBoards)) {
-                setIsDirty(true);
-                e.preventDefault();
-                return;
-            }
+            setState(prev => ({ ...prev, activeBoards: activeBoards.sort((a, b) => a.code > b.code) }));
+            return;
 
         });
         return unsubscribe;
 
-    }, [sailor, isDirty, temp, activeBoards, state.activeBoards, setTemp]);
+    }, [activeBoards, sailor, setState, setTemp, temp]);
 
 
     return <View style={{ flex: 1 }}>
         {temp.setupBoardsFilter !== null &&
-            <View style={{ padding: 5, borderWidth: 1, backgroundColor: '#333333', flexDirection: 'row', justifyContent: 'space-between' }}>
-                <View style={{ flex: 1 }}>
+            <View style={{ height: BAR_HEIGHT, borderWidth: 1, backgroundColor: theme.colors.card, flexDirection: 'row', justifyContent: 'space-between' }}>
+                <View style={{ flex: 1, padding: 5 }}>
                     <TextInput placeholder="Search..." onChangeText={text => setTemp({ ...temp, setupBoardsFilter: text })} />
                 </View>
                 <HeaderIcon name={'close'} onPress={() => { setTemp({ ...temp, setupBoardsFilter: null }); }} />
             </View>}
 
         <FlatList
-            data={state.boards.filter(item => item.name.toLowerCase().includes((temp.setupBoardsFilter || '').toLowerCase()))}
+            data={state.boards.filter(item => item.name.toLowerCase().includes((temp.setupBoardsFilter || '').toLowerCase())).sort((a, b) => a.code > b.code)}
             keyExtractor={(item) => item.code}
-            renderItem={({ item }) => <BoardItem item={item} activeBoards={activeBoards} setActiveBoards={setActiveBoards} />}
-            ListEmptyComponent={<ThemedText content={'No boards found'} />}
+            renderItem={({ item }) => <BoardItem item={item} setShowInfo={setShowInfo} activeBoards={activeBoards} setActiveBoards={setActiveBoards} />}
+            ListEmptyComponent={<NoBoardsFound />}
+            ListFooterComponent={<View style={{ padding: 10, gap: 10, }}>
+                <ThemedText content={'Selected boards: ' + activeBoards.length} />
+                <ThemedText content={'Total boards: ' + state.boards.length} />
+            </View>}
         />
 
-        {isDirty && <ModalAlert
-            msg={'You are about to go back, but there are unsaved changes'}
-            left={'discard'}
-            right={'save'}
-            visible={isDirty}
-            onClose={() => setIsDirty(false)}
-            onPressLeft={() => {
-                setIsDirty(false);
-                sailor.goBack();
-            }}
-            onPressRight={() => {
-                setIsDirty(false);
-                setState({ ...state, activeBoards: activeBoards });
-                sailor.goBack();
-            }}
-        />
+        {showInfo &&
+            <ModalView
+                visible={showInfo !== null}
+                onClose={() => { setShowInfo(null) }}
+                content={
+                    <View style={{ gap: 15, paddingTop: 15, paddingBottom: 15, }}>
+                        {showInfo.code &&
+                            <View style={infoOuter}>
+                                <ThemedText content={`Code:`} />
+                                <ThemedText content={showInfo.code} />
+                            </View>}
+                        {showInfo.name &&
+                            <View style={infoOuter}>
+                                <ThemedText content={`Name:`} />
+                                <ThemedText content={showInfo.name} />
+                            </View>}
+                        {showInfo.description &&
+                            <View style={infoOuter}>
+                                <ThemedText content={`Description:`} />
+                                <ThemedText content={showInfo.description} />
+                            </View>}
+                        {showInfo.max_sub_len &&
+                            <View style={infoOuter}>
+                                <ThemedText content={`Max subject length:`} />
+                                <ThemedText content={showInfo.max_sub_len} />
+                            </View>}
+                        {showInfo.max_com_len &&
+                            <View style={infoOuter}>
+                                <ThemedText content={`Max comment length:`} />
+                                <ThemedText content={showInfo.max_com_len} />
+                            </View>}
+                        {showInfo.max_threads &&
+                            <View style={infoOuter}>
+                                <ThemedText content={`Max threads:`} />
+                                <ThemedText content={showInfo.max_threads} />
+                            </View>}
+                        {showInfo.max_replies &&
+                            <View style={infoOuter}>
+                                <ThemedText content={`Max replies per thread}`} />
+                                <ThemedText content={showInfo.max_replies} />
+                            </View>}
+                        {showInfo.max_img_replies &&
+                            <View style={infoOuter}>
+                                <ThemedText content={`Max images per thread:`} />
+                                <ThemedText content={showInfo.max_img_replies} />
+                            </View>}
+                        {showInfo.max_file_size &&
+                            <View style={infoOuter}>
+                                <ThemedText content={`Max media size:`} />
+                                <ThemedText content={showInfo.max_file_size} /></View>}
+                        {showInfo.is_nsfw &&
+                            <View style={infoOuter}>
+                                <ThemedText content={`Is NSFW:`} />
+                                <ThemedText content={showInfo.is_nsfw ? 'yes' : 'no'} />
+                            </View>}
+                    </View>
+                }
+            />
         }
 
-        {temp.setupBoardsFilter === null && <Fab
-            onPress={() => { setTemp({ ...temp, setupBoardsFilter: '' }); }}
-            child={<ThemedIcon name={'search'} />} />}
     </View>;
 };
-const BoardItem = ({ item, activeBoards, setActiveBoards }) => {
+const BoardItem = ({ item, activeBoards, setActiveBoards, setShowInfo }) => {
     const theme = useTheme();
     const { config } = React.useContext(Ctx);
     const style = {
-        borderRadius: 10,
         padding: 10,
-        backgroundColor: theme.colors.highlight,
-        borderWidth: 1,
-        flexDirection: 'row', justifyContent: 'space-between'
+        overflow: 'hidden',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignContent: 'center', alignItems: 'center',
+        backgroundColor: theme.colors.card,
+        flex: 1,
     };
     const selectedStyle = {
         ...style,
         backgroundColor: 'darkgreen'
     };
 
-    return <View style={{ margin: 5, overflow: 'hidden', borderRadius: config.borderRadius }}>
-        <TouchableNativeFeedback onPress={() => {
-            setActiveBoards(prev => {
-                const index = prev.indexOf(item.code);
-                return index > -1 ?
-                    [...prev.slice(0, index), ...prev.slice(index + 1)] :
-                    [...prev, item.code];
-            });
-        }}>
+    return <View style={{ flex: 1, margin: 5, borderRadius: config.borderRadius, overflow: 'hidden', flexDirection: 'row' }}>
+        <TouchableNativeFeedback
+            onLongPress={() => { setShowInfo(item); }}
+            onPress={() => {
+                setActiveBoards(prev => {
+                    const index = prev.indexOf(item.code);
+                    return index > -1 ?
+                        [...prev.slice(0, index), ...prev.slice(index + 1)] :
+                        [...prev, item.code];
+                });
+            }}>
             <View style={activeBoards.includes(item.code) ? selectedStyle : style} >
-                <ThemedText content={`/${item.code}/ - ${item.name}`} />
+                <ThemedText style={{}} content={`/${item.code}/ - ${item.name}`} />
             </View>
         </TouchableNativeFeedback>
+
+    </View>;
+};
+
+const NoBoardsFound = () => {
+    return <View>
+        <ThemedText content={'No boards found'} />
     </View>;
 };

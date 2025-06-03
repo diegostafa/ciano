@@ -1,17 +1,16 @@
+import { api } from "../data/api";
 import { getLocal, setLocal } from "../utils";
 
 const defaultConfig = {
     // appearance
+    themeMode: 2, // 0:light, 1:dark, 2:auto
     themeLight: null,
     themeDark: null,
-    borderRadius: 10,
-    catalogGridCols: 3,
-    catalogGridRows: 4,
-    catalogGridColsLandscape: 5,
-    catalogGridRowsLandscape: 2,
-    catalogListRows: 7,
-    catalogListRowsLandscape: 3,
     relativeTime: false,
+    catalogGridCols: 3, catalogGridRows: 4,
+    catalogGridColsLandscape: 5, catalogGridRowsLandscape: 2,
+    catalogListRows: 7, catalogListRowsLandscape: 3,
+    borderRadius: 10,
 
     // accessibility
     disableMovingElements: false,
@@ -26,7 +25,7 @@ const defaultConfig = {
     loopVideos: true,
 
     // advanced
-    backend: 0,
+    api: api.ciano,
 
 };
 export const Config = {
@@ -40,7 +39,7 @@ export const Config = {
     restore: async () => {
         const restored = {};
         for (const [key, defaultValue] of Object.entries(defaultConfig)) {
-            restored[key] = await getLocal(key).catch(() => null) || defaultValue
+            restored[key] = (await getLocal(key).catch(() => null)) || defaultValue
         }
         return restored;
     },
