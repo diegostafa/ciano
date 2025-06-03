@@ -9,16 +9,11 @@ run with:
 - `npx react-native run-android`
 
 todo:
-
-- app:
-  - [ ] add app icon
-  - [ ] splash screen
-  - [ ] better error handling and messages
-- history:
-  - [ ] add button to clear the history
-  - [ ] add input to filter the history
-- settings:
-  - [ ] fill the various sections (appearance, accessibility ...)
-- notifications:
-  - show indicator in bottom nav
-  - when opening a thread, reset the notification counter
+- add app icon
+- splash screen
+- better error handling, messages and images
+- fix light and dark theme
+- use opacity button for ios
+- add history drawer
+- add settings pages
+- thread watcher tab
