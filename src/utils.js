@@ -23,14 +23,11 @@ import { DarkHtmlHeaderTheme, DarkHtmlTheme, LightHtmlHeaderTheme, LightHtmlThem
 
 // --- helper functions
 
-const handleStorageError = (err) => {
-    console.log(err);
-};
 export const setLocal = async (key, value) => {
-    return AsyncStorage.setItem(key, JSON.stringify(value)).catch(handleStorageError);
+    return AsyncStorage.setItem(key, JSON.stringify(value));
 };
 export const getLocal = async (key) => {
-    return AsyncStorage.getItem(key).then(res => { JSON.parse(res) }).catch(handleStorageError);
+    return AsyncStorage.getItem(key).then(res => JSON.parse(res));
 };
 export const relativeTime = (tstamp) => {
     return formatDistanceToNow(Number(tstamp) * 1000, { addSuffix: true });

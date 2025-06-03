@@ -54,8 +54,8 @@ export const hasCommentsErrors = (temp) => {
         temp.commentsFetchErrorResponse !== null ||
         temp.commentsFetchErrorUnknown !== null;
 };
-export const isOffline = (temp) => {
-    return temp.connType === "none";
+export const isOnline = (temp) => {
+    return temp.connType !== "none";
 };
 
 export const Temp = {

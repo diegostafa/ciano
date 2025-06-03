@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const BLU_SERVER = `http://192.168.4.5:3000`;
 const CHAN_SERVER = 'https://a.4cdn.org';
-const TIMEOUT = 10000;
+const TIMEOUT = 8000;
 
 
 export const api = {

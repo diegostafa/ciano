@@ -5,7 +5,7 @@ import { TextInput } from 'react-native-gesture-handler';
 
 import { BAR_HEIGHT, BAR_WIDTH, Ctx } from '../../app';
 import { catalogModes, catalogSorts, State } from '../../context/state';
-import { hasBoardsErrors, hasThreadsErrors, isOffline } from '../../context/temp';
+import { hasBoardsErrors, hasThreadsErrors, isOnline } from '../../context/temp';
 import { Repo } from '../../data/repo';
 import { loadBoards, loadThreads } from '../../data/utils';
 import { Fab, getCurrBoard, HeaderIcon, historyAdd, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, ThemedIcon, ThemedText } from '../../utils';
@@ -219,7 +219,7 @@ export const Catalog = () => {
         }
     }, [state, setState, setTemp, temp.threads, temp, config]);
 
-    if (isOffline(temp) && noConnectionModal && state.showNoConnectionNotice) {
+    if (!isOnline(temp) && noConnectionModal && state.showNoConnectionNotice) {
         return <ModalAlert
             msg={'It looks like you are offline :(\nYou can still use the app, but with limited functionalities'}
             noBackdrop={true}
@@ -229,51 +229,52 @@ export const Catalog = () => {
             right={'Ok'}
             onPressLeft={async () => {
                 setNotConnectionModal(false);
-                setState({ ...state, showNoConnectionNotice: false });
-                await State.save(state);
+                const newState = { ...state, showNoConnectionNotice: false };
+                setState(newState);
+                await State.save(newState);
             }}
             onPressRight={() => { setNotConnectionModal(false); }}
         />
     }
     if (hasBoardsErrors(temp)) {
         return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
-            {temp.boardsFetchErrorTimeout &&
+            {temp.boardsFetchErrorTimeout !== null &&
                 <View>
                     <ThemedText content={'boardsfetcherror'} />
                     <ThemedText content={'The server is unreachable'} />
                     <ThemedText content={'TODO: SAD IMAGE'} />
-                    <Button title={'Retry'} onPress={async () => { await loadThreads(config, state, setTemp, true); }} />
+                    <Button title={'Retry'} onPress={async () => { await loadBoards(config, state, setState, setTemp, true); }} />
                 </View>
             }
-            {temp.boardsFetchErrorRequest &&
+            {temp.boardsFetchErrorRequest !== null &&
                 <View>
                     <ThemedText content={'boardsfetcherror'} />
                     <ThemedText content={'Malformed request'} />
                     <ThemedText content={'TODO: SAD IMAGE'} />
-                    <Button title={'Retry'} onPress={async () => { await loadThreads(config, state, setTemp, true); }} />
+                    <Button title={'Retry'} onPress={async () => { await loadBoards(config, state, setState, setTemp, true); }} />
                 </View>
             }
-            {temp.boardsFetchErrorResponse &&
+            {temp.boardsFetchErrorResponse !== null &&
                 <View>
                     <ThemedText content={'boardsfetcherror'} />
                     <ThemedText content={'The server returned an error'} />
                     <ThemedText content={'TODO: SAD IMAGE'} />
-                    <Button title={'Retry'} onPress={async () => { await loadThreads(config, state, setTemp, true); }} />
+                    <Button title={'Retry'} onPress={async () => { await loadBoards(config, state, setState, setTemp, true); }} />
                 </View>
             }
-            {temp.boardsFetchErrorUnknown &&
+            {temp.boardsFetchErrorUnknown !== null &&
                 <View>
                     <ThemedText content={'boardsfetcherror'} />
                     <ThemedText content={'The server returned an unknown error'} />
                     <ThemedText content={'TODO: SAD IMAGE'} />
-                    <Button title={'Retry'} onPress={async () => { await loadThreads(config, state, setTemp, true); }} />
+                    <Button title={'Retry'} onPress={async () => { await loadBoards(config, state, setState, setTemp, true); }} />
                 </View>
             }
         </View>;
     }
     if (hasThreadsErrors(temp)) {
         return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
-            {temp.threadsFetchErrorTimeout &&
+            {temp.threadsFetchErrorTimeout !== null &&
                 <View>
                     <ThemedText content={'threadsfetcherror'} />
                     <ThemedText content={'The server is unreachable'} />
@@ -281,7 +282,7 @@ export const Catalog = () => {
                     <Button title={'Retry'} onPress={async () => { await loadThreads(config, state, setTemp, true); }} />
                 </View>
             }
-            {temp.threadsFetchErrorRequest &&
+            {temp.threadsFetchErrorRequest !== null &&
                 <View>
                     <ThemedText content={'threadsfetcherror'} />
                     <ThemedText content={'Malformed request'} />
@@ -289,7 +290,7 @@ export const Catalog = () => {
                     <Button title={'Retry'} onPress={async () => { await loadThreads(config, state, setTemp, true); }} />
                 </View>
             }
-            {temp.threadsFetchErrorResponse &&
+            {temp.threadsFetchErrorResponse !== null &&
                 <View>
                     <ThemedText content={'threadsfetcherror'} />
                     <ThemedText content={'The server returned an error'} />
@@ -297,7 +298,7 @@ export const Catalog = () => {
                     <Button title={'Retry'} onPress={async () => { await loadThreads(config, state, setTemp, true); }} />
                 </View>
             }{
-                temp.threadsFetchErrorUnknown &&
+                temp.threadsFetchErrorUnknown !== null &&
                 <View>
                     <ThemedText content={'threadsfetcherror'} />
                     <ThemedText content={'The server returned an unknown error'} />
@@ -486,6 +487,7 @@ const GridTile = ({ thread, index, tw, th }) => {
             onPress={async () => {
                 const history = await historyAdd(state, thread)
                 setState({ ...state, history });
+                setTemp(prev => ({ ...prev, thread }));
                 sailor.navigate(THREAD_KEY);
             }}>
             <View style={{

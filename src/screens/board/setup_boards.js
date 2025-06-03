@@ -1,9 +1,11 @@
 import { useNavigation, useTheme } from "@react-navigation/native";
 import React from "react";
-import { FlatList, TouchableNativeFeedback, View } from "react-native";
+import { ActivityIndicator, Button, FlatList, TouchableNativeFeedback, View } from "react-native";
 import { TextInput } from "react-native-gesture-handler";
 
 import { BAR_HEIGHT, Ctx } from "../../app";
+import { hasBoardsErrors } from "../../context/temp";
+import { loadBoards } from "../../data/utils";
 import { HeaderIcon, ModalView, ThemedText } from "../../utils";
 
 
@@ -15,14 +17,14 @@ export const SetupBoardsHeaderTitle = () => {
     </View>;
 };
 export const SetupBoardsHeaderRight = () => {
-    const { state, setState, temp, setTemp } = React.useContext(Ctx);
+    const { state, setState, temp, setTemp, config } = React.useContext(Ctx);
 
     return <View style={{ flexDirection: 'row' }}>
         {temp.setupBoardsFilter !== null ?
             <HeaderIcon name={'close'} onPress={() => { setTemp({ ...temp, setupBoardsFilter: null }); }} /> :
             <View style={{ flexDirection: 'row' }}>
                 <HeaderIcon name={'reload'} onPress={async () => {
-                    await loadBoards(state, setState, setTemp, true);
+                    await loadBoards(config, state, setState, setTemp, true);
                 }} />
                 <HeaderIcon name={'search'} onPress={() => { setTemp({ ...temp, setupBoardsFilter: '' }); }} />
             </View>
@@ -30,7 +32,7 @@ export const SetupBoardsHeaderRight = () => {
     </View>;
 };
 export const SetupBoards = () => {
-    const { state, setState, temp, setTemp } = React.useContext(Ctx);
+    const { state, setState, temp, setTemp, config } = React.useContext(Ctx);
     const theme = useTheme();
     const sailor = useNavigation();
     const [activeBoards, setActiveBoards] = React.useState(state.activeBoards);
@@ -56,6 +58,74 @@ export const SetupBoards = () => {
 
     }, [activeBoards, sailor, setState, setTemp, temp]);
 
+
+    React.useEffect(() => {
+        if (hasBoardsErrors(temp)) {
+            return;
+        }
+        if (state.isFetchingBoards) {
+            return;
+        }
+        if (!state.boards) {
+            loadBoards(config, state, setState, setTemp, true);
+            return;
+        }
+    }, [config, setState, setTemp, state, temp]);
+
+    console.log("here1");
+    if (hasBoardsErrors(temp)) {
+        return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
+            {temp.boardsFetchErrorTimeout !== null &&
+                <View>
+                    <ThemedText content={'boardsfetcherror'} />
+                    <ThemedText content={'The server is unreachable'} />
+                    <ThemedText content={'TODO: SAD IMAGE'} />
+                    <Button title={'Retry'} onPress={async () => { await loadBoards(config, state, setState, setTemp, true); }} />
+                </View>
+            }
+            {temp.boardsFetchErrorRequest !== null &&
+                <View>
+                    <ThemedText content={'boardsfetcherror'} />
+                    <ThemedText content={'Malformed request'} />
+                    <ThemedText content={'TODO: SAD IMAGE'} />
+                    <Button title={'Retry'} onPress={async () => { await loadBoards(config, state, setTemp, true); }} />
+                </View>
+            }
+            {temp.boardsFetchErrorResponse !== null &&
+                <View>
+                    <ThemedText content={'boardsfetcherror'} />
+                    <ThemedText content={'The server returned an error'} />
+                    <ThemedText content={'TODO: SAD IMAGE'} />
+                    <Button title={'Retry'} onPress={async () => { await loadBoards(config, state, setTemp, true); }} />
+                </View>
+            }
+            {temp.boardsFetchErrorUnknown !== null &&
+                <View>
+                    <ThemedText content={'boardsfetcherror'} />
+                    <ThemedText content={'The server returned an unknown error'} />
+                    <ThemedText content={'TODO: SAD IMAGE'} />
+                    <Button title={'Retry'} onPress={async () => { await loadBoards(config, state, setTemp, true); }} />
+                </View>
+            }
+        </View>;
+    }
+    console.log("here2");
+    if (temp.isFetchingBoards) {
+        return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
+            <ThemedText content={'FETCHING BOARDS'} />
+            <ThemedText content={'TODO: COOL IMAGE'} />
+            <ActivityIndicator />
+        </View>;
+    }
+    console.log("here3");
+
+    if (state.boards === null) {
+        return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator />
+        </View>;
+    }
+
+    console.log("here4");
 
     return <View style={{ flex: 1 }}>
         {temp.setupBoardsFilter !== null &&
