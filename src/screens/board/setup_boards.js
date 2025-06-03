@@ -72,7 +72,6 @@ export const SetupBoards = () => {
         }
     }, [config, setState, setTemp, state, temp]);
 
-    console.log("here1");
     if (hasBoardsErrors(temp)) {
         return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
             {temp.boardsFetchErrorTimeout !== null &&
@@ -109,7 +108,6 @@ export const SetupBoards = () => {
             }
         </View>;
     }
-    console.log("here2");
     if (temp.isFetchingBoards) {
         return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
             <ThemedText content={'FETCHING BOARDS'} />
@@ -117,16 +115,11 @@ export const SetupBoards = () => {
             <ActivityIndicator />
         </View>;
     }
-    console.log("here3");
-
     if (state.boards === null) {
         return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
             <ActivityIndicator />
         </View>;
     }
-
-    console.log("here4");
-
     return <View style={{ flex: 1 }}>
         {temp.setupBoardsFilter !== null &&
             <View style={{ height: BAR_HEIGHT, borderWidth: 1, backgroundColor: theme.colors.card, flexDirection: 'row', justifyContent: 'space-between' }}>
