@@ -186,7 +186,7 @@ export const Thread = () => {
                 /> :
                 <CreateCommentForm setCreateComment={setCreateComment} form={form} setForm={setForm} />
             ) :
-            <Fab onPress={() => { setCreateComment(true) }} />}
+            config.api.name === 'ciano' && <Fab onPress={() => { setCreateComment(true) }} />}
 
 
     </View>;
@@ -273,6 +273,7 @@ const CommentList = ({ selectedComment, setSelectedComment, repliesStack, setRep
     const { state, config, temp, setTemp } = React.useContext(Ctx);
     const { width } = useWindowDimensions();
 
+
     const renderItem = useCallback(({ item, index }) => (
         <CommentTile
             comment={item}
@@ -308,11 +309,15 @@ const CommentList = ({ selectedComment, setSelectedComment, repliesStack, setRep
         refreshing={temp.isFetchingComments}
         ListEmptyComponent={EmptyComponent} />;
 };
-const CommentTile = React.memo(({ comment, index, selectedComment, setSelectedComment, tw, repliesStack, setRepliesStack }) => {
+const CommentTile = React.memo(({ comment, index, selectedComment, setSelectedComment, repliesStack, setRepliesStack }) => {
     const { state, config, temp, setTemp, } = React.useContext(Ctx);
+    const { width, height } = useWindowDimensions() || {}
+    const isVertical = width < height;
+
+
     const comments = temp.comments || [];
     const theme = useTheme();
-    const thumbWidth = tw / 4;
+    const thumbWidth = isVertical ? width / 4 : height / 4;
     const replies = getRepliesTo(comments, comment);
     const isMine = state.myComments.includes(comment.id);
     const isQuotingMe = quotes(comment).some(id => state.myComments.includes(id));
@@ -355,8 +360,8 @@ const CommentTile = React.memo(({ comment, index, selectedComment, setSelectedCo
                     <View style={{ flexDirection: 'row' }}>
                         {img &&
                             <TouchableNativeFeedback
-                                onPress={() => { setTemp(prev => ({ ...prev, selectedMediaComment: index })); }}>
-                                <Image src={img} resizeMode="contain" style={{ borderRadius: config.borderRadius, width: thumbWidth, height: thumbWidth, marginRight: 8 }} />
+                                onPress={() => { setTemp(prev => ({ ...prev, selectedMediaComment: comment })); }}>
+                                <Image src={img} style={{ borderRadius: config.borderRadius, width: thumbWidth, height: thumbWidth, marginRight: 8 }} />
                             </TouchableNativeFeedback>}
 
                         <View style={{ flex: 1 }}>
@@ -369,7 +374,7 @@ const CommentTile = React.memo(({ comment, index, selectedComment, setSelectedCo
 
                             {img &&
                                 <View>
-                                    <HtmlText value={`<info>File: ${comment.filename}.${comment.media_ext}</info>`} />
+                                    <HtmlText value={`<info>File: ${comment.file_name}.${comment.media_ext}</info>`} />
                                     {comment.media_size && <HtmlText value={`<info>Size: ${filesize(comment.media_size)} </info>`} />}
                                 </View>}
                         </View>
@@ -548,15 +553,6 @@ const CommentMenu = ({ selectedComment, setSelectedComment }) => {
     const { state, setState, temp, config } = React.useContext(Ctx);
     const isMine = state.myComments.includes(selectedComment.id);
     const items = [
-        [isMine ? 'Unmark as yours' : 'Mark as yours', isMine ? 'arrow-undo' : 'checkmark', () => {
-            if (isMine) {
-                setState({ ...state, myComments: state.myComments.filter(item => item !== selectedComment.id) })
-            }
-            else {
-                setState({ ...state, myComments: [...state.myComments, selectedComment.id] })
-            }
-            setSelectedComment(null)
-        }],
         ['Quote', 'chatbox', () => {
             setSelectedComment(null)
         }],
@@ -565,6 +561,15 @@ const CommentMenu = ({ selectedComment, setSelectedComment }) => {
         }],
         ['Copy', 'copy', () => {
             // todo
+            setSelectedComment(null)
+        }],
+        [isMine ? 'Unmark as yours' : 'Mark as yours', isMine ? 'arrow-undo' : 'checkmark', () => {
+            if (isMine) {
+                setState({ ...state, myComments: state.myComments.filter(item => item !== selectedComment.id) })
+            }
+            else {
+                setState({ ...state, myComments: [...state.myComments, selectedComment.id] })
+            }
             setSelectedComment(null)
         }],
     ];

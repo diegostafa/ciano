@@ -17,7 +17,7 @@ export const Repo = (api) => {
         },
         boards: {
             getLocalOrRemote: async () => {
-                return getLocalOrRemote({ key: `boards`, remote: () => api.getBoards() });
+                return getLocalOrRemote({ key: `${api.name}/boards`, remote: () => api.getBoards() });
             },
             getRemote: async () => {
                 return api.getBoards();
@@ -25,27 +25,27 @@ export const Repo = (api) => {
         },
         threads: {
             set: async (threads) => {
-                return setLocal('board', threads);
+                return setLocal(`${api.name}/board`, threads);
             },
             getLocal: async (boardId) => {
-                return getLocal(`board/${boardId}`);
+                return getLocal(`${api.name}/board/${boardId}`);
             },
             getLocalOrRemote: async (boardId) => {
-                return getLocalOrRemote({ key: `board/${boardId}`, remote: () => api.getThreads(boardId) });
+                return getLocalOrRemote({ key: `${api.name}board/${boardId}`, remote: () => api.getThreads(boardId) });
             },
             getRemote: async (boardId) => {
-                return getRemote({ key: `board/${boardId}`, remote: () => api.getThreads(boardId) });
+                return getRemote({ key: `${api.name}board/${boardId}`, remote: () => api.getThreads(boardId) });
             },
         },
         comments: {
             getLocal: async (boardId, threadId) => {
-                return getLocal(`board/${boardId}/thread/${threadId}`);
+                return getLocal(`${api.name}board/${boardId}/thread/${threadId}`);
             },
             getLocalOrRemote: async (boardId, threadId) => {
-                return getLocalOrRemote({ key: `board/${boardId}/thread/${threadId}`, remote: () => api.getComments(boardId, threadId) });
+                return getLocalOrRemote({ key: `${api.name}board/${boardId}/thread/${threadId}`, remote: () => api.getComments(boardId, threadId) });
             },
             getRemote: async (boardId, threadId) => {
-                return getRemote({ key: `board/${boardId}/thread/${threadId}`, remote: () => api.getComments(boardId, threadId) });
+                return getRemote({ key: `${api.name}board/${boardId}/thread/${threadId}`, remote: () => api.getComments(boardId, threadId) });
             },
             create: async (form) => {
                 return api.postComment(form);

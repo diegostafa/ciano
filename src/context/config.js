@@ -25,7 +25,7 @@ const defaultConfig = {
     loopVideos: true,
 
     // advanced
-    api: api.ciano,
+    api: api.chan,
 
 };
 export const Config = {

@@ -49,7 +49,6 @@ export const loadThreads = async (conf, state, setTemp, forceRefresh) => {
         let threads = forceRefresh ?
             await Repo(conf.api).threads.getRemote(board) :
             await Repo(conf.api).threads.getLocalOrRemote(board);
-
         const sort = catalogSorts[state.catalogSort].sort;
         threads = threads.sort((a, b) => sort(a, b) * (state.catalogRev ? -1 : 1));
         setTemp(prev => ({ ...prev, threads }));

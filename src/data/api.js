@@ -1,18 +1,17 @@
 import axios from 'axios';
 
-const BLU_SERVER = `http://192.168.4.5:3000`;
+const BLU_SERVER = `http://192.168.250.97:3000`;
 const CHAN_SERVER = 'https://a.4cdn.org';
 const TIMEOUT = 8000;
-
 
 export const api = {
     ciano: {
         name: 'ciano',
         thumb: (comment) => {
-            if (!comment || !comment.media_name) {
+            if (!comment || !comment.thumb_name) {
                 return null;
             }
-            return `${BLU_SERVER}/media/${comment.media_name}`;
+            return `${BLU_SERVER}/media/${comment.thumb_name}`;
         },
         full: (comment) => {
             if (!comment || !comment.media_name) {

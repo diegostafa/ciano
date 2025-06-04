@@ -369,14 +369,21 @@ export const Catalog = () => {
             <ListCatalog width={width} height={height} /> :
             <GridCatalog width={width} height={height} />}
 
-        <Fab onPress={() => { sailor.navigate(CREATE_THREAD_KEY); }} />
+        {config.api.name === 'ciano' && <Fab onPress={() => { sailor.navigate(CREATE_THREAD_KEY); }} />}
         <ModalMediaPreview />
     </View>;
 };
 
 const NoThreads = () => {
+    const { temp } = React.useContext(Ctx);
+
+    if (temp.catalogFilter === null) {
+        return <View style={{ flex: 1 }}>
+            <ThemedText content={'There are no threads here, be the first one to post!'} />
+        </View>;
+    }
     return <View style={{ flex: 1 }}>
-        <ThemedText content={'This is rather empty, there are no threads in this board, did you filter them out?'} />
+        <ThemedText content={'No threads found'} />
     </View>;
 
 };
@@ -485,10 +492,9 @@ const GridTile = ({ thread, index, tw, th }) => {
 
         <TouchableNativeFeedback
             onPress={async () => {
-                const history = await historyAdd(state, thread)
-                setState({ ...state, history });
-                setTemp(prev => ({ ...prev, thread }));
+                setState({ ...state, history: await historyAdd(state, thread) });
                 sailor.navigate(THREAD_KEY);
+
             }}>
             <View style={{
                 flex: 1,

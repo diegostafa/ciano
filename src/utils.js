@@ -97,13 +97,16 @@ const downloadMedia = async (setTemp, config, comment) => {
     try {
         const url = Repo(config.api).media.full(comment);
         const savepath = `${RNBlobUtil.fs.dirs.DownloadDir}/${comment.file_name}.${comment.media_ext}`;
+
+        console.log(`Downloading ${url} to ${savepath}`);
+
         const result = await RNBlobUtil.config({
             fileCache: true,
             addAndroidDownloads: {
                 useDownloadManager: true,
                 notification: true,
                 path: savepath,
-                description: 'Downloading media file',
+                description: `Downloading ${comment.file_name}.${comment.media_ext}`,
             },
         }).fetch('GET', url);
         if (result.statusCode === 200) {
@@ -125,9 +128,6 @@ const downloadMedia = async (setTemp, config, comment) => {
         }));
     }
 };
-export const isString = (x) => {
-    return typeof x === 'string';
-}
 
 // --- components
 
