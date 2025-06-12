@@ -1,7 +1,7 @@
 import { catalogSorts, threadSorts } from "../context/state";
 import { Repo } from "./repo";
 
-export const loadBoards = async (conf, state, setState, setTemp, forceRefresh) => {
+export const loadBoards = async (state, setState, setTemp, forceRefresh) => {
     setTemp(prev => ({
         ...prev,
         boardsFetchErrorTimeout: null,
@@ -13,12 +13,13 @@ export const loadBoards = async (conf, state, setState, setTemp, forceRefresh) =
 
     try {
         const boards = forceRefresh ?
-            await Repo(conf.api).boards.getRemote() :
-            await Repo(conf.api).boards.getLocalOrRemote();
+            await Repo(state.api).boards.getRemote() :
+            await Repo(state.api).boards.getLocalOrRemote();
 
         setState({ ...state, boards });
     }
     catch (err) {
+        console.log(err);
         if (err.code === 'ECONNABORTED') {
             setTemp(prev => ({ ...prev, boardsFetchErrorTimeout: true }));
         }
@@ -34,7 +35,7 @@ export const loadBoards = async (conf, state, setState, setTemp, forceRefresh) =
     }
     setTemp(prev => ({ ...prev, isFetchingBoards: false }));
 };
-export const loadThreads = async (conf, state, setTemp, forceRefresh) => {
+export const loadThreads = async (state, setTemp, forceRefresh) => {
     const board = state.board;
     setTemp(prev => ({
         ...prev,
@@ -47,13 +48,14 @@ export const loadThreads = async (conf, state, setTemp, forceRefresh) => {
 
     try {
         let threads = forceRefresh ?
-            await Repo(conf.api).threads.getRemote(board) :
-            await Repo(conf.api).threads.getLocalOrRemote(board);
+            await Repo(state.api).threads.getRemote(board) :
+            await Repo(state.api).threads.getLocalOrRemote(board);
         const sort = catalogSorts[state.catalogSort].sort;
         threads = threads.sort((a, b) => sort(a, b) * (state.catalogRev ? -1 : 1));
         setTemp(prev => ({ ...prev, threads }));
     }
     catch (err) {
+        console.log(err);
         if (err.code === 'ECONNABORTED') {
             setTemp(prev => ({ ...prev, threadsFetchErrorTimeout: true }));
         }
@@ -69,7 +71,7 @@ export const loadThreads = async (conf, state, setTemp, forceRefresh) => {
     }
     setTemp(prev => ({ ...prev, isFetchingThreads: false }));
 }
-export const loadComments = async (conf, state, setTemp, refresh) => {
+export const loadComments = async (state, setTemp, refresh) => {
     setTemp(prev => ({
         ...prev,
         commentsFetchErrorTimeout: null,
@@ -82,8 +84,8 @@ export const loadComments = async (conf, state, setTemp, refresh) => {
     try {
         const thread = state.history.at(-1).thread;
         const data = refresh ?
-            await Repo(conf.api).comments.getRemote(thread.board, thread.id) :
-            await Repo(conf.api).comments.getLocalOrRemote(thread.board, thread.id);
+            await Repo(state.api).comments.getRemote(thread.board, thread.id) :
+            await Repo(state.api).comments.getLocalOrRemote(thread.board, thread.id);
 
         let comments = data;
         const sort = threadSorts[state.threadSort].sort;
@@ -93,6 +95,7 @@ export const loadComments = async (conf, state, setTemp, refresh) => {
         setTemp(prev => ({ ...prev, comments, commentsBoard: thread.id }));
     }
     catch (err) {
+        console.log(err);
         if (err.code === 'ECONNABORTED') {
             setTemp(prev => ({ ...prev, commmentsFetchErrorTimeout: true }));
         }
@@ -107,4 +110,38 @@ export const loadComments = async (conf, state, setTemp, refresh) => {
         }
     }
     setTemp(prev => ({ ...prev, isFetchingComments: false }));
+};
+
+export const uploadComment = async (state, setState, setTemp, data) => {
+    setTemp(prev => ({
+        ...prev,
+        uploadCommentErrorTimeout: null,
+        uploadCommentErrorResponse: null,
+        uploadCommentErrorRequest: null,
+        uploadCommentErrorUnknown: null,
+        isUploadingComment: true,
+    }));
+
+
+    try {
+        const comment = await Repo(state.api).comments.create(data.form, data.form);
+        setState(prev => ({ ...prev, myComments: [...prev.myComments, comment.id] }))
+    }
+    catch (err) {
+        console.log(err);
+        if (err.code === 'ECONNABORTED') {
+            setTemp(prev => ({ ...prev, uploadCommentErrorTimeout: true }));
+        }
+        else if (err.response) {
+            setTemp(prev => ({ ...prev, uploadCommentErrorResponse: true }));
+        }
+        else if (err.request) {
+            setTemp(prev => ({ ...prev, uploadCommentErrorRequest: true }));
+        }
+        else {
+            setTemp(prev => ({ ...prev, uploadCommentErrorUnknown: true }));
+        }
+    }
+
+    setTemp(prev => ({ ...prev, isUploadingComment: false }));
 };

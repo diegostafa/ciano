@@ -1,6 +1,7 @@
 import axios from 'axios';
+import RNBlobUtil from 'react-native-blob-util';
 
-const BLU_SERVER = `http://192.168.250.97:3000`;
+const BLU_SERVER = `http://192.168.78.97:3000`;
 const CHAN_SERVER = 'https://a.4cdn.org';
 const TIMEOUT = 8000;
 
@@ -20,52 +21,72 @@ export const api = {
             return `${BLU_SERVER}/media/${comment.media_name}`;
         },
         getBoards: async () => {
-            return await axios({
+            const data = await axios({
                 method: 'get',
                 timeout: TIMEOUT,
                 url: `${BLU_SERVER}/boards`,
             })
                 .then(res => res.data);
+
+            if ('Err' in data) {
+                throw new Error(data.Err);
+            }
+            return data.Ok;
         },
         getThreads: async (boardId) => {
-            return await axios({
+            const data = await axios({
                 method: 'get',
                 timeout: TIMEOUT,
                 url: `${BLU_SERVER}/${boardId}`,
             })
                 .then(res => res.data);
+            if ('Err' in data) {
+                throw new Error(data.Err);
+            }
+            return data.Ok;
         },
         getComments: async (boardId, threadId) => {
-            return await axios({
+            const data = await axios({
                 method: 'get',
                 timeout: TIMEOUT,
                 url: `${BLU_SERVER}/${boardId}/thread/${threadId}`,
             })
                 .then(res => res.data);
+            if ('Err' in data) {
+                throw new Error(data.Err);
+            }
+            return data.Ok;
         },
-        postComment: async (form) => {
-            const multipart = new FormData();
-            const data = form.data;
-            const media = form.media;
 
-            if (!data.com && !media) {
-                return null;
+        postComment: async (form, media) => {
+            const multipartData = [];
+
+            multipartData.push({
+                name: 'data',
+                data: JSON.stringify(form)
+            });
+            if (media !== null) {
+                multipartData.push({
+                    name: 'media',
+                    filename: media.path.split('/').pop(),
+                    data: RNBlobUtil.wrap(media.path)
+                });
             }
-            if (data.com) {
-                multipart.append('data', JSON.stringify(data));
+
+
+            const response = await RNBlobUtil.fetch(
+                'POST',
+                `${BLU_SERVER}/create_comment`,
+                { 'Content-Type': 'multipart/form-data' },
+                multipartData
+            );
+            const data = await response.json();
+            if ('Err' in data) {
+                throw new Error(data.Err);
             }
-            if (media) {
-                multipart.append('media', media.path);
-            }
-            return await axios({
-                method: 'post',
-                timeout: TIMEOUT,
-                url: `${BLU_SERVER}/create_comment`,
-                headers: { 'Content-Type': 'multipart/form-data' },
-                data: multipart,
-            })
-                .then(res => res.data.Ok);
+            return data.Ok;
         }
+
     },
     chan: {
         name: '4chan',
@@ -128,6 +149,7 @@ export const api = {
                         media_ext: thread.ext ? thread.ext.slice(1) : null,
                         board: boardId,
                         created_at: thread.time,
+                        media_desc: null,
                     };
                 }));
         },
@@ -150,6 +172,7 @@ export const api = {
                         media_ext: comment.ext ? comment.ext.slice(1) : null,
                         board: boardId,
                         created_at: comment.time,
+                        media_desc: null,
                     };
                 }));
         },

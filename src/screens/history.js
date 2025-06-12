@@ -1,81 +1,105 @@
-import { useNavigation } from '@react-navigation/native';
-import React from 'react';
-import { FlatList, Image, Text, TouchableNativeFeedback, useWindowDimensions, View } from 'react-native';
+import { useNavigation, useTheme } from '@react-navigation/native';
+import React, { useState } from 'react';
+import { FlatList, Image, TouchableNativeFeedback, useWindowDimensions, View } from 'react-native';
+import { TextInput } from 'react-native-gesture-handler';
 
-import { BOARD_TAB_KEY, BOTTOM_NAV_KEY, Ctx, THREAD_KEY } from '../app';
-import { getThreadSignature, HeaderIcon, historyAdd, HtmlText, ThemedText } from '../utils';
-import { api } from './api';
+import { BAR_HEIGHT, BOARD_TAB_KEY, BOTTOM_NAV_KEY, Ctx, THREAD_KEY } from '../app';
+import { Repo } from '../data/repo';
+import { getThreadSignature, historyAdd, HtmlText, ModalAlert, ThemedAsset, ThemedText } from '../utils';
+
 
 export const History = () => {
     const { state } = React.useContext(Ctx);
     const { width, height } = useWindowDimensions();
-    const tw = width;
-    const th = height / 16;
+    const isLandscape = width > height;
+    const th = height / (isLandscape ? 6 : 16);
+    const [filter, setFilter] = React.useState('');
+    const [forget, setForget] = useState(null);
+    const theme = useTheme();
+    const topPad = BAR_HEIGHT;
+    const bottomPad = 60;
+    const history = state.history.filter(item => getThreadSignature(item.thread).includes(filter.toLowerCase()))
 
     return <View style={{ flex: 1 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <ThemedText content={'History'} />
-            <HeaderIcon name='circle' />
+        <ModalAlert
+            visible={forget !== null}
+            onClose={() => { setForget(null); }}
+            msg={'Remove from the list?'}
+            left={'No'}
+            right={'Yes'}
+            onPressLeft={() => { setForget(null); }}
+            onPressRight={() => {
+                setForget(null);
+            }}
+        />
+
+        <View style={{ alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, height: topPad, }}>
+            <ThemedText content={'History'} style={{ fontSize: 20, fontWeight: 'bold' }} />
         </View>
-        <View style={{ flex: 1 }}>
-            <FlatList
-                data={state.history}
-                inverted
-                renderItem={({ item }) => <HistoryTile item={item} tw={tw} th={th} />}
-                keyExtractor={(item) => item.thread.id}
-                ListEmptyComponent={<NoHistory />}
-            />
+        <View style={{ height: height - bottomPad - topPad }}>
+            {history.length === 0 ?
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    <ThemedAsset name={"error"} width={200} height={200} />
+                    <ThemedText content={'There is no history to show'} />
+                </View> :
+                <FlatList
+                    inverted
+                    data={history}
+                    renderItem={({ item }) => <HistoryTile item={item} th={th} setForget={setForget} />}
+                    keyExtractor={(item) => item.thread.id}
+                />
+            }
+
         </View>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <HeaderIcon name='search' />
+        <View style={{ bottom: 0, height: bottomPad }}>
+            <TextInput
+                onChangeText={text => setFilter(text)}
+                value={filter}
+                placeholder='Type to filter...'
+                style={{
+                    flex: 1,
+                    height: bottomPad,
+                    padding: 10,
+                    fontSize: 16,
+                    backgroundColor: theme.colors.background,
+                    color: theme.colors.text,
+                }} />
         </View>
     </View>;
 };
-const HistoryTile = ({ item, tw, th }) => {
+
+const HistoryTile = ({ item, th, setForget }) => {
     const sailor = useNavigation();
+    const theme = useTheme();
     const { state, setState } = React.useContext(Ctx);
     const thread = item.thread;
-    const img = api.blu.thumb(thread);
+    const img = Repo(state.api).media.thumb(thread);
+    const margin = 4;
+    const padding = 10;
+    const imgSz = th - padding * 2 - margin;
+    const sign = getThreadSignature(thread);
 
-    return <TouchableNativeFeedback
-        onPress={async () => {
-            setState({ ...state, history: await historyAdd(state, thread) });
-            sailor.navigate(BOTTOM_NAV_KEY, {
-                screen: BOARD_TAB_KEY,
-                params: { screen: THREAD_KEY },
-            });
-        }}>
-        <View
-            style={{
-                height: th,
-                flexDirection: 'row',
-                overflow: 'hidden',
-            }} >
-            <Image src={img} style={{
-                padding: 0,
-                margin: 0,
-                top: 0,
-                borderRadius: th / 2,
-                width: th,
-                height: th,
-                overflow: 'hidden',
-            }} />
-            <View style={{ padding: 10 }}>
-                <HtmlText
-                    value={getThreadSignature(thread)}
-                    renderNode={(node, index, siblings, parent, defaultRenderer) => {
-                        if (node.name === 'br') { return null; }
-                    }}
-                />
-
+    return <View style={{ overflow: 'hidden', marginBottom: margin, backgroundColor: theme.colors.highlight }}>
+        <TouchableNativeFeedback
+            onLongPress={() => { setForget(item); }}
+            onPress={() => {
+                historyAdd(state, setState, thread)
+                sailor.navigate(BOTTOM_NAV_KEY, {
+                    screen: BOARD_TAB_KEY,
+                    params: { screen: THREAD_KEY },
+                });
+            }}>
+            <View style={{ alignItems: 'center', padding, height: th, flexDirection: 'row', gap: 15 }} >
+                <Image src={img} style={{
+                    top: 0,
+                    borderRadius: th / 2,
+                    width: imgSz,
+                    height: imgSz,
+                }} />
+                <View>
+                    <HtmlText value={sign} />
+                </View>
             </View>
-        </View>
-    </TouchableNativeFeedback>;
-};
-const NoHistory = () => {
-    return <View style={{ flex: 1 }}>
-        <Text>NO HISTORY</Text>
+        </TouchableNativeFeedback>
     </View>;
 };
-
-

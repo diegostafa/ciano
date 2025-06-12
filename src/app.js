@@ -13,9 +13,10 @@ import { State } from './context/state.js';
 import { Temp } from './context/temp.js';
 import { BOARD_TAB_KEY, BoardTab } from './screens/board/tab.js';
 import { THREAD_KEY } from './screens/board/thread.js';
+import { History } from "./screens/history.js";
 import { SETTINGS_TAB_KEY, SettingsTab } from './screens/settings/tab.js';
 import { WATCHER_TAB_KEY, WatcherTab } from './screens/watcher/tab.js';
-import { DarkTheme, LightTheme } from './theme.js';
+import { DarkTheme, DarkThemeHighContrast, LightTheme, LightThemeHighContrast } from './theme.js';
 import { TabIcon } from './utils';
 enableScreens();
 
@@ -25,10 +26,11 @@ export const Ctx = React.createContext();
 export const Drawer = createDrawerNavigator();
 export const BAR_HEIGHT = 48;
 export const BAR_WIDTH = 128;
+export const DRAWER_WIDTH = 300;
 export const BOTTOM_NAV_KEY = 'BottomNav';
 
 export const App = () => {
-    const theme = useColorScheme();
+    const colorscheme = useColorScheme();
     const appState = React.useRef(AppState.currentState);
     const [state, setState] = React.useState(null);
     const [config, setConfig] = React.useState(null);
@@ -61,19 +63,26 @@ export const App = () => {
 
     if (!state || !config) { return <View><ActivityIndicator /></View>; }
 
+    const theme = colorscheme === 'dark' ?
+        config.highContrast ? DarkThemeHighContrast : DarkTheme :
+        config.highContrast ? LightThemeHighContrast : LightTheme;
+
     return <Ctx.Provider value={{ state, setState, config, setConfig, temp, setTemp }}>
-        <NavigationContainer theme={theme === 'dark' ? DarkTheme : LightTheme} >
+        <NavigationContainer theme={theme} >
             <Drawer.Navigator
-                screenOptions={{ headerShown: false }}
+                keyboardShouldPersistTaps="handled"
+                screenOptions={{
+                    headerShown: false,
+                    drawerStyle: {
+                        width: DRAWER_WIDTH,
+                    },
+                }}
                 initialRouteName={BOTTOM_NAV_KEY}
-                drawerContent={DrawerScreen} >
+                drawerContent={History} >
                 <Drawer.Screen name={BOTTOM_NAV_KEY} component={BottomNav} />
             </Drawer.Navigator>
         </NavigationContainer></Ctx.Provider>;
 };
-const DrawerScreen = () => {
-    return <View />;
-}
 const BottomNav = () => {
     const { width, height } = useWindowDimensions();
     const isVertical = width < height;
@@ -97,7 +106,7 @@ const BottomNav = () => {
                 options={{
                     tabBarIcon: TabIcon('notifications'),
                     headerStyle: { height: BAR_HEIGHT },
-                    title: 'Thread Watcher'
+                    title: 'Watcher'
                 }}
             />
             <Tab.Screen

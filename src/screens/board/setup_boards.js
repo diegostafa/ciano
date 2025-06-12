@@ -17,14 +17,14 @@ export const SetupBoardsHeaderTitle = () => {
     </View>;
 };
 export const SetupBoardsHeaderRight = () => {
-    const { state, setState, temp, setTemp, config } = React.useContext(Ctx);
+    const { state, setState, temp, setTemp } = React.useContext(Ctx);
 
     return <View style={{ flexDirection: 'row' }}>
         {temp.setupBoardsFilter !== null ?
             <HeaderIcon name={'close'} onPress={() => { setTemp({ ...temp, setupBoardsFilter: null }); }} /> :
             <View style={{ flexDirection: 'row' }}>
                 <HeaderIcon name={'reload'} onPress={async () => {
-                    await loadBoards(config, state, setState, setTemp, true);
+                    await loadBoards(state, setState, setTemp, true);
                 }} />
                 <HeaderIcon name={'search'} onPress={() => { setTemp({ ...temp, setupBoardsFilter: '' }); }} />
             </View>
@@ -67,7 +67,7 @@ export const SetupBoards = () => {
             return;
         }
         if (!state.boards) {
-            loadBoards(config, state, setState, setTemp, true);
+            loadBoards(state, setState, setTemp, true);
             return;
         }
     }, [config, setState, setTemp, state, temp]);
@@ -79,7 +79,7 @@ export const SetupBoards = () => {
                     <ThemedText content={'boardsfetcherror'} />
                     <ThemedText content={'The server is unreachable'} />
                     <ThemedText content={'TODO: SAD IMAGE'} />
-                    <Button title={'Retry'} onPress={async () => { await loadBoards(config, state, setState, setTemp, true); }} />
+                    <Button title={'Retry'} onPress={async () => { await loadBoards(state, setState, setTemp, true); }} />
                 </View>
             }
             {temp.boardsFetchErrorRequest !== null &&
@@ -87,7 +87,7 @@ export const SetupBoards = () => {
                     <ThemedText content={'boardsfetcherror'} />
                     <ThemedText content={'Malformed request'} />
                     <ThemedText content={'TODO: SAD IMAGE'} />
-                    <Button title={'Retry'} onPress={async () => { await loadBoards(config, state, setTemp, true); }} />
+                    <Button title={'Retry'} onPress={async () => { await loadBoards(state, setTemp, true); }} />
                 </View>
             }
             {temp.boardsFetchErrorResponse !== null &&
@@ -95,7 +95,7 @@ export const SetupBoards = () => {
                     <ThemedText content={'boardsfetcherror'} />
                     <ThemedText content={'The server returned an error'} />
                     <ThemedText content={'TODO: SAD IMAGE'} />
-                    <Button title={'Retry'} onPress={async () => { await loadBoards(config, state, setTemp, true); }} />
+                    <Button title={'Retry'} onPress={async () => { await loadBoards(state, setTemp, true); }} />
                 </View>
             }
             {temp.boardsFetchErrorUnknown !== null &&
@@ -103,7 +103,7 @@ export const SetupBoards = () => {
                     <ThemedText content={'boardsfetcherror'} />
                     <ThemedText content={'The server returned an unknown error'} />
                     <ThemedText content={'TODO: SAD IMAGE'} />
-                    <Button title={'Retry'} onPress={async () => { await loadBoards(config, state, setTemp, true); }} />
+                    <Button title={'Retry'} onPress={async () => { await loadBoards(state, setTemp, true); }} />
                 </View>
             }
         </View>;
@@ -120,6 +120,13 @@ export const SetupBoards = () => {
             <ActivityIndicator />
         </View>;
     }
+    if (state.boards.length === 0) {
+        return <View style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
+            <ThemedText content={'This server has no boards'} />
+            <ThemedText content={'TODO: SAD IMAGE'} />
+        </View>;
+    }
+
     return <View style={{ flex: 1 }}>
         {temp.setupBoardsFilter !== null &&
             <View style={{ height: BAR_HEIGHT, borderWidth: 1, backgroundColor: theme.colors.card, flexDirection: 'row', justifyContent: 'space-between' }}>

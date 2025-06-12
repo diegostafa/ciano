@@ -1,54 +1,56 @@
 /* eslint-disable react/react-in-jsx-scope */
 import { useNavigation } from '@react-navigation/native';
-import { TouchableNativeFeedback, View } from 'react-native';
+import { ScrollView, TouchableNativeFeedback, View } from 'react-native';
 
-import { ThemedText } from '../../utils';
+import { ThemedIcon, ThemedText } from '../../utils';
 import { ABOUT_KEY } from './about';
 import { ACCESSIBILITY_KEY } from './accessibility';
 import { ADVANCED_KEY } from './advanced';
 import { APPEARANCE_KEY } from './appearance';
 import { BEHAVIOUR_KEY } from './behaviour';
-import { MEDIA_KEY } from './media';
 
 export const MENU_KEY = 'SettingsMenu';
 
 export const Menu = () => {
     const sailor = useNavigation();
     const style = {
-        padding: 20
+        flexDirection: 'row',
+        padding: 20,
+        gap: 20,
+        alignItems: 'center',
     };
 
-    return <View>
+    return <ScrollView>
         <TouchableNativeFeedback onPress={() => { sailor.navigate(APPEARANCE_KEY); }}>
             <View style={style}>
-                <ThemedText content={APPEARANCE_KEY} />
+                <ThemedIcon name={'color-palette'} />
+                <ThemedText content={APPEARANCE_KEY} style={{ fontSize: 16, fontWeight: 'bold' }} />
             </View>
         </TouchableNativeFeedback>
         <TouchableNativeFeedback onPress={() => { sailor.navigate(ACCESSIBILITY_KEY); }}>
             <View style={style}>
-                <ThemedText content={ACCESSIBILITY_KEY} />
-            </View>
-        </TouchableNativeFeedback>
-        <TouchableNativeFeedback onPress={() => { sailor.navigate(MEDIA_KEY); }}>
-            <View style={style}>
-                <ThemedText content={MEDIA_KEY} />
+                <ThemedIcon name={'accessibility'} />
+                <ThemedText content={ACCESSIBILITY_KEY} style={{ fontWeight: 'bold' }} />
             </View>
         </TouchableNativeFeedback>
         <TouchableNativeFeedback onPress={() => { sailor.navigate(BEHAVIOUR_KEY); }}>
             <View style={style}>
-                <ThemedText content={BEHAVIOUR_KEY} />
+                <ThemedIcon name={'build'} />
+                <ThemedText content={BEHAVIOUR_KEY} style={{ fontWeight: 'bold' }} />
             </View>
         </TouchableNativeFeedback>
         <TouchableNativeFeedback onPress={() => { sailor.navigate(ADVANCED_KEY); }}>
             <View style={style}>
-                <ThemedText content={ADVANCED_KEY} />
+                <ThemedIcon name={'code'} />
+                <ThemedText content={ADVANCED_KEY} style={{ fontWeight: 'bold' }} />
             </View>
         </TouchableNativeFeedback>
         <TouchableNativeFeedback onPress={() => { sailor.navigate(ABOUT_KEY); }}>
             <View style={style}>
-                <ThemedText content={ABOUT_KEY} />
+                <ThemedIcon name={'information-circle'} />
+                <ThemedText content={ABOUT_KEY} style={{ fontWeight: 'bold' }} />
             </View>
         </TouchableNativeFeedback>
-    </View>;
+    </ScrollView>;
 };
 

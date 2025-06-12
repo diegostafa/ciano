@@ -45,7 +45,7 @@ export const CreateThreadHeaderRight = () => {
                 onPressLeft={() => { setNeedsConfirmation(false); }}
                 onPressRight={async () => {
                     setTemp({ ...temp, creatingThread: true });
-                    await Repo(config.api).threads.create(form);
+                    await Repo(state.api).threads.create(form);
                     await loadThreads(state, setState, null, true);
                     sailor.goBack();
                     setTemp({ ...temp, creatingThread: false });
@@ -59,7 +59,7 @@ export const CreateThread = () => {
     const [form, setForm] = React.useState({
         data: {
             board: state.board,
-            alias: config.alias,
+            alias: config.defaultName,
             sub: null,
             com: null,
         },

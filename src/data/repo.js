@@ -47,8 +47,8 @@ export const Repo = (api) => {
             getRemote: async (boardId, threadId) => {
                 return getRemote({ key: `${api.name}board/${boardId}/thread/${threadId}`, remote: () => api.getComments(boardId, threadId) });
             },
-            create: async (form) => {
-                return api.postComment(form);
+            create: async (form, media) => {
+                return api.postComment(form, media);
             },
         },
     }

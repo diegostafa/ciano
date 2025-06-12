@@ -1,4 +1,3 @@
-import { api } from "../data/api";
 import { getLocal, setLocal } from "../utils";
 
 const defaultConfig = {
@@ -14,19 +13,19 @@ const defaultConfig = {
 
     // accessibility
     disableMovingElements: false,
+    uiFontScale: 1,
+    htmlFontScale: 1,
+    highContrast: false,
 
     // behaviour
-    alias: null,
+    defaultName: null,
+    showNames: true,
     swipeToReply: false,
     showCatalogThumbnails: true,
     loadFaster: true,
     autoWatchThreads: true,
     muteVideos: false,
     loopVideos: true,
-
-    // advanced
-    api: api.chan,
-
 };
 export const Config = {
     get: async (key) => getLocal(key),
@@ -43,4 +42,5 @@ export const Config = {
         }
         return restored;
     },
+    default: () => defaultConfig
 };

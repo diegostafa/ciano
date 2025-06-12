@@ -1,11 +1,12 @@
 const defaultTemp = {
-    connType: "none",
+    connType: 'none',
     viewLocal: false,
 
     thread: null,
     threads: null,
     comments: null,
     selectedMediaComment: null,
+    selectedLocalMedia: null,
     commentsBoard: null,
 
     catalogReflist: null,
@@ -20,6 +21,12 @@ const defaultTemp = {
     isFetchingBoards: false,
     isFetchingThreads: false,
     isFetchingComments: false,
+    isUploadingComment: false,
+
+    uploadCommentErrorTimeout: null,
+    uploadCommentErrorRequest: null,
+    uploadCommentErrorResponse: null,
+    uploadCommentErrorUnknown: null,
 
     boardsFetchErrorTimeout: null,
     boardsFetchErrorRequest: null,
@@ -60,4 +67,10 @@ export const isOnline = (temp) => {
 
 export const Temp = {
     default: () => defaultTemp,
+    switchApi: (temp) => {
+        return {
+            ...defaultTemp,
+            connType: temp.connType,
+        }
+    },
 };
