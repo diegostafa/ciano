@@ -1,10 +1,8 @@
-import { getLocal, setLocal } from "../utils";
+import { getLocal, setLocal } from "../helpers";
 
 const defaultConfig = {
     // appearance
     themeMode: 2, // 0:light, 1:dark, 2:auto
-    themeLight: null,
-    themeDark: null,
     relativeTime: false,
     catalogGridCols: 3, catalogGridRows: 4,
     catalogGridColsLandscape: 5, catalogGridRowsLandscape: 2,

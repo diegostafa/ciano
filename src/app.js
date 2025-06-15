@@ -8,6 +8,7 @@ import { ActivityIndicator, AppState, Platform, useColorScheme, useWindowDimensi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
 
+import { TabIcon } from './components.js';
 import { Config } from './context/config.js';
 import { State } from './context/state.js';
 import { Temp } from './context/temp.js';
@@ -17,7 +18,6 @@ import { History } from "./screens/history.js";
 import { SETTINGS_TAB_KEY, SettingsTab } from './screens/settings/tab.js';
 import { WATCHER_TAB_KEY, WatcherTab } from './screens/watcher/tab.js';
 import { DarkTheme, DarkThemeHighContrast, LightTheme, LightThemeHighContrast } from './theme.js';
-import { TabIcon } from './utils';
 enableScreens();
 
 export const Tab = createBottomTabNavigator();
@@ -61,11 +61,13 @@ export const App = () => {
         return () => { unsubscribe(); };
     }, [config, state]);
 
+
     if (!state || !config) { return <View><ActivityIndicator /></View>; }
 
     const theme = colorscheme === 'dark' ?
         config.highContrast ? DarkThemeHighContrast : DarkTheme :
         config.highContrast ? LightThemeHighContrast : LightTheme;
+
 
     return <Ctx.Provider value={{ state, setState, config, setConfig, temp, setTemp }}>
         <NavigationContainer theme={theme} >

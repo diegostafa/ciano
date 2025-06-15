@@ -1,7 +1,7 @@
 /* eslint-disable react/react-in-jsx-scope */
 import { View } from 'react-native';
 
-import { ThemedText } from '../../utils';
+import { ThemedText } from '../../components';
 
 export const MEDIA_KEY = 'Media';
 

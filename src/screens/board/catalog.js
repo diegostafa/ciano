@@ -4,11 +4,12 @@ import { ActivityIndicator, BackHandler, Button, FlatList, Image, TouchableNativ
 import { TextInput } from 'react-native-gesture-handler';
 
 import { BAR_HEIGHT, BAR_WIDTH, Ctx } from '../../app';
+import { Fab, HeaderIcon, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, ThemedIcon, ThemedText } from '../../components';
 import { catalogModes, catalogSorts, State } from '../../context/state';
 import { hasBoardsErrors, hasThreadsErrors, isOnline } from '../../context/temp';
 import { Repo } from '../../data/repo';
 import { loadBoards, loadThreads } from '../../data/utils';
-import { Fab, getCurrBoard, HeaderIcon, historyAdd, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, ThemedIcon, ThemedText } from '../../utils';
+import { getCurrFullBoard, historyAdd } from '../../helpers';
 import { CREATE_THREAD_KEY } from './create_thread';
 import { SETUP_BOARDS_KEY } from './setup_boards';
 import { THREAD_KEY } from './thread';
@@ -39,7 +40,7 @@ export const CatalogHeaderTitle = () => {
         return undefined;
     }
 
-    const board = getCurrBoard(state);
+    const board = getCurrFullBoard(state);
     const activeBoards = state.activeBoards.map(boardId => state.boards.find(item => item.code === boardId));
     const inputStyle = {
         flex: 1,
@@ -67,7 +68,7 @@ export const CatalogHeaderTitle = () => {
                             <TextInput
                                 onChangeText={text => setFilter(text)}
                                 value={filter}
-                                placeholder='Search...'
+                                placeholder='Search for an active board...'
                                 style={inputStyle} />
                         </View>
                         <TouchableNativeFeedback onPress={() => {
@@ -337,7 +338,7 @@ export const Catalog = () => {
             <ActivityIndicator />
         </View>;
     }
-    return <View style={{ flex: 1, backgroundColor: theme.colors.card }}>
+    return <View style={{ flex: 1 }}>
         {temp.catalogFilter !== null &&
             <View style={{
                 position: 'absolute',
@@ -349,7 +350,7 @@ export const Catalog = () => {
                 flexDirection: 'row', justifyContent: 'space-between'
             }}>
                 <TextInput
-                    placeholder='Search...'
+                    placeholder='Search in the catalog...'
                     value={temp.catalogFilter}
                     onChangeText={text => setTemp({ ...temp, catalogFilter: text })}
                     style={{
@@ -487,7 +488,6 @@ const GridTile = ({ thread, index, tw, th }) => {
             <TouchableNativeFeedback
                 onPress={() => { setTemp({ ...temp, selectedMediaComment: thread }); }}>
                 <Image src={img}
-                    resizeMode="contain"
                     style={{
                         width: '100%',
                         height: th / 3,
@@ -507,7 +507,7 @@ const GridTile = ({ thread, index, tw, th }) => {
             <View style={{
                 flex: 1,
                 justifyContent: 'space-between',
-                backgroundColor: lastThread && lastThread.thread.id === thread.id ? theme.colors.highlight : theme.colors.background,
+                backgroundColor: lastThread && lastThread.thread.id === thread.id ? theme.colors.highlight : theme.colors.card,
                 padding: 5,
                 borderTopLeftRadius: config.showCatalogThumbnails ? 0 : config.borderRadius,
                 borderTopRightRadius: config.showCatalogThumbnails ? 0 : config.borderRadius,
@@ -548,7 +548,6 @@ const ListTile = ({ thread, index, tw, th }) => {
             <TouchableNativeFeedback
                 onPress={() => { setTemp({ ...temp, selectedMediaComment: thread }); }}>
                 <Image src={img}
-                    resizeMode="contain"
                     style={{ borderRadius: config.borderRadius, width: imgH, height: imgH }} />
             </TouchableNativeFeedback>
         }
@@ -571,7 +570,7 @@ const ListTile = ({ thread, index, tw, th }) => {
                     paddingLeft: 8,
                     paddingRight: 8,
                     justifyContent: 'space-between',
-                    backgroundColor: lastThread && lastThread.thread.id === thread.id ? theme.colors.highlight : theme.colors.background,
+                    backgroundColor: lastThread && lastThread.thread.id === thread.id ? theme.colors.highlight : theme.colors.card,
                 }}>
                     <View style={{ flexShrink: 1, overflow: 'hidden' }}>
                         {thread.sub && <HtmlText value={`<sub>${thread.sub}</sub>`} />}

@@ -4,9 +4,9 @@ import { KeyboardAvoidingView, Platform, TouchableNativeFeedback, View } from "r
 import { TextInput } from "react-native-gesture-handler";
 
 import { Ctx } from "../../app";
+import { HeaderButton, ModalAlert, ThemedText } from "../../components";
 import { Repo } from "../../data/repo";
 import { loadThreads } from "../../data/utils";
-import { HeaderButton, ModalAlert, ThemedText } from "../../utils";
 
 export const CREATE_THREAD_KEY = 'CreateThread';
 

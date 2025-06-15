@@ -1,13 +1,10 @@
 /* eslint-disable react/display-name */
 import { Marquee } from '@animatereactnative/marquee';
 import { ImageZoom } from '@likashefqet/react-native-image-zoom';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@react-navigation/native';
-import { formatDistanceToNow } from 'date-fns';
 import { filesize } from 'filesize';
 import React, { useContext, useRef } from 'react';
 import { ActivityIndicator, Image, Modal, Pressable, Switch, Text, TouchableNativeFeedback, TouchableWithoutFeedback, useColorScheme, useWindowDimensions, View } from 'react-native';
-import RNBlobUtil from 'react-native-blob-util';
 import FastImage from 'react-native-fast-image';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import HTMLView from 'react-native-htmlview';
@@ -15,122 +12,14 @@ import Snackbar from 'react-native-snackbar';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
 
-import { BOARD_NAV_KEY, CATALOG_KEY, Ctx } from './app';
+import { Ctx } from './app';
 import { Repo } from './data/repo';
-import { DarkHtmlHeaderTheme, DarkHtmlTheme, LightHtmlHeaderTheme, LightHtmlTheme } from './theme';
+import { capitalize, downloadMedia, getImageAsset, isGif, isImage, isVideo } from './helpers';
+import { DarkHtmlTheme, LightHtmlTheme } from './theme';
 
-
-// --- helper functions
-export const withoutBr = (s) => {
-    const index = s.indexOf('<br>');
-    return index !== -1 ? s.substring(0, index) : s;
-}
-
-export const setLocal = async (key, value) => {
-    return AsyncStorage.setItem(key, JSON.stringify(value));
-};
-export const getLocal = async (key) => {
-    const val = AsyncStorage.getItem(key).then(res => JSON.parse(res));
-    return val;
-};
-export const relativeTime = (tstamp) => {
-    return formatDistanceToNow(Number(tstamp) * 1000, { addSuffix: true });
-};
-export const historyAdd = (state, setState, thread) => {
-    if (!thread) {
-        return state.history;
-    }
-    const others = state.history.filter(
-        item => !(item.board === state.board && item.thread.id === thread.id)
-    );
-
-    setState({ ...state, history: [...others, { board: state.board, thread }] });
-};
-
-export const getComment = (comments, threadId) => {
-    return comments.find(item => item.id === threadId);
-};
-export const getRepliesTo = (comments, comment) => {
-    return comments.filter(item => item.com && item.com.includes("&gt;&gt;" + comment.id));
-};
-export const quotes = (comment) => {
-    if (!comment.com) {
-        return [];
-    }
-    const matches = comment.com.match(/&gt;&gt;\d+/g) || [];
-    return matches.map(match => Number(match.slice(8)));
-}
-export const getThreadSignature = (thread) => {
-    const board = `<info>/${thread.board}/ - </info>`;
-    const text = thread.sub ? `${board}<sub>${thread.sub}</sub>` : `${board}<com>${thread.com}</com>`;
-    return withoutBr(text);
-}
-export const currRoute = (state) => {
-    const tabRoute = state.routes.find(r => r.name === BOARD_NAV_KEY);
-    const stackState = tabRoute?.state;
-    const currentRoute = stackState?.routes?.[stackState.index]?.name;
-    return currentRoute || CATALOG_KEY;
-};
-export const arraysDiffer = (a, b) => {
-    if (a.length !== b.length) return true;
-    for (let i = 0; i < a.length; i++) {
-        if (a[i] !== b[i]) return true;
-    }
-    return false;
-};
-export const capitalize = (str) => {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-};
-export const isImage = (ext) => {
-    return ext === 'jpg' || ext === 'jpeg' || ext === 'png';
-}
-export const isGif = (ext) => {
-    return ext === 'gif';
-}
-export const isVideo = (ext) => {
-    return ext === 'mp4' || ext === 'webm';
-}
-export const getCurrBoard = (state) => {
-    return state.boards.find(item => item.code === state.board);
-}
-const downloadMedia = async (setTemp, state, comment) => {
-    try {
-        const url = Repo(state.api).media.full(comment);
-        const savepath = `${RNBlobUtil.fs.dirs.DownloadDir}/${comment.file_name}.${comment.media_ext}`;
-        const result = await RNBlobUtil.config({
-            fileCache: true,
-            addAndroidDownloads: {
-                useDownloadManager: true,
-                notification: true,
-                path: savepath,
-                description: `Downloading ${comment.file_name}.${comment.media_ext}`,
-            },
-        }).fetch('GET', url);
-        if (result.statusCode === 200) {
-            setTemp(prev => ({
-                ...prev,
-                mediaDownloadSuccess: true,
-            }));
-        }
-        else {
-            setTemp(prev => ({
-                ...prev,
-                mediaDownloadError: "Returned status code " + result.statusCode,
-            }));
-        }
-    } catch (error) {
-        setTemp(prev => ({
-            ...prev,
-            mediaDownloadError: "Returned error: " + error,
-        }));
-    }
-};
-
-// --- components
-
-export const ThemedIcon = ({ name, size, color }) => {
+export const ThemedIcon = ({ name, size, accent }) => {
     const theme = useTheme();
-    return <Icon name={name} size={size || 28} color={color || theme.colors.text} />;
+    return <Icon name={name} size={size || 28} color={accent ? theme.colors.primary : theme.colors.text} />;
 };
 export const HeaderIcon = ({ name, onPress, size }) => {
     return <View style={{
@@ -273,21 +162,12 @@ export const ThemedText = ({ content, style }) => {
     }
     return <Text style={{ ...style, color: theme.colors.text, fontSize }}>{content}</Text>;
 };
-export const HtmlHeader = ({ value }) => {
-    const theme = useTheme();
-    value = value.replaceAll(/<br>/g, ' ');
-
-    return <HTMLView
-        value={`<header>${value}</header>`}
-        stylesheet={theme.dark ? DarkHtmlHeaderTheme : LightHtmlHeaderTheme}
-    />;
-}
-export const HtmlText = React.memo(({ value, onLinkPress }) => {
+export const HtmlText = React.memo(({ value, onLinkPress, raw }) => {
     const theme = useTheme();
     const { config } = useContext(Ctx);
     return <HTMLView
-        onLinkPress={onLinkPress}
-        value={`<p>${value}</p>`}
+        onLinkPress={onLinkPress || undefined}
+        value={raw ? value : `<p>${value}</p>`}
         stylesheet={theme.dark ? DarkHtmlTheme(config) : LightHtmlTheme(config)}
     />;
 }, (prevProps, nextProps) => prevProps.value === nextProps.value);
@@ -667,17 +547,4 @@ export const ThemedAsset = ({ name, width, height, desc }) => {
     return <Image
         style={{ width, height }}
         source={getImageAsset(theme, name)} />;
-};
-const getImageAsset = (theme, name) => {
-    const images = {
-        light: {
-            fullLogo: require('../assets/light/full-logo.png'),
-            error: require('../assets/light/error.png'),
-        },
-        dark: {
-            fullLogo: require('../assets/dark/full-logo.png'),
-            error: require('../assets/dark/error.png'),
-        },
-    };
-    return images[theme]?.[name] || null;
 };

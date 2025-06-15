@@ -4,10 +4,9 @@ import { ActivityIndicator, Button, FlatList, TouchableNativeFeedback, View } fr
 import { TextInput } from "react-native-gesture-handler";
 
 import { BAR_HEIGHT, Ctx } from "../../app";
+import { HeaderIcon, ModalView, ThemedText } from "../../components";
 import { hasBoardsErrors } from "../../context/temp";
 import { loadBoards } from "../../data/utils";
-import { HeaderIcon, ModalView, ThemedText } from "../../utils";
-
 
 export const SETUP_BOARDS_KEY = 'SetupBoards';
 

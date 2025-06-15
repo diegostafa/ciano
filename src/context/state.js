@@ -1,5 +1,5 @@
 import { api } from '../data/api';
-import { getLocal, getRepliesTo, isImage, quotes, setLocal } from '../utils';
+import { getLocal, getRepliesTo, isImage, quotes, setLocal } from '../helpers';
 
 const defaultState = {
     board: null,

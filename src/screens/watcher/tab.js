@@ -3,7 +3,7 @@ import { useContext } from 'react';
 import { FlatList, View } from 'react-native';
 
 import { Ctx } from '../../app';
-import { ThemedText } from '../../utils';
+import { ThemedText } from '../../components';
 
 export const WATCHER_TAB_KEY = 'WatcherTab';
 

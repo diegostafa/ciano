@@ -1,7 +1,6 @@
 import { DarkTheme as DefaultDark, DefaultTheme as DefaultLight } from '@react-navigation/native';
 import { StyleSheet } from 'react-native';
 
-// todo: tweak colors:
 export const LightTheme = {
     dark: false,
     colors: {
@@ -16,7 +15,6 @@ export const LightTheme = {
     },
     fonts: DefaultLight.fonts,
 };
-
 export const DarkTheme = {
     dark: true,
     colors: {
@@ -32,7 +30,6 @@ export const DarkTheme = {
     },
     fonts: DefaultDark.fonts,
 };
-
 export const LightThemeHighContrast = {
     dark: false,
     colors: {
@@ -47,7 +44,6 @@ export const LightThemeHighContrast = {
     },
     fonts: DefaultLight.fonts,
 };
-
 export const DarkThemeHighContrast = {
     dark: true,
     colors: {
@@ -63,8 +59,13 @@ export const DarkThemeHighContrast = {
     },
     fonts: DefaultDark.fonts,
 };
-
 export const DarkHtmlTheme = (config) => StyleSheet.create({
+    header: {
+        fontWeight: 'bold',
+        fontSize: 18 * config.htmlFontScale,
+        color: DarkTheme.colors.text,
+    },
+
     // quote
     span: {
         color: '#98971a',
@@ -97,6 +98,11 @@ export const DarkHtmlTheme = (config) => StyleSheet.create({
     }
 });
 export const LightHtmlTheme = (config) => StyleSheet.create({
+    header: {
+        fontWeight: 'bold',
+        fontSize: 18 * config.htmlFontScale,
+        color: LightTheme.colors.text,
+    },
     sub: {
         fontSize: 14 * config.htmlFontScale,
     },
@@ -111,19 +117,5 @@ export const LightHtmlTheme = (config) => StyleSheet.create({
     },
     p: {
         color: 'black',
-    },
-});
-export const DarkHtmlHeaderTheme = (config) => StyleSheet.create({
-    header: {
-        fontWeight: 'bold',
-        fontSize: 18 * config.htmlFontScale,
-        color: DarkTheme.colors.text,
-    },
-});
-export const LightHtmlHeaderTheme = (config) => StyleSheet.create({
-    header: {
-        fontWeight: 'bold',
-        fontSize: 18 * config.htmlFontScale,
-        color: DarkTheme.colors.text,
     },
 });

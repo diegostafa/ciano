@@ -4,11 +4,11 @@ import { useContext } from 'react';
 import { ScrollView, TouchableNativeFeedback, View } from 'react-native';
 
 import { Ctx } from '../../app';
+import { ThemedText } from '../../components';
 import { Config } from '../../context/config';
 import { State } from '../../context/state';
 import { Temp } from '../../context/temp';
 import { api } from '../../data/api';
-import { ThemedText } from '../../utils';
 
 export const ADVANCED_KEY = 'Advanced';
 

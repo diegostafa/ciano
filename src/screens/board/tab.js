@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 
 import { BAR_HEIGHT, Ctx, Stack } from '../../app.js';
@@ -7,7 +5,6 @@ import { CATALOG_KEY, Catalog, CatalogHeaderLeft, CatalogHeaderRight, CatalogHea
 import { CREATE_THREAD_KEY, CreateThread, CreateThreadHeaderRight, CreateThreadHeaderTitle } from './create_thread.js';
 import { SETUP_BOARDS_KEY, SetupBoards, SetupBoardsHeaderRight, SetupBoardsHeaderTitle } from './setup_boards.js';
 import { THREAD_KEY, Thread, ThreadHeaderRight, ThreadHeaderTitle } from './thread.js';
-
 
 export const BOARD_TAB_KEY = 'BoardTab';
 

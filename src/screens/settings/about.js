@@ -4,7 +4,7 @@ import { useContext } from 'react';
 import { Linking, ScrollView, TouchableNativeFeedback, useWindowDimensions, View } from 'react-native';
 
 import { Ctx } from '../../app';
-import { ThemedAsset, ThemedIcon, ThemedText } from '../../utils';
+import { ThemedAsset, ThemedIcon, ThemedText } from '../../components';
 
 export const ABOUT_KEY = 'About';
 

@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { getLocal, setLocal } from '../utils';
+import { getLocal, setLocal } from '../helpers';
 
 export const Repo = (api) => {
     return {

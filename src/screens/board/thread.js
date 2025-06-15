@@ -8,11 +8,12 @@ import { State } from 'react-native-gesture-handler';
 import ImageCropPicker from 'react-native-image-crop-picker';
 
 import { Ctx } from '../../app';
+import { Fab, HeaderIcon, HtmlText, ModalAlert, ModalLocalMediaPreview, ModalMediaPreview, ModalMenu, ModalView, ThemedIcon, ThemedText } from '../../components';
 import { threadSorts } from '../../context/state';
 import { hasCommentsErrors } from '../../context/temp';
 import { Repo } from '../../data/repo';
 import { loadComments, uploadComment } from '../../data/utils';
-import { Fab, getCurrBoard, getRepliesTo, HeaderIcon, HtmlHeader, HtmlText, ModalAlert, ModalLocalMediaPreview, ModalMediaPreview, ModalMenu, ModalView, quotes, relativeTime, ThemedIcon, ThemedText } from '../../utils';
+import { getCurrFullBoard, getRepliesTo, getThreadHeaderSignature, quotes, relativeTime } from '../../helpers';
 export const THREAD_KEY = 'Thread';
 
 const getDefaultForm = (config, thread) => {
@@ -29,13 +30,16 @@ const getDefaultForm = (config, thread) => {
 
 export const ThreadHeaderTitle = () => {
     const { state, config } = React.useContext(Ctx);
+    const { width } = useWindowDimensions();
     const thread = state.history.at(-1).thread;
+    const titleWidth = width - 150;
+    const title = getThreadHeaderSignature(thread);
 
     return <Marquee
         speed={config.disableMovingElements ? 0 : 0.3}
-        spacing={100}
+        spacing={titleWidth}
         style={{ flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
-        <HtmlHeader value={`/${thread.board}/ - ${thread.sub || thread.com}`} />
+        <HtmlText value={`<header>${title}</header>`} raw={true} />
     </Marquee>;
 };
 export const ThreadHeaderRight = () => {
@@ -118,7 +122,7 @@ export const Thread = () => {
     const [repliesStack, setRepliesStack] = React.useState([]);
     const [createComment, setCreateComment] = React.useState(false);
     const [form, setForm] = React.useState(getDefaultForm(config, thread));
-    const board = getCurrBoard(state);
+    const board = getCurrFullBoard(state);
 
     useFocusEffect(
         useCallback(() => {

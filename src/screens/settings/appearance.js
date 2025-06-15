@@ -4,8 +4,8 @@ import { useContext } from 'react';
 import { ScrollView } from 'react-native';
 
 import { Ctx } from '../../app';
+import { BooleanConfig, Col, Row, ThemedText } from '../../components';
 import { Config } from '../../context/config';
-import { BooleanConfig, Col, Row, ThemedText } from '../../utils';
 
 export const APPEARANCE_KEY = 'Appearance';
 
