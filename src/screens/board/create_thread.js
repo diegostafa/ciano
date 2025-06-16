@@ -1,10 +1,10 @@
 import { useNavigation, useTheme } from "@react-navigation/native";
 import React from "react";
-import { KeyboardAvoidingView, Platform, TouchableNativeFeedback, View } from "react-native";
+import { KeyboardAvoidingView, TouchableNativeFeedback } from "react-native";
 import { TextInput } from "react-native-gesture-handler";
 
-import { Ctx } from "../../app";
-import { HeaderButton, ModalAlert, ThemedText } from "../../components";
+import { Ctx, isIos } from "../../app";
+import { Col, HeaderButton, ModalAlert, ThemedText } from "../../components";
 import { Repo } from "../../data/repo";
 import { loadThreads } from "../../data/utils";
 
@@ -12,11 +12,11 @@ export const CREATE_THREAD_KEY = 'CreateThread';
 
 export const CreateThreadHeaderTitle = () => {
     const { state } = React.useContext(Ctx);
-    return <View>
+    return <Col>
         <TouchableNativeFeedback>
             <ThemedText content={`Create a thread in /${state.board}/`} />
         </TouchableNativeFeedback>
-    </View>;
+    </Col>;
 };
 export const CreateThreadHeaderRight = () => {
     const { state, setState, temp, setTemp, config } = React.useContext(Ctx);
@@ -24,13 +24,13 @@ export const CreateThreadHeaderRight = () => {
     const sailor = useNavigation();
     const [needsConfirmation, setNeedsConfirmation] = React.useState(false);
 
-    return <View style={{
+    return <Col style={{
         overflow: 'hidden',
         borderRadius: config.borderRadius,
         marginRight: 5,
     }}>
         <HeaderButton
-            enabled={true}
+            enabled
             onPress={() => { setNeedsConfirmation(true); }}
             child={<ThemedText content={'Post'} />}
         />
@@ -40,7 +40,7 @@ export const CreateThreadHeaderRight = () => {
                 msg={`You are about to post a thread in /${state.board}/\nThis can't be reversed`}
                 left={'Cancel'}
                 right={'Submit'}
-                visible={true}
+                visible
                 onClose={() => { setNeedsConfirmation(false); }}
                 onPressLeft={() => { setNeedsConfirmation(false); }}
                 onPressRight={async () => {
@@ -52,7 +52,7 @@ export const CreateThreadHeaderRight = () => {
                 }}
             />
         }
-    </View>
+    </Col>
 };
 export const CreateThread = () => {
     const { state, config } = React.useContext(Ctx);
@@ -82,29 +82,29 @@ export const CreateThread = () => {
         color: theme.colors.text
     };
 
-    return <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }} >
-        <View style={{ flex: 1 }}>
+    return <KeyboardAvoidingView behavior={isIos() ? 'padding' : 'height'} style={{ flex: 1 }} >
+        <Col style={{ flex: 1 }}>
             {form.media &&
-                <View>
+                <Col>
                     <ThemedText content={form.media} />
-                </View>
+                </Col>
             }
 
-            <View style={outerStyle} >
-                <View style={{ padding: 10, }}>
+            <Col style={outerStyle} >
+                <Col style={{ padding: 10, }}>
                     <ThemedText content={'Name'} />
-                </View>
+                </Col>
                 <TextInput
                     value={form.data.alias || ''}
                     style={inputStyle}
                     placeholder='Name (Optional)'
                     onChangeText={(text) => setForm({ ...form, data: { ...form.data, alias: text } })}
                 />
-            </View>
-            <View style={outerStyle} >
-                <View style={{ padding: 10, }}>
+            </Col>
+            <Col style={outerStyle} >
+                <Col style={{ padding: 10, }}>
                     <ThemedText content={'Subject'} />
-                </View>
+                </Col>
                 <TextInput
                     value={form.data.sub || ''}
                     style={inputStyle}
@@ -112,14 +112,14 @@ export const CreateThread = () => {
                     multiline
                     onChangeText={(text) => setForm({ ...form, data: { ...form.data, sub: text } })}
                 />
-            </View>
-            <View style={{
+            </Col>
+            <Col style={{
                 ...outerStyle,
                 flex: 1
             }} >
-                <View style={{ padding: 10, }}>
+                <Col style={{ padding: 10, }}>
                     <ThemedText content={'Comment'} />
-                </View>
+                </Col>
                 <TextInput
                     placeholder="Comment"
                     value={form.data.com || ''}
@@ -127,7 +127,7 @@ export const CreateThread = () => {
                     multiline
                     onChangeText={(text) => setForm({ ...form, data: { ...form.data, com: text } })}
                 />
-            </View>
-        </View>
+            </Col>
+        </Col>
     </KeyboardAvoidingView>;
 };

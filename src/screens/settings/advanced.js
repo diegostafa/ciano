@@ -1,10 +1,10 @@
 /* eslint-disable react/react-in-jsx-scope */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useContext } from 'react';
-import { ScrollView, TouchableNativeFeedback, View } from 'react-native';
+import { ScrollView, TouchableNativeFeedback } from 'react-native';
 
 import { Ctx } from '../../app';
-import { ThemedText } from '../../components';
+import { Col, ThemedText } from '../../components';
 import { Config } from '../../context/config';
 import { State } from '../../context/state';
 import { Temp } from '../../context/temp';
@@ -16,38 +16,38 @@ export const Advanced = () => {
     const { state, setState, temp, setTemp, setConfig } = useContext(Ctx);
 
     return <ScrollView style={{ padding: 20, flex: 1 }}>
-        <View>
+        <Col>
             <TouchableNativeFeedback onPress={async () => {
                 const s = State.default();
                 await State.save(s);
                 setState(s);
             }}>
-                <View>
+                <Col>
                     <ThemedText content={"clear state"} />
-                </View>
+                </Col>
             </TouchableNativeFeedback>
-        </View>
-        <View>
+        </Col>
+        <Col>
             <TouchableNativeFeedback onPress={async () => {
                 setTemp(Temp.default);
             }}>
-                <View>
+                <Col>
                     <ThemedText content={"clear temp"} />
-                </View>
+                </Col>
             </TouchableNativeFeedback>
-        </View>
-        <View>
+        </Col>
+        <Col>
             <TouchableNativeFeedback onPress={async () => {
                 const c = Config.default();
                 await Config.save(c);
                 setConfig(c);
             }}>
-                <View>
+                <Col>
                     <ThemedText content={"clear conf"} />
-                </View>
+                </Col>
             </TouchableNativeFeedback>
-        </View>
-        <View>
+        </Col>
+        <Col>
             <TouchableNativeFeedback onPress={async () => {
                 State.save(state);
 
@@ -62,19 +62,19 @@ export const Advanced = () => {
                 setState(newState);
                 setTemp(Temp.switchApi(temp));
             }}>
-                <View>
+                <Col>
                     <ThemedText content={"switch api, current: " + state.api.name} />
-                </View>
+                </Col>
             </TouchableNativeFeedback>
-        </View>
-        <View>
+        </Col>
+        <Col>
             <TouchableNativeFeedback onPress={async () => {
                 await AsyncStorage.clear();
             }}>
-                <View>
+                <Col>
                     <ThemedText content={"clear all cache"} />
-                </View>
+                </Col>
             </TouchableNativeFeedback>
-        </View>
+        </Col>
     </ScrollView >;
 };

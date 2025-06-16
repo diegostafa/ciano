@@ -20,10 +20,12 @@ const defaultConfig = {
     showNames: true,
     swipeToReply: false,
     showCatalogThumbnails: true,
-    loadFaster: true,
     autoWatchThreads: true,
     muteVideos: false,
     loopVideos: true,
+
+    // advanced
+    loadFaster: true,
 };
 export const Config = {
     get: async (key) => getLocal(key),

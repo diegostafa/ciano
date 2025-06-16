@@ -1,4 +1,7 @@
 const defaultTemp = {
+    isComputingThreads: false,
+    isComputingComments: false,
+
     connType: 'none',
     viewLocal: false,
 

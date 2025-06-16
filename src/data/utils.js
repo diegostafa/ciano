@@ -88,10 +88,13 @@ export const loadComments = async (state, setTemp, refresh) => {
             await Repo(state.api).comments.getLocalOrRemote(thread.board, thread.id);
 
         let comments = data;
-        const sort = threadSorts[state.threadSort].sort;
-        const head = comments[0]; // do not sort OP
-        const tail = comments.slice(1).sort((a, b) => sort({ state, comments })(a, b) * (state.threadRev ? -1 : 1));
-        comments = [head, ...tail];
+        // don't sort op
+        if (comments.lenght > 0) {
+            const sort = threadSorts[state.threadSort].sort;
+            const head = comments[0];
+            const tail = comments.slice(1).sort((a, b) => sort({ state, comments })(a, b) * (state.threadRev ? -1 : 1));
+            comments = [head, ...tail];
+        }
         setTemp(prev => ({ ...prev, comments, commentsBoard: thread.id }));
     }
     catch (err) {

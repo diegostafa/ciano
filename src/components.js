@@ -4,7 +4,7 @@ import { ImageZoom } from '@likashefqet/react-native-image-zoom';
 import { useTheme } from '@react-navigation/native';
 import { filesize } from 'filesize';
 import React, { useContext, useRef } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, Switch, Text, TouchableNativeFeedback, TouchableWithoutFeedback, useColorScheme, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Switch, Text, TouchableNativeFeedback, TouchableWithoutFeedback, useColorScheme, useWindowDimensions, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import HTMLView from 'react-native-htmlview';
@@ -22,16 +22,16 @@ export const ThemedIcon = ({ name, size, accent }) => {
     return <Icon name={name} size={size || 28} color={accent ? theme.colors.primary : theme.colors.text} />;
 };
 export const HeaderIcon = ({ name, onPress, size }) => {
-    return <View style={{
+    return <Col style={{
         overflow: 'hidden',
         borderRadius: '50%',
     }}>
         <TouchableNativeFeedback onPress={onPress}>
-            <View style={{ padding: 10 }}>
+            <Col style={{ padding: 10 }}>
                 <ThemedIcon name={name} size={size || 26} />
-            </View>
+            </Col>
         </TouchableNativeFeedback>
-    </View>;
+    </Col>;
 };
 export const TabIcon = (name) => ({ color }) => {
     return ThemedIcon({ name, size: 24, color });
@@ -52,7 +52,7 @@ export const Fab = ({ onPress, child }) => {
 
     }}>
         <TouchableNativeFeedback onPress={onPress}>
-            <View style={{
+            <Col style={{
                 backgroundColor: theme.colors.primary,
                 justifyContent: 'center',
                 alignItems: 'center',
@@ -60,7 +60,7 @@ export const Fab = ({ onPress, child }) => {
                 width: size,
             }}>
                 {child || <ThemedIcon name={'add'} />}
-            </View>
+            </Col>
         </TouchableNativeFeedback>
     </View>;
 };
@@ -76,14 +76,14 @@ export const ModalView = ({ content, visible, onClose, fullscreen, noBackdrop, a
         visible={visible}
         onRequestClose={onClose}>
         <TouchableWithoutFeedback onPress={noBackdrop ? null : onClose}>
-            <View
+            <Col
                 style={{
                     flex: 1,
                     justifyContent: 'center',
                     alignItems: 'center',
                     backgroundColor: 'rgba(0, 0, 0, 0.5)',
                 }}>
-                <View style={{
+                <Col style={{
                     borderWidth: fullscreen ? 0 : 1,
                     borderColor: theme.colors.highlight,
                     width: fullscreen ? '100%' : isVertical ? '90%' : '50%',
@@ -94,45 +94,48 @@ export const ModalView = ({ content, visible, onClose, fullscreen, noBackdrop, a
                     overflow: 'hidden'
                 }}>
                     {content}
-                </View>
-            </View>
+                </Col>
+            </Col>
         </TouchableWithoutFeedback>
     </Modal >;
 };
 export const ModalAlert = ({ msg, visible, left, right, onClose, onPressLeft, onPressRight, noBackdrop }) => {
     const btnStyle = { padding: 10, flex: 1, alignItems: 'center' };
+    const theme = useTheme();
 
     return <ModalView
         noBackdrop={noBackdrop}
         visible={visible}
         onClose={onClose}
         content={
-            <View>
-                <View style={{ padding: 15 }} >
+            <Col>
+                <Col style={{ padding: 15 }} >
                     <ThemedText content={msg} />
-                </View>
+                </Col>
 
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Row style={{ justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: theme.colors.border }}>
                     {left && <TouchableNativeFeedback onPress={onPressLeft}>
-                        <View style={btnStyle}>
+                        <Col style={btnStyle}>
                             <ThemedText content={left} />
-                        </View>
+                        </Col>
                     </TouchableNativeFeedback>}
+
+                    {left && right && <Col style={{ width: 1, backgroundColor: theme.colors.border }} />}
 
                     {right && <TouchableNativeFeedback onPress={onPressRight}>
-                        <View style={btnStyle}>
+                        <Col style={btnStyle}>
                             <ThemedText content={right} />
-                        </View>
+                        </Col>
                     </TouchableNativeFeedback>}
 
-                </View>
-            </View>
+                </Row>
+            </Col>
         }
     />
 }
 export const ModalMenu = ({ visible, onClose, items }) => {
     const theme = useTheme();
-    const btnStyle = { padding: 15, flexDirection: 'row' };
+    const btnStyle = { padding: 15 };
     const textStyle = { marginLeft: 15 };
     const activeTextStyle = { ...textStyle, color: theme.colors.primary };
 
@@ -140,27 +143,27 @@ export const ModalMenu = ({ visible, onClose, items }) => {
         visible={visible}
         onClose={onClose}
         content={
-            <View>
+            <ScrollView>
                 {items.map(([value, icon, action, isActive]) => {
                     return <TouchableNativeFeedback key={value} onPress={action}>
-                        <View style={btnStyle}>
+                        <Row style={btnStyle}>
                             {icon && <ThemedIcon name={icon} size={20} />}
                             <ThemedText content={capitalize(value)} style={isActive ? activeTextStyle : textStyle} />
-                        </View>
+                        </Row>
                     </TouchableNativeFeedback>
                 })}
-            </View>
+            </ScrollView>
         }
     />
 };
-export const ThemedText = ({ content, style }) => {
+export const ThemedText = ({ content, style, line }) => {
     const theme = useTheme();
     const { config } = useContext(Ctx);
     let fontSize = 14;
     if (style && 'fontSize' in style) {
         fontSize = style.fontSize * config.uiFontScale;
     }
-    return <Text style={{ ...style, color: theme.colors.text, fontSize }}>{content}</Text>;
+    return <Text ellipsizeMode='tail' numberOfLines={1} style={{ ...style, color: theme.colors.text, fontSize }}>{content}</Text>;
 };
 export const HtmlText = React.memo(({ value, onLinkPress, raw }) => {
     const theme = useTheme();
@@ -175,15 +178,14 @@ export const HeaderButton = ({ child, enabled, onPress }) => {
     const theme = useTheme();
     const { config } = React.useContext(Ctx);
 
-    return <View style={{
+    return <Col style={{
         overflow: 'hidden',
         borderRadius: config.borderRadius,
         marginRight: 5,
         backgroundColor: enabled ? theme.colors.primary : 'gray',
     }}>
         <TouchableNativeFeedback onPress={onPress}>
-            <View style={{
-                flexDirection: 'row',
+            <Col style={{
                 justifyContent: 'space-between',
                 paddingLeft: 15,
                 paddingRight: 15,
@@ -191,13 +193,13 @@ export const HeaderButton = ({ child, enabled, onPress }) => {
                 paddingBottom: 6,
             }}>
                 {child}
-            </View>
+            </Col>
         </TouchableNativeFeedback>
-    </View>;
+    </Col>;
 };
 export const ListSeparator = () => {
     const theme = useTheme();
-    return <View style={{ height: 2, backgroundColor: theme.colors.highlight }} />;
+    return <Col style={{ height: 2, backgroundColor: theme.colors.highlight }} />;
 }
 export const ModalMediaPreview = () => {
     const { width, height } = useWindowDimensions();
@@ -213,18 +215,18 @@ export const ModalMediaPreview = () => {
     }, [temp.mediaDownloadSuccess]);
 
     return <ModalView
-        fullscreen={true}
+        fullscreen
         visible={temp.selectedMediaComment !== null}
         onClose={() => { setTemp({ ...temp, selectedMediaComment: null }); }}
-        noBackdrop={true}
+        noBackdrop
         animation={'slide'}
         content={
-            <View style={{ width, height, backgroundColor: 'rgba(0,0,0,0)' }}>
+            <Col style={{ width, height, backgroundColor: 'rgba(0,0,0,0)' }}>
                 <MediaPreview
                     comment={temp.selectedMediaComment}
                     onClose={() => { setTemp({ ...temp, selectedMediaComment: null }); }}
                 />
-            </View>
+            </Col>
         }
     />;
 };
@@ -242,8 +244,7 @@ const MediaPreview = ({ comment, onClose }) => {
     const thumb = Repo(state.api).media.thumb(comment);
     const videoref = useRef(null);
 
-    return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-
+    return <Col style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ModalAlert
             visible={temp.mediaDownloadError !== null}
             msg={'The file could not be downloaded'}
@@ -252,7 +253,7 @@ const MediaPreview = ({ comment, onClose }) => {
         />
 
         {showHeader &&
-            <View style={{
+            <Row style={{
                 top: 0,
                 flex: 1,
                 justifyContent: 'space-between',
@@ -260,14 +261,12 @@ const MediaPreview = ({ comment, onClose }) => {
                 zIndex: 4,
                 width: '100%',
                 position: 'absolute',
-                flexDirection: 'row',
                 padding: 10,
                 backgroundColor: theme.colors.overlayBg,
             }}>
-
                 <Marquee
                     speed={config.disableMovingElements ? 0 : 0.3}
-                    spacing={width}
+                    spacing={width - 150}
                     style={{ flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
                     <ThemedText
                         style={{ fontWeight: 'bold', }}
@@ -275,13 +274,13 @@ const MediaPreview = ({ comment, onClose }) => {
                     />
                 </Marquee>
 
-                <View style={{ flexDirection: 'row', gap: 10 }}>
+                <Row style={{ gap: 10 }}>
                     <HeaderIcon name={'download'} onPress={async () => {
                         await downloadMedia(setTemp, state, comment);
                     }} />
                     <HeaderIcon name={'close'} onPress={onClose} />
-                </View>
-            </View>
+                </Row>
+            </Row>
         }
 
         {is_image &&
@@ -295,8 +294,8 @@ const MediaPreview = ({ comment, onClose }) => {
                     minScale={0.5}
                     maxScale={3}
                     doubleTapScale={3}
-                    isSingleTapEnabled={true}
-                    isDoubleTapEnabled={true}
+                    isSingleTapEnabled
+                    isDoubleTapEnabled
                 />
             </GestureHandlerRootView>}
 
@@ -313,7 +312,7 @@ const MediaPreview = ({ comment, onClose }) => {
             <Video
                 ref={videoref}
                 enterPictureInPictureOnLeave={false}
-                controls={true}
+                controls
                 muted={config.muteVideos}
                 repeat={config.loopVideos}
                 controlsStyles={{
@@ -327,7 +326,7 @@ const MediaPreview = ({ comment, onClose }) => {
             />}
 
 
-        {isLoading && <View style={{
+        {isLoading && <Col style={{
             justifyContent: 'center',
             alignItems: 'center',
             zIndex: 2,
@@ -343,10 +342,10 @@ const MediaPreview = ({ comment, onClose }) => {
                 minScale={0.5}
                 maxScale={3}
                 doubleTapScale={3}
-                isSingleTapEnabled={true}
-                isDoubleTapEnabled={true}
+                isSingleTapEnabled
+                isDoubleTapEnabled
             />
-            <View style={{
+            <Col style={{
                 justifyContent: 'center',
                 alignItems: 'center',
                 zIndex: 2,
@@ -354,9 +353,8 @@ const MediaPreview = ({ comment, onClose }) => {
                 width: '100%',
                 height: '100%',
             }}>
-                <View style={{
+                <Row style={{
                     maxWidth: '80%',
-                    flexDirection: 'row',
                     backgroundColor: theme.colors.background,
                     borderRadius: config.borderRadius,
                     padding: 15,
@@ -364,28 +362,28 @@ const MediaPreview = ({ comment, onClose }) => {
                 }}>
                     <ActivityIndicator size='large' color='white' />
                     <ThemedText content={`Loading...\nThis might take a while`} />
-                </View>
-            </View>
-        </View >}
-    </View>;
+                </Row>
+            </Col>
+        </Col >}
+    </Col>;
 };
 export const ModalLocalMediaPreview = () => {
     const { width, height } = useWindowDimensions();
     const { temp, setTemp } = React.useContext(Ctx);
 
     return <ModalView
-        fullscreen={true}
+        fullscreen
         visible={temp.selectedLocalMedia !== null}
         onClose={() => { setTemp({ ...temp, selectedLocalMedia: null }); }}
-        noBackdrop={true}
+        noBackdrop
         animation={'slide'}
         content={
-            <View style={{ width, height, backgroundColor: 'rgba(0,0,0,0)' }}>
+            <Col style={{ width, height, backgroundColor: 'rgba(0,0,0,0)' }}>
                 <LocalMediaPreview
                     media={temp.selectedLocalMedia}
                     onClose={() => { setTemp({ ...temp, selectedLocalMedia: null }); }}
                 />
-            </View>
+            </Col>
         }
     />;
 };
@@ -407,9 +405,9 @@ const LocalMediaPreview = ({ media, onClose }) => {
     const videoref = useRef(null);
 
 
-    return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+    return <Col style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         {showHeader &&
-            <View style={{
+            <Row style={{
                 top: 0,
                 flex: 1,
                 justifyContent: 'space-between',
@@ -417,14 +415,13 @@ const LocalMediaPreview = ({ media, onClose }) => {
                 zIndex: 4,
                 width: '100%',
                 position: 'absolute',
-                flexDirection: 'row',
                 padding: 10,
                 backgroundColor: theme.colors.overlayBg,
             }}>
 
                 <Marquee
                     speed={config.disableMovingElements ? 0 : 0.3}
-                    spacing={width}
+                    spacing={width - 150}
                     style={{ flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
                     <ThemedText
                         style={{ fontWeight: 'bold', }}
@@ -432,11 +429,10 @@ const LocalMediaPreview = ({ media, onClose }) => {
                     />
                 </Marquee>
 
-                <View style={{ flexDirection: 'row', gap: 10 }}>
+                <Row style={{ gap: 10 }}>
                     <HeaderIcon name={'close'} onPress={onClose} />
-                </View>
-            </View>
-        }
+                </Row>
+            </Row>}
 
         {is_image &&
             <GestureHandlerRootView style={{ flex: 1 }}>
@@ -449,8 +445,8 @@ const LocalMediaPreview = ({ media, onClose }) => {
                     minScale={0.5}
                     maxScale={3}
                     doubleTapScale={3}
-                    isSingleTapEnabled={true}
-                    isDoubleTapEnabled={true}
+                    isSingleTapEnabled
+                    isDoubleTapEnabled
                 />
             </GestureHandlerRootView>}
 
@@ -467,7 +463,7 @@ const LocalMediaPreview = ({ media, onClose }) => {
             <Video
                 ref={videoref}
                 enterPictureInPictureOnLeave={false}
-                controls={true}
+                controls
                 muted={config.muteVideos}
                 repeat={config.loopVideos}
                 controlsStyles={{
@@ -481,7 +477,7 @@ const LocalMediaPreview = ({ media, onClose }) => {
             />}
 
 
-        {isLoading && <View style={{
+        {isLoading && <Col style={{
             justifyContent: 'center',
             alignItems: 'center',
             zIndex: 2,
@@ -490,7 +486,7 @@ const LocalMediaPreview = ({ media, onClose }) => {
             height: '100%',
             gap: 10,
         }}>
-            <View style={{
+            <Col style={{
                 justifyContent: 'center',
                 alignItems: 'center',
                 zIndex: 2,
@@ -498,9 +494,8 @@ const LocalMediaPreview = ({ media, onClose }) => {
                 width: '100%',
                 height: '100%',
             }}>
-                <View style={{
+                <Row style={{
                     maxWidth: '80%',
-                    flexDirection: 'row',
                     backgroundColor: theme.colors.background,
                     borderRadius: config.borderRadius,
                     padding: 15,
@@ -508,17 +503,17 @@ const LocalMediaPreview = ({ media, onClose }) => {
                 }}>
                     <ActivityIndicator size='large' color='white' />
                     <ThemedText content={`Loading...\nThis might take a while`} />
-                </View>
-            </View>
-        </View >}
-    </View>;
+                </Row>
+            </Col>
+        </Col >}
+    </Col>;
 };
 export const BooleanConfig = ({ title, description, isEnabled, onToggle }) => {
-    return <View style={{ flexDirection: 'row', padding: 10 }}>
-        <View>
+    return <Row style={{ padding: 10 }}>
+        <Col>
             <ThemedText content={title} style={{ fontWeight: 'bold' }} />
             <ThemedText content={description} />
-        </View>
+        </Col>
         <Switch
             trackColor={{ false: '#767577', true: '#81b0ff' }}
             thumbColor={isEnabled ? '#f5dd4b' : '#f4f3f4'}
@@ -526,22 +521,19 @@ export const BooleanConfig = ({ title, description, isEnabled, onToggle }) => {
             onValueChange={onToggle}
             value={isEnabled}
         />
-    </View>;
+    </Row>;
 };
 export const Row = ({ children, style, ...rest }) => {
-    return (
-        <View style={[{ flexDirection: 'row' }, style]} {...rest}>
-            {children}
-        </View>
-    );
+    return <View style={[{ flexDirection: 'row' }, style]} {...rest}>
+        {children}
+    </View>;
 };
 export const Col = ({ children, style, ...rest }) => {
-    return (
-        <View style={[{ flexDirection: 'column' }, style]} {...rest}>
-            {children}
-        </View>
-    );
+    return <View style={[{ flexDirection: 'column' }, style]} {...rest}>
+        {children}
+    </View>;
 };
+
 export const ThemedAsset = ({ name, width, height, desc }) => {
     const theme = useColorScheme();
     return <Image

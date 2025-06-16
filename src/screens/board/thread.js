@@ -3,13 +3,12 @@ import { Marquee } from '@animatereactnative/marquee';
 import { useFocusEffect, useTheme } from '@react-navigation/native';
 import { filesize } from 'filesize';
 import React, { useCallback, useRef } from 'react';
-import { ActivityIndicator, BackHandler, FlatList, Image, Linking, ScrollView, TextInput, TouchableHighlight, TouchableNativeFeedback, useWindowDimensions, View } from 'react-native';
-import { State } from 'react-native-gesture-handler';
+import { ActivityIndicator, BackHandler, FlatList, Image, Linking, Pressable, ScrollView, TextInput, TouchableHighlight, TouchableNativeFeedback, useWindowDimensions } from 'react-native';
 import ImageCropPicker from 'react-native-image-crop-picker';
 
 import { Ctx } from '../../app';
-import { Fab, HeaderIcon, HtmlText, ModalAlert, ModalLocalMediaPreview, ModalMediaPreview, ModalMenu, ModalView, ThemedIcon, ThemedText } from '../../components';
-import { threadSorts } from '../../context/state';
+import { Col, Fab, HeaderIcon, HtmlText, ModalAlert, ModalLocalMediaPreview, ModalMediaPreview, ModalMenu, ModalView, Row, ThemedIcon, ThemedText } from '../../components';
+import { State, threadSorts } from '../../context/state';
 import { hasCommentsErrors } from '../../context/temp';
 import { Repo } from '../../data/repo';
 import { loadComments, uploadComment } from '../../data/utils';
@@ -39,7 +38,7 @@ export const ThreadHeaderTitle = () => {
         speed={config.disableMovingElements ? 0 : 0.3}
         spacing={titleWidth}
         style={{ flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
-        <HtmlText value={`<header>${title}</header>`} raw={true} />
+        <HtmlText value={`<header>${title}</header>`} raw />
     </Marquee>;
 };
 export const ThreadHeaderRight = () => {
@@ -49,26 +48,46 @@ export const ThreadHeaderRight = () => {
     const theme = useTheme();
     const [threadActions, setThreadActions] = React.useState(false);
     const [sortActions, setSortActions] = React.useState(false);
-    const isWatching = state.watching.includes(thread.id);
+    const isWatching = state.watching.some(item => item.thread.id === thread.id);
 
     const items = [
-        [isWatching ? 'Unwatch' : 'Watch', isWatching ? 'eye-off' : 'eye', () => {
-            setThreadActions(false);
-            if (isWatching) {
-                setState(prev => ({ ...prev, watching: prev.watching.filter(item => item !== thread.id) }));
+        (temp.comments !== null &&
+            isWatching ?
+            ["unwatch", "eye-off", () => {
+                setThreadActions(false);
+                setState(prev => ({ ...prev, watching: prev.watching.filter(item => item.thread.id !== thread.id) }));
             }
-            else {
-                setState(prev => ({ ...prev, watching: [...prev.watching, thread.id] }));
-            }
-        }],
+            ] :
+            ["watch, eye", () => {
+                setThreadActions(false);
+                setState(prev => ({
+                    ...prev, watching: [...prev.watching, {
+                        thread,
+                        last: thread.replies,
+                        new: 0,
+                        you: 0,
+                    }]
+                }));
+            }]
+        ),
         ['Sort...', 'options', () => {
             setThreadActions(false);
             setSortActions(true);
         }],
         ['reverse', 'swap-vertical', () => {
             setThreadActions(false);
-            setState({ ...state, threadRev: !state.threadRev });
-            setTemp(prev => ({ ...prev, comments: [...prev.comments].reverse() }));
+            setTemp(prev => ({ ...prev, isComputingComments: true }));
+            async function defer() {
+                setState({ ...state, threadRev: !state.threadRev });
+                // don't sort op
+                if (temp.comments.length > 0) {
+                    const head = temp.comments[0];
+                    const tail = temp.comments.slice(1).reverse();
+                    setTemp(prev => ({ ...prev, comments: [head, ...tail] }));
+                }
+                setTemp(prev => ({ ...prev, isComputingComments: false }));
+            }
+            defer()
         }],
         ['Refresh', 'refresh', () => {
             setThreadActions(false);
@@ -86,7 +105,7 @@ export const ThreadHeaderRight = () => {
             temp.threadReflist.current?.scrollToEnd();
         }]);
     }
-    return <View style={{ flexDirection: 'row', backgroundColor: theme.colors.card }}>
+    return <Row style={{ backgroundColor: theme.colors.card }}>
         <HeaderIcon name='search' onPress={() => { }} />
         <HeaderIcon name='ellipsis-vertical' onPress={() => { setThreadActions(true) }} />
 
@@ -104,13 +123,23 @@ export const ThreadHeaderRight = () => {
                 items={threadSorts.map(({ name, sort, icon }, index) => {
                     return [name, icon, async () => {
                         setSortActions(false);
-                        setState({ ...state, threadSort: index });
-                        setTemp({ ...temp, comments: temp.comments.sort(sort({ state: state, comments: temp.comments })) });
-                        await State.set('catalogSort', index);
+                        setTemp(prev => ({ ...prev, isComputingComments: true }));
+                        async function defer() {
+                            setState({ ...state, threadSort: index });
+                            await State.set('catalogSort', index);
+                            // don't sort op
+                            if (temp.comments.length > 0) {
+                                const head = temp.comments[0];
+                                const tail = temp.comments.slice(1).sort(sort({ state: state, comments: temp.comments }));
+                                setTemp({ ...temp, comments: [head, ...tail] });
+                            }
+                            setTemp(prev => ({ ...prev, isComputingComments: false }));
+                        }
+                        defer()
                     }]
                 })}
             />}
-    </View>;
+    </Row>;
 };
 export const Thread = () => {
     const { state, config, temp, setTemp } = React.useContext(Ctx);
@@ -168,7 +197,14 @@ export const Thread = () => {
         </ScrollView>;
     }
 
-    return <View style={{ flex: 1, backgroundColor: theme.colors.card }}>
+    if (temp.isComputingComments) {
+        return <Col style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator />
+            <ThemedText content={'sorting...'} />
+        </Col>;
+    }
+
+    return <Col style={{ flex: 1, backgroundColor: theme.colors.card }}>
         <CommentList
             repliesStack={repliesStack} setRepliesStack={setRepliesStack}
             selectedComment={selectedComment} setSelectedComment={setSelectedComment}
@@ -198,9 +234,8 @@ export const Thread = () => {
             state.api.name === 'ciano' && <Fab onPress={() => { setCreateComment(true) }} />}
 
 
-    </View>;
+    </Col>;
 };
-
 const RepliesModal = ({ repliesStack, setRepliesStack, setSelectedComment }) => {
     const { config } = React.useContext(Ctx);
     const currReplies = repliesStack.at(-1);
@@ -221,50 +256,50 @@ const RepliesModal = ({ repliesStack, setRepliesStack, setSelectedComment }) => 
     return <ModalView
         visible={repliesStack.length > 0}
         onClose={() => setRepliesStack(repliesStack.slice(0, -1))}
-        content={<View>
-            <View style={{ maxHeight: '90%', }} >
+        content={<Col>
+            <Col style={{ maxHeight: '90%', }} >
                 <FlatList
                     data={currReplies}
                     windowSize={10}
                     initialNumToRender={10}
                     maxToRenderPerBatch={50}
                     updateCellsBatchingPeriod={50}
-                    removeClippedSubviews={true}
-                    keyExtractor={(item) => item.id}
+                    removeClippedSubviews
+                    keyExtractor={(item) => String(item.id)}
                     renderItem={({ item, index }) => {
-                        return <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <View style={{ flex: 1 }}>
+                        return <Row style={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Col style={{ flex: 1 }}>
                                 <CommentTile
                                     index={index}
                                     comment={item}
                                     tw={width}
                                     repliesStack={repliesStack} setRepliesStack={setRepliesStack}
                                     setSelectedComment={setSelectedComment} />
-                            </View>
-                        </View>;
+                            </Col>
+                        </Row>;
                     }}
                 />
-            </View>
-            <View style={{ position: 'relative', bottom: 0, flexDirection: 'row', borderRadius: config.borderRadius, }}>
+            </Col>
+            <Row style={{ position: 'relative', bottom: 0, borderRadius: config.borderRadius, }}>
                 {repliesStack.length > 1 &&
-                    <View style={btnOuterStyle}>
+                    <Col style={btnOuterStyle}>
                         <TouchableNativeFeedback onPress={() => setRepliesStack(repliesStack.slice(0, -1))}>
-                            <View style={btnStyle}>
+                            <Col style={btnStyle}>
                                 <ThemedText content={`Back (${repliesStack.length - 1})`} />
-                            </View>
+                            </Col>
                         </TouchableNativeFeedback>
-                    </View>
+                    </Col>
                 }
-                <View style={btnOuterStyle}>
+                <Col style={btnOuterStyle}>
                     <TouchableNativeFeedback
                         onPress={() => setRepliesStack([])}>
-                        <View style={btnStyle}>
+                        <Col style={btnStyle}>
                             <ThemedText content='Close' />
-                        </View>
+                        </Col>
                     </TouchableNativeFeedback>
-                </View>
-            </View>
-        </View>}
+                </Col>
+            </Row>
+        </Col>}
     />;
 };
 const NoComments = () => {
@@ -272,11 +307,11 @@ const NoComments = () => {
     const thread = state.history.at(-1).thread;
     const tw = useWindowDimensions().width;
 
-    return <View>
+    return <Col>
         <CommentTile comment={thread} tw={tw} index={0} />
         <ThemedText content={'TODO: THERE ARE NO COMMENTS'} />
         <ModalMediaPreview />
-    </View>;
+    </Col>;
 };
 const CommentList = ({ selectedComment, setSelectedComment, repliesStack, setRepliesStack }) => {
     const { state, config, temp, setTemp } = React.useContext(Ctx);
@@ -310,7 +345,7 @@ const CommentList = ({ selectedComment, setSelectedComment, repliesStack, setRep
         initialNumToRender={config.loadFaster ? 10 : temp.comments.length}
         maxToRenderPerBatch={50}
         updateCellsBatchingPeriod={50}
-        removeClippedSubviews={true}
+        removeClippedSubviews
         // ItemSeparatorComponent={ListSeparator}
         ListFooterComponent={<ThreadInfo />}
         renderItem={renderItem}
@@ -322,8 +357,6 @@ const CommentTile = React.memo(({ comment, selectedComment, setSelectedComment, 
     const { state, config, temp, setTemp, } = React.useContext(Ctx);
     const { width, height } = useWindowDimensions() || {}
     const isVertical = width < height;
-
-
     const comments = temp.comments || [];
     const theme = useTheme();
     const thumbWidth = isVertical ? width / 4 : height / 4;
@@ -334,10 +367,8 @@ const CommentTile = React.memo(({ comment, selectedComment, setSelectedComment, 
     const reply = replies.length === 1 ? 'reply' : 'replies';
     const alias = config.showNames ? `<name>${comment.alias || config.alias || 'Anonymous'}</name>, ` : '';
 
-
     let style = {
         backgroundColor: theme.colors.background,
-        flexDirection: 'column',
     };
     if (selectedComment && comment.id === selectedComment.id) {
         style = {
@@ -360,39 +391,39 @@ const CommentTile = React.memo(({ comment, selectedComment, setSelectedComment, 
         };
     }
 
-    return <View style={{
+    return <Col style={{
         overflow: 'hidden',
         borderRadius: config.borderRadius,
         margin: 5,
     }}>
-        <View style={style}>
-            <TouchableNativeFeedback onLongPress={() => { setSelectedComment(comment); }}>
-                <View style={{ padding: 8 }}>
-                    <View style={{ flexDirection: 'row' }}>
+        <Col style={style}>
+            <Pressable onLongPress={() => { setSelectedComment(comment); }}>
+                <Col style={{ padding: 8 }}>
+                    <Row>
                         {img &&
                             <TouchableNativeFeedback
                                 onPress={() => { setTemp(prev => ({ ...prev, selectedMediaComment: comment })); }}>
                                 <Image src={img} style={{ borderRadius: config.borderRadius, width: thumbWidth, height: thumbWidth, marginRight: 8 }} />
                             </TouchableNativeFeedback>}
 
-                        <View style={{ flex: 1 }}>
+                        <Col style={{ flex: 1 }}>
                             {comment.sub && <HtmlText value={`<sub>${comment.sub}</sub>`} />}
 
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                            <Row style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
                                 <HtmlText value={`${alias}<info>${comment.created_at ? relativeTime(comment.created_at) : ''}</info>`} />
                                 <HtmlText value={`<info>ID: ${comment.id}</info>`} />
-                            </View>
+                            </Row>
 
                             {img &&
-                                <View>
+                                <Col>
                                     <HtmlText value={`<info>File: ${comment.file_name}.${comment.media_ext}</info>`} />
                                     {comment.media_size && <HtmlText value={`<info>Size: ${filesize(comment.media_size)} </info>`} />}
-                                </View>}
-                        </View>
-                    </View>
+                                </Col>}
+                        </Col>
+                    </Row>
 
                     {comment.com &&
-                        <View style={{ marginTop: 8 }}>
+                        <Col style={{ marginTop: 8 }}>
                             <HtmlText value={`<com>${comment.com}</com>`} onLinkPress={(url) => {
                                 if (url.startsWith('#')) { url = url.slice(2); }
                                 const quoted = comments.find(c => c.id === Number(url));
@@ -402,36 +433,34 @@ const CommentTile = React.memo(({ comment, selectedComment, setSelectedComment, 
                                     Linking.openURL(url);
                                 }
                             }} />
-                        </View>}
-                </View>
-            </TouchableNativeFeedback>
+                        </Col>}
+                </Col>
+            </Pressable>
 
             {replies.length > 0 &&
-                <View style={{ flexDirection: 'row' }}>
-                    <View style={{
+                <Row>
+                    <Row style={{
                         flex: 1,
                         borderColor: 'red',
                         overflow: 'hidden',
-                        flexDirection: 'row'
                     }}>
                         <TouchableNativeFeedback
                             onPress={() => setRepliesStack([...repliesStack, replies])}>
-                            <View style={{
+                            <Row style={{
                                 flex: 1,
                                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
                                 padding: 6,
                                 alignItems: 'center',
-                                flexDirection: 'row',
                                 justifyContent: 'space-between'
                             }}>
                                 <HtmlText value={`<replies>View ${replies.length} ${reply}</replies>`} />
                                 <ThemedIcon name='chevron-down-outline' size={20} color={theme.colors.text} />
-                            </View>
+                            </Row>
                         </TouchableNativeFeedback>
-                    </View>
-                </View>}
-        </View>
-    </View>;
+                    </Row>
+                </Row>}
+        </Col>
+    </Col>;
 }, (prevProps, nextProps) => {
     return prevProps.index === nextProps.index &&
         prevProps.comment === nextProps.comment &&
@@ -447,8 +476,7 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
     const handleSize = 32;
 
     if (temp.isUploadingComment) {
-        return <View style={{
-            flexDirection: 'row',
+        return <Row style={{
             borderTopWidth: 1,
             padding: 10,
             borderColor: theme.colors.primary,
@@ -458,15 +486,15 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
         }}>
             <ActivityIndicator size="large" />
             <ThemedText content={'Uploading your comment...'} />
-        </View>
+        </Row>
     }
 
-    return <View style={{
+    return <Col style={{
         backgroundColor: theme.colors.background,
         maxHeight: '50%',
         height: viewMode === 2 ? '50%' : undefined
     }}>
-        <View style={{
+        <Col style={{
             position: 'absolute',
             borderColor: theme.colors.primary,
             borderTopWidth: 1,
@@ -478,42 +506,42 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
             <TouchableNativeFeedback onPress={() => {
                 setViewMode(prev => (prev + 1) % 3);
             }}>
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <Col style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     {viewMode === 2 ?
                         <ThemedIcon name='chevron-down-outline' size={handleSize} /> :
                         <ThemedIcon name='chevron-up-outline' size={handleSize} />
                     }
-                </View>
+                </Col>
             </TouchableNativeFeedback>
-        </View>
+        </Col>
         {form.media &&
-            <View style={{ marginTop: 10, marginLeft: 10, marginRight: 10, }}>
-                <View style={{ flexDirection: 'row' }}>
+            <Col style={{ marginTop: 10, marginLeft: 10, marginRight: 10, }}>
+                <Row>
                     <TouchableHighlight onPress={() => {
                         setTemp(prev => ({ ...prev, selectedLocalMedia: form.media }));
                     }}>
                         <Image src={form.media.path} resizeMode="contain" style={{ width: 100, height: 100, borderRadius: config.borderRadius, }} />
                     </TouchableHighlight>
-                    <View style={{ flex: 1, paddingLeft: 10, justifyContent: 'space-between' }}>
-                        <View>
+                    <Col style={{ flex: 1, paddingLeft: 10, justifyContent: 'space-between' }}>
+                        <Col>
                             <ThemedText content={`Name: ${form.media.path.split('/').pop()}`} />
                             <ThemedText content={`Size: ${filesize(form.media.size)}`} />
                             <ThemedText content={`Type: ${form.media.mime}`} />
-                        </View>
+                        </Col>
                         <TouchableNativeFeedback onPress={() => {
                             setForm({ ...form, media: null });
                         }}>
-                            <View style={{ padding: 10, width: '30%', alignItems: 'center', backgroundColor: 'rgba(255, 0,0, 0.2)', borderRadius: config.borderRadius }}>
+                            <Col style={{ padding: 10, width: '30%', alignItems: 'center', backgroundColor: 'rgba(255, 0,0, 0.2)', borderRadius: config.borderRadius }}>
                                 <ThemedText content={`Remove`} />
-                            </View>
+                            </Col>
                         </TouchableNativeFeedback>
-                    </View>
-                </View>
-            </View>}
+                    </Col>
+                </Row>
+            </Col>}
 
-        <View style={{ padding: 10, gap: 10, }}>
+        <Col style={{ padding: 10, gap: 10, }}>
             {viewMode > 0 &&
-                <View style={{ borderRadius: config.borderRadius, overflow: 'hidden' }}>
+                <Col style={{ borderRadius: config.borderRadius, overflow: 'hidden' }}>
                     <TextInput
                         value={form.data.alias || ''}
                         style={{
@@ -525,16 +553,15 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                         placeholder='Name (Optional)'
                         onChangeText={(text) => setForm({ ...form, data: { ...form.data, alias: text } })}
                     />
-                </View>
+                </Col>
             }
 
-            <View style={{
-                flexDirection: 'row',
+            <Row style={{
                 borderRadius: config.borderRadius,
                 overflow: 'hidden',
                 backgroundColor: theme.colors.highlight
             }}>
-                <View style={{}}>
+                <Col>
                     <TouchableNativeFeedback onPress={() => {
                         ImageCropPicker.openPicker({
                             mediaType: "any",
@@ -544,12 +571,12 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                             console.log(media);
                         });
                     }}>
-                        <View style={{ padding: 10, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                        <Col style={{ padding: 10, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                             <ThemedIcon name={'attach'} size={22} />
-                        </View>
+                        </Col>
                     </TouchableNativeFeedback>
 
-                </View>
+                </Col>
                 <TextInput
                     value={form.data.com || ''}
                     style={{
@@ -563,7 +590,7 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                     multiline
                     onChangeText={(text) => setForm({ ...form, data: { ...form.data, com: text } })}
                 />
-                <View style={{}}>
+                <Col>
                     <TouchableNativeFeedback onPress={async () => {
                         const data = form;
                         setForm(getDefaultForm(config, thread))
@@ -571,26 +598,35 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                         setCreateComment(false);
                         await loadComments(state, setTemp, true);
                         if (config.autoWatchThreads) {
-                            setState(prev => ({ ...prev, watching: [...prev.watching, thread.id] }))
+                            if (!state.watching.some(item => item.threadId === thread.id)) {
+                                setState(prev => ({
+                                    ...prev, watching: [...prev.watching, {
+                                        thread,
+                                        last: temp.comments.length,
+                                        new: 0,
+                                        you: 0
+                                    }]
+                                }))
+                            }
                         }
                     }}>
-                        <View style={{ padding: 10, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                        <Col style={{ padding: 10, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                             <ThemedIcon name={'send'} size={22} />
-                        </View>
+                        </Col>
                     </TouchableNativeFeedback>
-                </View>
-            </View>
-        </View>
-    </View >;
+                </Col>
+            </Row>
+        </Col>
+    </Col >;
 };
 const ThreadInfo = () => {
     const { state } = React.useContext(Ctx);
     const thread = state.history.at(-1).thread;
 
-    return <View style={{ padding: 15 }}>
+    return <Col style={{ padding: 15 }}>
         <ThemedText content={`Replies: ${thread.replies}`} />
         <ThemedText content={`Images: ${thread.images}`} />
-    </View>;
+    </Col>;
 };
 const CommentMenu = ({ selectedComment, setSelectedComment }) => {
     const { state, setState, temp, config } = React.useContext(Ctx);

@@ -1,10 +1,10 @@
-import { useNavigation, useTheme } from '@react-navigation/native';
+import { CommonActions, DrawerActions, useNavigation, useTheme } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { FlatList, Image, TouchableNativeFeedback, useWindowDimensions, View } from 'react-native';
+import { FlatList, Image, TouchableNativeFeedback, useWindowDimensions } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
 
 import { BAR_HEIGHT, BOARD_TAB_KEY, BOTTOM_NAV_KEY, Ctx, THREAD_KEY } from '../app';
-import { HeaderIcon, HtmlText, ModalAlert, ThemedAsset, ThemedText } from '../components';
+import { Col, HeaderIcon, HtmlText, ModalAlert, Row, ThemedAsset, ThemedText } from '../components';
 import { Repo } from '../data/repo';
 import { getThreadSignature, historyAdd } from '../helpers';
 
@@ -17,11 +17,14 @@ export const History = () => {
     const [forget, setForget] = useState(null);
     const [forgetAll, setForgetAll] = useState(false);
     const theme = useTheme();
-    const topPad = BAR_HEIGHT;
-    const bottomPad = 60;
-    const history = state.history.filter(item => getThreadSignature(item.thread).includes(filter.toLowerCase()))
+    const headerPad = BAR_HEIGHT;
+    const searchPad = 40;
+    const noHistory = state.history.length === 0;
+    const history = state.history.filter(item => getThreadSignature(item.thread).toLowerCase().includes(filter.toLowerCase()))
 
-    return <View style={{ flex: 1, overflow: 'hidden' }}>
+    console.log(history)
+
+    return <Col style={{ flex: 1, overflow: 'hidden' }}>
         <ModalAlert
             visible={forget !== null}
             onClose={() => { setForget(null); }}
@@ -37,7 +40,7 @@ export const History = () => {
         <ModalAlert
             visible={forgetAll}
             onClose={() => { setForgetAll(false); }}
-            msg={'Delete all the history?'}
+            msg={'Delete all history?'}
             left={'No'}
             right={'Yes'}
             onPressLeft={() => { setForgetAll(false); }}
@@ -47,48 +50,47 @@ export const History = () => {
             }}
         />
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, height: topPad, }}>
-            {history.lenght > 0 && <View style={{ position: 'absolute', left: 0 }}>
-                <HeaderIcon name={'trash'} onPress={() => { setForgetAll(true); }} />
-            </View>}
-            <ThemedText content={'History'} style={{ fontSize: 20, }} />
-        </View>
-        <View style={{ height: height - bottomPad - topPad }}>
-            {history.length === 0 ?
-                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                    <ThemedAsset name={"error"} width={200} height={200} />
-                    <ThemedText content={'There is no history to show'} />
-                </View> :
-                <FlatList
-                    data={history}
-                    renderItem={({ index }) => {
-                        const item = history[history.length - 1 - index];
-                        return <HistoryTile item={item} th={th} setForget={setForget} />;
-                    }}
-                    keyExtractor={(item) => item.thread.id}
-                />
-            }
-
-        </View>
-        {history.length > 0 &&
-            <View style={{ bottom: 0, height: bottomPad }}>
+        {!noHistory &&
+            <Col style={{ bottom: 0, height: searchPad }}>
                 <TextInput
                     onChangeText={text => setFilter(text)}
                     value={filter}
                     placeholder='Search in the history...'
                     style={{
                         flex: 1,
-                        height: bottomPad,
+                        height: searchPad,
                         padding: 10,
                         fontSize: 16,
                         backgroundColor: theme.colors.background,
                         color: theme.colors.text,
                     }} />
-            </View>
-        }
-    </View>;
-};
+            </Col>}
 
+        <Col style={{ height: height - searchPad - headerPad, backgroundColor: theme.colors.card }}>
+            {history.length === 0 ?
+                <Col style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    <ThemedAsset name={"error"} width={200} height={200} />
+                    <ThemedText content={'There is no history to show'} />
+                </Col> :
+                <FlatList
+                    data={history}
+                    renderItem={({ index }) => {
+                        const item = history[history.length - 1 - index];
+                        return <HistoryTile item={item} th={th} setForget={setForget} />;
+                    }}
+                    keyExtractor={(item) => String(item.thread.id)}
+                />
+            }
+
+        </Col>
+        <Row style={{ alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, height: headerPad, }}>
+            {!noHistory && <Col style={{ position: 'absolute', left: 0 }}>
+                <HeaderIcon name={'trash'} onPress={() => { setForgetAll(true); }} />
+            </Col>}
+            <ThemedText content={'History'} style={{ fontSize: 20, }} />
+        </Row>
+    </Col>;
+};
 const HistoryTile = ({ item, th, setForget }) => {
     const sailor = useNavigation();
     const theme = useTheme();
@@ -100,18 +102,25 @@ const HistoryTile = ({ item, th, setForget }) => {
     const imgSz = th - padding * 2 - margin;
     const sign = getThreadSignature(thread);
 
-    return <View style={{ marginLeft: 5, marginRight: 5, borderRadius: 10, overflow: 'hidden', marginTop: margin, backgroundColor: theme.colors.highlight }}>
+    return <Col style={{ marginLeft: 5, marginRight: 5, borderRadius: 10, overflow: 'hidden', marginTop: margin, backgroundColor: theme.colors.background }}>
         <TouchableNativeFeedback
             onLongPress={() => { setForget(item); }}
             onPress={() => {
-                historyAdd(state, setState, thread)
-                sailor.navigate(BOTTOM_NAV_KEY, {
-                    screen: BOARD_TAB_KEY,
-                    params: { screen: THREAD_KEY },
-                });
+                historyAdd(state, setState, thread);
+                sailor.dispatch(DrawerActions.closeDrawer());
+                sailor.dispatch(CommonActions.navigate({
+                    name: BOTTOM_NAV_KEY,
+                    params: {
+                        screen: BOARD_TAB_KEY,
+                        params: {
+                            screen: THREAD_KEY,
+                        }
+                    }
+                })
+                );
             }}>
-            <View>
-                <View style={{ overflow: 'hidden', marginRight: 10, alignItems: 'center', padding, height: th, flexDirection: 'row', gap: 15 }} >
+            <Col>
+                <Row style={{ overflow: 'hidden', marginRight: 10, alignItems: 'center', padding, height: th, gap: 15 }} >
                     <Image src={img} style={{
                         top: 0,
                         borderRadius: th / 2,
@@ -119,8 +128,8 @@ const HistoryTile = ({ item, th, setForget }) => {
                         height: imgSz,
                     }} />
                     <HtmlText value={sign} />
-                </View>
-            </View>
+                </Row>
+            </Col>
         </TouchableNativeFeedback>
-    </View>;
+    </Col>;
 };

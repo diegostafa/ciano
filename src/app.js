@@ -4,14 +4,16 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
-import { ActivityIndicator, AppState, Platform, useColorScheme, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, AppState, Platform, useColorScheme, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
 
-import { TabIcon } from './components.js';
+import { Col, TabIcon } from './components.js';
 import { Config } from './context/config.js';
 import { State } from './context/state.js';
 import { Temp } from './context/temp.js';
+import { Repo } from "./data/repo.js";
+import { quotes } from "./helpers.js";
 import { BOARD_TAB_KEY, BoardTab } from './screens/board/tab.js';
 import { THREAD_KEY } from './screens/board/thread.js';
 import { History } from "./screens/history.js";
@@ -28,6 +30,8 @@ export const BAR_HEIGHT = 48;
 export const BAR_WIDTH = 128;
 export const DRAWER_WIDTH = 300;
 export const BOTTOM_NAV_KEY = 'BottomNav';
+export const isIos = () => Platform.OS === 'ios';
+export const isAndroid = () => Platform.OS === 'android';
 
 export const App = () => {
     const colorscheme = useColorScheme();
@@ -35,6 +39,7 @@ export const App = () => {
     const [state, setState] = React.useState(null);
     const [config, setConfig] = React.useState(null);
     const [temp, setTemp] = React.useState(Temp.default());
+    const [watcherTask, setWatchertask] = React.useState(null);
 
     async function restoreState() { setState(await State.restore()) }
     async function restoreConfig() { setConfig(await Config.restore()) }
@@ -61,13 +66,39 @@ export const App = () => {
         return () => { unsubscribe(); };
     }, [config, state]);
 
+    React.useEffect(() => {
+        if (state && config) {
+            if (config.enableWatcher) {
+                const task = setInterval(() => {
+                    const newWatching = state.watching.map(async watched => {
+                        const newComments = await Repo(state.api).comments.getRemote(watched.boardId, watched.threadId);
+                        const diff = newComments.slice(watched.last);
+                        const you = newComments.filter(com => quotes(com).some(id => state.myComments.includes(id)));
+                        return {
+                            ...watched,
+                            new: diff.length,
+                            you: you.length,
+                        };
 
-    if (!state || !config) { return <View><ActivityIndicator /></View>; }
+                    });
+                    setState(prev => ({ ...prev, watching: newWatching }));
+                    setWatchertask(task);
+                }, config.watcherUpdateSecs * 1000)
+            }
+            else {
+                if (watcherTask) {
+                    clearInterval(watcherTask);
+                    setWatchertask(null);
+                }
+            }
+        }
+    }, [config, state, watcherTask]);
+
+    if (!state || !config) { return <Col><ActivityIndicator /></Col>; }
 
     const theme = colorscheme === 'dark' ?
         config.highContrast ? DarkThemeHighContrast : DarkTheme :
         config.highContrast ? LightThemeHighContrast : LightTheme;
-
 
     return <Ctx.Provider value={{ state, setState, config, setConfig, temp, setTemp }}>
         <NavigationContainer theme={theme} >
@@ -88,13 +119,12 @@ export const App = () => {
 const BottomNav = () => {
     const { width, height } = useWindowDimensions();
     const isVertical = width < height;
-    const isAndroid = Platform.OS === 'android';
 
     return <SafeAreaView style={{ flex: 1 }}>
         <Tab.Navigator
             initialRouteName={BOARD_TAB_KEY}
             screenOptions={{
-                tabBarVariant: isAndroid && !isVertical ? 'material' : undefined,
+                tabBarVariant: isAndroid() && !isVertical ? 'material' : undefined,
                 height: BAR_HEIGHT,
                 tabBarPosition: isVertical ? 'bottom' : 'left',
                 tabBarHideOnKeyboard: true,
