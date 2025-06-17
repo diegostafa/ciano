@@ -5,6 +5,11 @@ import RNBlobUtil from 'react-native-blob-util';
 import { BOARD_NAV_KEY, CATALOG_KEY } from './app';
 import { Repo } from './data/repo';
 
+export const threadContains = (thread, filter) => {
+    const lowerFilter = filter.toLowerCase();
+    return (thread.sub && thread.sub.toLowerCase().includes(lowerFilter)) ||
+        (thread.com && thread.com.toLowerCase().includes(lowerFilter));
+};
 export const firstSplitAt = (text, needle) => {
     const index = text.indexOf(needle);
     return index !== -1 ? text.substring(0, index) : text;
@@ -23,11 +28,8 @@ export const historyAdd = (state, setState, thread) => {
     if (!thread) {
         return state.history;
     }
-    const others = state.history.filter(
-        item => !(item.board === state.board && item.thread.id === thread.id)
-    );
-
-    setState({ ...state, history: [...others, { board: state.board, thread }] });
+    const others = state.history.filter(item => item.id !== thread.id);
+    setState({ ...state, history: [...others, thread] });
 };
 export const getComment = (comments, threadId) => {
     return comments.find(item => item.id === threadId);

@@ -4,7 +4,7 @@ import { ActivityIndicator, Button, FlatList, TouchableNativeFeedback } from "re
 import { TextInput } from "react-native-gesture-handler";
 
 import { BAR_HEIGHT, Ctx } from "../../app";
-import { Col, HeaderIcon, ModalView, Row, ThemedText } from "../../components";
+import { BoardInfo, Col, HeaderIcon, ModalView, Row, ThemedText } from "../../components";
 import { hasBoardsErrors } from "../../context/temp";
 import { loadBoards } from "../../data/utils";
 
@@ -36,11 +36,6 @@ export const SetupBoards = () => {
     const sailor = useNavigation();
     const [activeBoards, setActiveBoards] = React.useState(state.activeBoards);
     const [showInfo, setShowInfo] = React.useState(null);
-    const infoOuter = {
-        justifyContent: 'space-between',
-        paddingRight: 15,
-        paddingLeft: 15,
-    };
 
     React.useEffect(() => {
         const unsubscribe = sailor.addListener('beforeRemove', (e) => {
@@ -129,9 +124,9 @@ export const SetupBoards = () => {
     return <Col style={{ flex: 1 }}>
         {temp.setupBoardsFilter !== null &&
             <Row style={{ height: BAR_HEIGHT, borderWidth: 1, backgroundColor: theme.colors.card, justifyContent: 'space-between' }}>
-                <Col style={{ flex: 1, padding: 5 }}>
+                <Row style={{ flex: 1, padding: 5, itemsAlign: 'center' }}>
                     <TextInput placeholder="Search..." onChangeText={text => setTemp({ ...temp, setupBoardsFilter: text })} />
-                </Col>
+                </Row>
                 <HeaderIcon name={'close'} onPress={() => { setTemp({ ...temp, setupBoardsFilter: null }); }} />
             </Row>}
 
@@ -150,60 +145,7 @@ export const SetupBoards = () => {
             <ModalView
                 visible={showInfo !== null}
                 onClose={() => { setShowInfo(null) }}
-                content={
-                    <Col style={{ gap: 15, paddingTop: 15, paddingBottom: 15, }}>
-                        {showInfo.code &&
-                            <Row style={infoOuter}>
-                                <ThemedText content={`Code:`} />
-                                <ThemedText content={showInfo.code} />
-                            </Row>}
-                        {showInfo.name &&
-                            <Row style={infoOuter}>
-                                <ThemedText content={`Name:`} />
-                                <ThemedText content={showInfo.name} />
-                            </Row>}
-                        {showInfo.description &&
-                            <Row style={infoOuter}>
-                                <ThemedText content={`Description:`} />
-                                <ThemedText content={showInfo.description} />
-                            </Row>}
-                        {showInfo.max_sub_len &&
-                            <Row style={infoOuter}>
-                                <ThemedText content={`Max subject length:`} />
-                                <ThemedText content={showInfo.max_sub_len} />
-                            </Row>}
-                        {showInfo.max_com_len &&
-                            <Row style={infoOuter}>
-                                <ThemedText content={`Max comment length:`} />
-                                <ThemedText content={showInfo.max_com_len} />
-                            </Row>}
-                        {showInfo.max_threads &&
-                            <Row style={infoOuter}>
-                                <ThemedText content={`Max threads:`} />
-                                <ThemedText content={showInfo.max_threads} />
-                            </Row>}
-                        {showInfo.max_replies &&
-                            <Row style={infoOuter}>
-                                <ThemedText content={`Max replies per thread}`} />
-                                <ThemedText content={showInfo.max_replies} />
-                            </Row>}
-                        {showInfo.max_img_replies &&
-                            <Row style={infoOuter}>
-                                <ThemedText content={`Max images per thread:`} />
-                                <ThemedText content={showInfo.max_img_replies} />
-                            </Row>}
-                        {showInfo.max_file_size &&
-                            <Row style={infoOuter}>
-                                <ThemedText content={`Max media size:`} />
-                                <ThemedText content={showInfo.max_file_size} />
-                            </Row>}
-                        {showInfo.is_nsfw &&
-                            <Row style={infoOuter}>
-                                <ThemedText content={`Is NSFW:`} />
-                                <ThemedText content={showInfo.is_nsfw ? 'yes' : 'no'} />
-                            </Row>}
-                    </Col>
-                }
+                content={<BoardInfo board={showInfo} />}
             />
         }
     </Col>;

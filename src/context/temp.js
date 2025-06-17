@@ -10,6 +10,7 @@ const defaultTemp = {
     comments: null,
     selectedMediaComment: null,
     selectedLocalMedia: null,
+    watcherMultiSelection: new Set(),
     commentsBoard: null,
 
     catalogReflist: null,

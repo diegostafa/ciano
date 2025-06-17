@@ -26,7 +26,14 @@ export const DarkTheme = {
         notification: 'rgb(255, 69, 58)',
         highlight: 'rgba(255, 255, 255, 0.1)',
         formBg: 'rgb(50, 50, 55)',
-        overlayBg: 'rgba(0, 0, 0, 0.5)'
+
+        lastVisited: 'rgba(214, 255, 250, 0.2)',
+        danger: 'rgba(255, 0,0, 0.1)',
+        safe: 'rgba(0, 0, 0, 0)',
+        overlay: 'rgba(0, 0, 0, 0.8)',
+        isQuotingMe: 'rgba(255, 251, 0, 0.5)',
+        isMine: 'rgb(165, 221, 255)',
+        viewReplies: 'rgba(255, 255, 255, 0.05)',
     },
     fonts: DefaultDark.fonts,
 };
@@ -55,7 +62,11 @@ export const DarkThemeHighContrast = {
         notification: 'rgb(255, 69, 58)',
         highlight: 'rgba(255, 255, 255, 0.1)',
         formBg: 'rgb(50, 50, 55)',
-        overlayBg: 'rgba(0, 0, 0, 0.5)'
+
+        danger: 'rgba(255, 0, 0, 0.5)',
+        safe: 'rgba(0, 255,0, 0.5)',
+        overlay: 'rgba(0, 0, 0, 0.8)',
+        isQuotingMe: 'rgba(255, 251, 0, 0.5)',
     },
     fonts: DefaultDark.fonts,
 };

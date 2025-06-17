@@ -6,7 +6,7 @@ import { TextInput } from 'react-native-gesture-handler';
 import { BAR_HEIGHT, BOARD_TAB_KEY, BOTTOM_NAV_KEY, Ctx, THREAD_KEY } from '../app';
 import { Col, HeaderIcon, HtmlText, ModalAlert, Row, ThemedAsset, ThemedText } from '../components';
 import { Repo } from '../data/repo';
-import { getThreadSignature, historyAdd } from '../helpers';
+import { getThreadSignature, historyAdd, threadContains } from '../helpers';
 
 export const History = () => {
     const { state, setState } = React.useContext(Ctx);
@@ -18,22 +18,20 @@ export const History = () => {
     const [forgetAll, setForgetAll] = useState(false);
     const theme = useTheme();
     const headerPad = BAR_HEIGHT;
-    const searchPad = 40;
     const noHistory = state.history.length === 0;
-    const history = state.history.filter(item => getThreadSignature(item.thread).toLowerCase().includes(filter.toLowerCase()))
-
-    console.log(history)
+    const searchPad = noHistory ? 0 : 40;
+    const history = state.history.filter(item => threadContains(item, filter))
 
     return <Col style={{ flex: 1, overflow: 'hidden' }}>
         <ModalAlert
             visible={forget !== null}
             onClose={() => { setForget(null); }}
             msg={'Remove from the list?'}
-            left={'No'}
-            right={'Yes'}
-            onPressLeft={() => { setForget(null); }}
-            onPressRight={() => {
-                setState({ ...state, history: state.history.filter(item => item.thread.id !== forget.id) });
+            right={'No'}
+            left={'Yes'}
+            onPressRight={() => { setForget(null); }}
+            onPressLeft={() => {
+                setState({ ...state, history: state.history.filter(item => item.id !== forget.id) });
                 setForget(null);
             }}
         />
@@ -41,10 +39,10 @@ export const History = () => {
             visible={forgetAll}
             onClose={() => { setForgetAll(false); }}
             msg={'Delete all history?'}
-            left={'No'}
-            right={'Yes'}
-            onPressLeft={() => { setForgetAll(false); }}
-            onPressRight={() => {
+            right={'No'}
+            left={'Yes'}
+            onPressRight={() => { setForgetAll(false); }}
+            onPressLeft={() => {
                 setState({ ...state, history: [] });
                 setForgetAll(false);
             }}
@@ -78,7 +76,7 @@ export const History = () => {
                         const item = history[history.length - 1 - index];
                         return <HistoryTile item={item} th={th} setForget={setForget} />;
                     }}
-                    keyExtractor={(item) => String(item.thread.id)}
+                    keyExtractor={(item) => String(item.id)}
                 />
             }
 
@@ -95,18 +93,17 @@ const HistoryTile = ({ item, th, setForget }) => {
     const sailor = useNavigation();
     const theme = useTheme();
     const { state, setState } = React.useContext(Ctx);
-    const thread = item.thread;
-    const img = Repo(state.api).media.thumb(thread);
+    const img = Repo(state.api).media.thumb(item);
     const margin = 5;
     const padding = 10;
     const imgSz = th - padding * 2 - margin;
-    const sign = getThreadSignature(thread);
+    const sign = getThreadSignature(item);
 
     return <Col style={{ marginLeft: 5, marginRight: 5, borderRadius: 10, overflow: 'hidden', marginTop: margin, backgroundColor: theme.colors.background }}>
         <TouchableNativeFeedback
             onLongPress={() => { setForget(item); }}
             onPress={() => {
-                historyAdd(state, setState, thread);
+                historyAdd(state, setState, item);
                 sailor.dispatch(DrawerActions.closeDrawer());
                 sailor.dispatch(CommonActions.navigate({
                     name: BOTTOM_NAV_KEY,

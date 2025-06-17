@@ -1,15 +1,15 @@
 import { useFocusEffect, useNavigation, useTheme } from '@react-navigation/native';
 import React, { useCallback, useRef } from 'react';
-import { ActivityIndicator, BackHandler, Button, FlatList, Image, TouchableNativeFeedback, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, BackHandler, Button, FlatList, Image, ScrollView, TouchableNativeFeedback, useWindowDimensions } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
 
 import { BAR_HEIGHT, BAR_WIDTH, Ctx } from '../../app';
-import { Col, Fab, HeaderIcon, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, Row, ThemedIcon, ThemedText } from '../../components';
+import { BoardInfo, Col, Fab, HeaderIcon, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, Row, ThemedIcon, ThemedText } from '../../components';
 import { catalogModes, catalogSorts, State } from '../../context/state';
 import { hasBoardsErrors, hasThreadsErrors, isOnline } from '../../context/temp';
 import { Repo } from '../../data/repo';
 import { loadBoards, loadThreads } from '../../data/utils';
-import { getCurrFullBoard, historyAdd } from '../../helpers';
+import { getCurrFullBoard, historyAdd, threadContains } from '../../helpers';
 import { CREATE_THREAD_KEY } from './create_thread';
 import { SETUP_BOARDS_KEY } from './setup_boards';
 import { THREAD_KEY } from './thread';
@@ -24,6 +24,7 @@ export const CatalogHeaderTitle = () => {
     const { state, setState, setTemp } = React.useContext(Ctx);
     const sailor = useNavigation();
     const [selectBoard, setSelectBoard] = React.useState(false);
+    const [showBoardInfo, setShowBoardInfo] = React.useState(false);
     const theme = useTheme();
     const [filter, setFilter] = React.useState('');
 
@@ -51,12 +52,23 @@ export const CatalogHeaderTitle = () => {
     };
 
     return <Row style={{ flex: 1, width: '100%', margin: 0, overflow: 'hidden' }}>
-        <TouchableNativeFeedback onPress={() => setSelectBoard(true)}>
+        <TouchableNativeFeedback
+            onLongPress={() => { setShowBoardInfo(true) }}
+            onPress={() => setSelectBoard(true)}>
             <Col style={{ flex: 1 }}>
                 <ThemedText content={`/${board.code}/`} />
                 <ThemedText content={`${board.name}`} />
             </Col>
         </TouchableNativeFeedback>
+
+        <ModalView
+            visible={showBoardInfo}
+            onClose={() => setShowBoardInfo(false)}
+            content={
+                <ScrollView>
+                    <BoardInfo board={board} />
+                </ScrollView>
+            } />
 
         <ModalView
             visible={selectBoard}
@@ -356,7 +368,31 @@ export const Catalog = () => {
     }
 
     const isWatching = state.watching.some(item => item.thread.id === selectedThread);
+
+
     return <Col style={{ flex: 1, backgroundColor: theme.colors.card }}>
+        {temp.catalogFilter !== null &&
+            <Row style={{
+                backgroundColor: theme.colors.background,
+                width: width,
+                height: BAR_HEIGHT,
+                justifyContent: 'space-between'
+            }}>
+                <TextInput
+                    placeholder='Search in the catalog...'
+                    value={temp.catalogFilter}
+                    onChangeText={text => setTemp({ ...temp, catalogFilter: text })}
+                    style={{
+                        fontSize: 16,
+                        padding: 10,
+                        color: theme.colors.text,
+                        flex: 1,
+                    }}
+                />
+                <HeaderIcon name={'close'} onPress={() => { setTemp({ ...temp, catalogFilter: null }); }} />
+            </Row>
+        }
+
         <ModalMenu
             visible={selectedThread !== null}
             onClose={() => { setSelectedThread(null); }}
@@ -380,31 +416,6 @@ export const Catalog = () => {
                     ])
             ]}
         />
-        {temp.catalogFilter !== null &&
-            <Row style={{
-                position: 'absolute',
-                top: 0,
-                backgroundColor: theme.colors.background,
-                width: width,
-                height: BAR_HEIGHT,
-                zIndex: 2,
-                justifyContent: 'space-between'
-            }}>
-                <TextInput
-                    placeholder='Search in the catalog...'
-                    value={temp.catalogFilter}
-                    onChangeText={text => setTemp({ ...temp, catalogFilter: text })}
-                    style={{
-                        fontSize: 16,
-                        padding: 10,
-                        color: theme.colors.text,
-                        flex: 1,
-                    }}
-                />
-                <HeaderIcon name={'close'} onPress={() => { setTemp({ ...temp, catalogFilter: null }); }} />
-            </Row>
-        }
-
         {catalogModes[state.catalogViewMode] === 'list' ?
             <ListCatalog width={width} height={height} setSelectedThread={setSelectedThread} /> :
             <GridCatalog width={width} height={height} setSelectedThread={setSelectedThread} />}
@@ -432,6 +443,11 @@ const GridCatalog = ({ width, height, setSelectedThread }) => {
     let tw;
     let th;
 
+    let threads = temp.threads;
+    if (temp.catalogFilter !== null) {
+        threads = threads.filter(thread => threadContains(thread, temp.catalogFilter));
+    }
+
     if (isVertical) {
         tw = width / config.catalogGridCols;
         th = (height - (BAR_HEIGHT * 2)) / config.catalogGridRows;
@@ -450,7 +466,7 @@ const GridCatalog = ({ width, height, setSelectedThread }) => {
             updateCellsBatchingPeriod={50}
             removeClippedSubviews
             numColumns={config.catalogGridCols}
-            data={temp.threads}
+            data={threads}
             renderItem={({ item, index }) => <GridTile thread={item} index={index} tw={tw} th={th} setSelectedThread={setSelectedThread} />}
             keyExtractor={(item) => String(item.id)}
             onRefresh={async () => await loadThreads(state, setTemp, true)}
@@ -484,6 +500,11 @@ const ListCatalog = ({ width, height, setSelectedThread }) => {
     let tw;
     let th;
 
+    let threads = temp.threads;
+    if (temp.catalogFilter !== null) {
+        threads = threads.filter(thread => threadContains(thread, temp.catalogFilter));
+    }
+
     if (isVertical) {
         tw = width;
         th = (height - (BAR_HEIGHT * 2)) / config.catalogListRows;
@@ -500,7 +521,7 @@ const ListCatalog = ({ width, height, setSelectedThread }) => {
         maxToRenderPerBatch={50}
         updateCellsBatchingPeriod={50}
         removeClippedSubviews
-        data={temp.threads}
+        data={threads}
         renderItem={({ item, index }) => <ListTile thread={item} index={index} tw={tw} th={th} setSelectedThread={setSelectedThread} />}
         keyExtractor={(item) => String(item.id)}
         onRefresh={async () => await loadThreads(state, setTemp, true)}
@@ -547,7 +568,7 @@ const GridTile = ({ thread, index, tw, th, setSelectedThread }) => {
             <Col style={{
                 flex: 1,
                 justifyContent: 'space-between',
-                backgroundColor: lastThread && lastThread.thread.id === thread.id ? theme.colors.highlight : theme.colors.background,
+                backgroundColor: lastThread && lastThread.id === thread.id ? theme.colors.lastVisited : theme.colors.background,
                 padding: 5,
                 borderTopLeftRadius: config.showCatalogThumbnails ? 0 : config.borderRadius,
                 borderTopRightRadius: config.showCatalogThumbnails ? 0 : config.borderRadius,
@@ -608,7 +629,7 @@ const ListTile = ({ thread, index, tw, th, setSelectedThread }) => {
                     paddingLeft: 8,
                     paddingRight: 8,
                     justifyContent: 'space-between',
-                    backgroundColor: lastThread && lastThread.thread.id === thread.id ? theme.colors.highlight : theme.colors.background,
+                    backgroundColor: lastThread && lastThread.id === thread.id ? theme.colors.lastVisited : theme.colors.background,
                 }}>
                     <Col style={{ flexShrink: 1, overflow: 'hidden' }}>
                         {thread.sub && <HtmlText value={`<sub>${thread.sub}</sub>`} />}

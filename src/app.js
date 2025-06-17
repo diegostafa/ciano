@@ -12,13 +12,12 @@ import { Col, TabIcon } from './components.js';
 import { Config } from './context/config.js';
 import { State } from './context/state.js';
 import { Temp } from './context/temp.js';
-import { Repo } from "./data/repo.js";
-import { quotes } from "./helpers.js";
+import { updateWatcher } from "./data/utils.js";
 import { BOARD_TAB_KEY, BoardTab } from './screens/board/tab.js';
 import { THREAD_KEY } from './screens/board/thread.js';
 import { History } from "./screens/history.js";
 import { SETTINGS_TAB_KEY, SettingsTab } from './screens/settings/tab.js';
-import { WATCHER_TAB_KEY, WatcherTab } from './screens/watcher/tab.js';
+import { Watcher, WATCHER_TAB_KEY, WatcherHeaderRight } from "./screens/watcher.js";
 import { DarkTheme, DarkThemeHighContrast, LightTheme, LightThemeHighContrast } from './theme.js';
 enableScreens();
 
@@ -69,19 +68,8 @@ export const App = () => {
     React.useEffect(() => {
         if (state && config) {
             if (config.enableWatcher) {
-                const task = setInterval(() => {
-                    const newWatching = state.watching.map(async watched => {
-                        const newComments = await Repo(state.api).comments.getRemote(watched.boardId, watched.threadId);
-                        const diff = newComments.slice(watched.last);
-                        const you = newComments.filter(com => quotes(com).some(id => state.myComments.includes(id)));
-                        return {
-                            ...watched,
-                            new: diff.length,
-                            you: you.length,
-                        };
-
-                    });
-                    setState(prev => ({ ...prev, watching: newWatching }));
+                const task = setInterval(async () => {
+                    await updateWatcher(state, setState);
                     setWatchertask(task);
                 }, config.watcherUpdateSecs * 1000)
             }
@@ -134,8 +122,9 @@ const BottomNav = () => {
 
             <Tab.Screen
                 name={WATCHER_TAB_KEY}
-                component={WatcherTab}
+                component={Watcher}
                 options={{
+                    headerRight: WatcherHeaderRight,
                     tabBarIcon: TabIcon('notifications'),
                     headerStyle: { height: BAR_HEIGHT },
                     title: 'Watcher'

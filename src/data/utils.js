@@ -1,4 +1,5 @@
 import { catalogSorts, threadSorts } from "../context/state";
+import { quotes } from "../helpers";
 import { Repo } from "./repo";
 
 export const loadBoards = async (state, setState, setTemp, forceRefresh) => {
@@ -82,7 +83,7 @@ export const loadComments = async (state, setTemp, refresh) => {
     }));
 
     try {
-        const thread = state.history.at(-1).thread;
+        const thread = state.history.at(-1);
         const data = refresh ?
             await Repo(state.api).comments.getRemote(thread.board, thread.id) :
             await Repo(state.api).comments.getLocalOrRemote(thread.board, thread.id);
@@ -114,7 +115,6 @@ export const loadComments = async (state, setTemp, refresh) => {
     }
     setTemp(prev => ({ ...prev, isFetchingComments: false }));
 };
-
 export const uploadComment = async (state, setState, setTemp, data) => {
     setTemp(prev => ({
         ...prev,
@@ -148,3 +148,18 @@ export const uploadComment = async (state, setState, setTemp, data) => {
 
     setTemp(prev => ({ ...prev, isUploadingComment: false }));
 };
+
+export const updateWatcher = async (state, setState) => {
+    const newWatching = state.watching.map(async watched => {
+        const newComments = await Repo(state.api).comments.getRemote(watched.boardId, watched.threadId);
+        const diff = newComments.slice(watched.last);
+        const you = newComments.filter(com => quotes(com).some(id => state.myComments.includes(id)));
+        return {
+            ...watched,
+            new: diff.length,
+            you: you.length,
+        };
+
+    });
+    setState(prev => ({ ...prev, watching: newWatching }));
+}

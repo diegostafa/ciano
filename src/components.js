@@ -81,7 +81,7 @@ export const ModalView = ({ content, visible, onClose, fullscreen, noBackdrop, a
                     flex: 1,
                     justifyContent: 'center',
                     alignItems: 'center',
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    backgroundColor: theme.colors.overlay,
                 }}>
                 <Col style={{
                     borderWidth: fullscreen ? 0 : 1,
@@ -102,6 +102,14 @@ export const ModalView = ({ content, visible, onClose, fullscreen, noBackdrop, a
 export const ModalAlert = ({ msg, visible, left, right, onClose, onPressLeft, onPressRight, noBackdrop }) => {
     const btnStyle = { padding: 10, flex: 1, alignItems: 'center' };
     const theme = useTheme();
+    const leftStyle = {
+        ...btnStyle,
+        backgroundColor: theme.colors.danger,
+    };
+    const rightStyle = {
+        ...btnStyle,
+        backgroundColor: theme.colors.safe,
+    }
 
     return <ModalView
         noBackdrop={noBackdrop}
@@ -115,7 +123,7 @@ export const ModalAlert = ({ msg, visible, left, right, onClose, onPressLeft, on
 
                 <Row style={{ justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: theme.colors.border }}>
                     {left && <TouchableNativeFeedback onPress={onPressLeft}>
-                        <Col style={btnStyle}>
+                        <Col style={leftStyle}>
                             <ThemedText content={left} />
                         </Col>
                     </TouchableNativeFeedback>}
@@ -123,11 +131,10 @@ export const ModalAlert = ({ msg, visible, left, right, onClose, onPressLeft, on
                     {left && right && <Col style={{ width: 1, backgroundColor: theme.colors.border }} />}
 
                     {right && <TouchableNativeFeedback onPress={onPressRight}>
-                        <Col style={btnStyle}>
+                        <Col style={rightStyle}>
                             <ThemedText content={right} />
                         </Col>
                     </TouchableNativeFeedback>}
-
                 </Row>
             </Col>
         }
@@ -163,7 +170,7 @@ export const ThemedText = ({ content, style, line }) => {
     if (style && 'fontSize' in style) {
         fontSize = style.fontSize * config.uiFontScale;
     }
-    return <Text ellipsizeMode='tail' numberOfLines={1} style={{ ...style, color: theme.colors.text, fontSize }}>{content}</Text>;
+    return <Text ellipsizeMode='tail' numberOfLines={line ? 1 : undefined} style={{ ...style, color: theme.colors.text, fontSize }}>{content}</Text>;
 };
 export const HtmlText = React.memo(({ value, onLinkPress, raw }) => {
     const theme = useTheme();
@@ -211,8 +218,9 @@ export const ModalMediaPreview = () => {
                 text: 'Media downloaded successfully',
                 duration: Snackbar.LENGTH_SHORT,
             });
+            setTemp(prev => ({ ...prev, mediaDownloadSuccess: null }));
         }
-    }, [temp.mediaDownloadSuccess]);
+    }, [setTemp, temp, temp.mediaDownloadSuccess]);
 
     return <ModalView
         fullscreen
@@ -236,6 +244,7 @@ const MediaPreview = ({ comment, onClose }) => {
     const { width, height } = useWindowDimensions();
     const smallest = Math.min(width, height);
     const [isLoading, setIsLoading] = React.useState(true);
+    const [loadError, setLoadError] = React.useState(false);
     const [showHeader, setShowHeader] = React.useState(true);
     const is_image = isImage(comment.media_ext);
     const is_gif = isGif(comment.media_ext);
@@ -251,8 +260,12 @@ const MediaPreview = ({ comment, onClose }) => {
             left={'OK'}
             onPressLeft={() => { setTemp({ ...temp, mediaDownloadError: null }); }}
         />
+        {loadError && <Col style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 10 }}>
+            <ThemedText content={'The preview could not be loaded'} />
+            <ThemedAsset name={'error'} width={200} height={200} />
+        </Col>}
 
-        {showHeader &&
+        {!loadError && showHeader &&
             <Row style={{
                 top: 0,
                 flex: 1,
@@ -262,7 +275,7 @@ const MediaPreview = ({ comment, onClose }) => {
                 width: '100%',
                 position: 'absolute',
                 padding: 10,
-                backgroundColor: theme.colors.overlayBg,
+                backgroundColor: theme.colors.overlay,
             }}>
                 <Marquee
                     speed={config.disableMovingElements ? 0 : 0.3}
@@ -283,9 +296,10 @@ const MediaPreview = ({ comment, onClose }) => {
             </Row>
         }
 
-        {is_image &&
+        {!loadError && is_image &&
             <GestureHandlerRootView style={{ flex: 1 }}>
                 <ImageZoom
+                    onError={() => setLoadError(true)}
                     onLoad={() => setIsLoading(false)}
                     onSingleTap={() => setShowHeader(!showHeader)}
                     uri={full}
@@ -299,16 +313,17 @@ const MediaPreview = ({ comment, onClose }) => {
                 />
             </GestureHandlerRootView>}
 
-        {is_gif &&
+        {!loadError && is_gif &&
             <Pressable onPress={() => setShowHeader(!showHeader)}>
                 <FastImage
                     source={{ uri: full }}
                     onLoad={() => setIsLoading(false)}
+                    onError={() => setLoadError(true)}
                     style={{ width: smallest, height: smallest }}
                 />
             </Pressable>}
 
-        {is_video &&
+        {!loadError && is_video &&
             <Video
                 ref={videoref}
                 enterPictureInPictureOnLeave={false}
@@ -323,8 +338,8 @@ const MediaPreview = ({ comment, onClose }) => {
                 source={{ uri: full }}
                 style={{ width: width, height: height }}
                 onLoad={() => { setIsLoading(false); }}
+                onError={() => { setLoadError(true); }}
             />}
-
 
         {isLoading && <Col style={{
             justifyContent: 'center',
@@ -416,7 +431,7 @@ const LocalMediaPreview = ({ media, onClose }) => {
                 width: '100%',
                 position: 'absolute',
                 padding: 10,
-                backgroundColor: theme.colors.overlayBg,
+                backgroundColor: theme.colors.overlay,
             }}>
 
                 <Marquee
@@ -533,7 +548,66 @@ export const Col = ({ children, style, ...rest }) => {
         {children}
     </View>;
 };
+export const BoardInfo = ({ board }) => {
+    const infoOuter = {
+        justifyContent: 'space-between',
+        paddingRight: 15,
+        paddingLeft: 15,
+    };
 
+    return <Col style={{ gap: 15, paddingTop: 15, paddingBottom: 15, }}>
+        {board.code &&
+            <Row style={infoOuter}>
+                <ThemedText content={`Code:`} />
+                <ThemedText content={board.code} />
+            </Row>}
+        {board.name &&
+            <Row style={infoOuter}>
+                <ThemedText content={`Name:`} />
+                <ThemedText content={board.name} />
+            </Row>}
+        {board.description &&
+            <Row style={infoOuter}>
+                <ThemedText content={`Description:`} />
+                <ThemedText content={board.description} />
+            </Row>}
+        {board.max_sub_len &&
+            <Row style={infoOuter}>
+                <ThemedText content={`Max subject length:`} />
+                <ThemedText content={board.max_sub_len} />
+            </Row>}
+        {board.max_com_len &&
+            <Row style={infoOuter}>
+                <ThemedText content={`Max comment length:`} />
+                <ThemedText content={board.max_com_len} />
+            </Row>}
+        {board.max_threads &&
+            <Row style={infoOuter}>
+                <ThemedText content={`Max threads:`} />
+                <ThemedText content={board.max_threads} />
+            </Row>}
+        {board.max_replies &&
+            <Row style={infoOuter}>
+                <ThemedText content={`Max replies per thread}`} />
+                <ThemedText content={board.max_replies} />
+            </Row>}
+        {board.max_img_replies &&
+            <Row style={infoOuter}>
+                <ThemedText content={`Max images per thread:`} />
+                <ThemedText content={board.max_img_replies} />
+            </Row>}
+        {board.max_file_size &&
+            <Row style={infoOuter}>
+                <ThemedText content={`Max media size:`} />
+                <ThemedText content={board.max_file_size} />
+            </Row>}
+        {board.is_nsfw &&
+            <Row style={infoOuter}>
+                <ThemedText content={`Is NSFW:`} />
+                <ThemedText content={board.is_nsfw ? 'yes' : 'no'} />
+            </Row>}
+    </Col>;
+};
 export const ThemedAsset = ({ name, width, height, desc }) => {
     const theme = useColorScheme();
     return <Image

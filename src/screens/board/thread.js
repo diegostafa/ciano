@@ -30,7 +30,7 @@ const getDefaultForm = (config, thread) => {
 export const ThreadHeaderTitle = () => {
     const { state, config } = React.useContext(Ctx);
     const { width } = useWindowDimensions();
-    const thread = state.history.at(-1).thread;
+    const thread = state.history.at(-1);
     const titleWidth = width - 150;
     const title = getThreadHeaderSignature(thread);
 
@@ -43,7 +43,7 @@ export const ThreadHeaderTitle = () => {
 };
 export const ThreadHeaderRight = () => {
     const { state, setState, temp, setTemp, config } = React.useContext(Ctx);
-    const thread = state.history.at(-1).thread;
+    const thread = state.history.at(-1);
 
     const theme = useTheme();
     const [threadActions, setThreadActions] = React.useState(false);
@@ -145,7 +145,7 @@ export const Thread = () => {
     const { state, config, temp, setTemp } = React.useContext(Ctx);
     const { width } = useWindowDimensions();
     const theme = useTheme();
-    const thread = state.history.at(-1).thread;
+    const thread = state.history.at(-1);
     const reflist = useRef(null);
     const [selectedComment, setSelectedComment] = React.useState(null);
     const [repliesStack, setRepliesStack] = React.useState([]);
@@ -304,7 +304,7 @@ const RepliesModal = ({ repliesStack, setRepliesStack, setSelectedComment }) => 
 };
 const NoComments = () => {
     const { state } = React.useContext(Ctx);
-    const thread = state.history.at(-1).thread;
+    const thread = state.history.at(-1);
     const tw = useWindowDimensions().width;
 
     return <Col>
@@ -380,14 +380,14 @@ const CommentTile = React.memo(({ comment, selectedComment, setSelectedComment, 
         style = {
             ...style,
             borderLeftWidth: 2,
-            borderLeftColor: theme.colors.primary
+            borderLeftColor: theme.colors.isMine
         };
     }
     if (isQuotingMe) {
         style = {
             ...style,
             borderLeftWidth: 2,
-            borderLeftColor: 'rgba(255, 251, 0, 0.5)'
+            borderLeftColor: theme.colors.isQuotingMe,
         };
     }
 
@@ -448,7 +448,7 @@ const CommentTile = React.memo(({ comment, selectedComment, setSelectedComment, 
                             onPress={() => setRepliesStack([...repliesStack, replies])}>
                             <Row style={{
                                 flex: 1,
-                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                backgroundColor: theme.colors.viewReplies,
                                 padding: 6,
                                 alignItems: 'center',
                                 justifyContent: 'space-between'
@@ -469,7 +469,7 @@ const CommentTile = React.memo(({ comment, selectedComment, setSelectedComment, 
 });
 const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
     const { state, setState, temp, setTemp, config } = React.useContext(Ctx);
-    const thread = state.history.at(-1).thread;
+    const thread = state.history.at(-1);
     const theme = useTheme();
     const { width } = useWindowDimensions();
     const [viewMode, setViewMode] = React.useState(2);
@@ -531,7 +531,7 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                         <TouchableNativeFeedback onPress={() => {
                             setForm({ ...form, media: null });
                         }}>
-                            <Col style={{ padding: 10, width: '30%', alignItems: 'center', backgroundColor: 'rgba(255, 0,0, 0.2)', borderRadius: config.borderRadius }}>
+                            <Col style={{ padding: 10, width: '30%', alignItems: 'center', backgroundColor: theme.colors.danger, borderRadius: config.borderRadius }}>
                                 <ThemedText content={`Remove`} />
                             </Col>
                         </TouchableNativeFeedback>
@@ -621,7 +621,7 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
 };
 const ThreadInfo = () => {
     const { state } = React.useContext(Ctx);
-    const thread = state.history.at(-1).thread;
+    const thread = state.history.at(-1);
 
     return <Col style={{ padding: 15 }}>
         <ThemedText content={`Replies: ${thread.replies}`} />
