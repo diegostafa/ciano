@@ -4,7 +4,7 @@ import { ActivityIndicator, BackHandler, Button, FlatList, Image, ScrollView, To
 import { TextInput } from 'react-native-gesture-handler';
 
 import { BAR_HEIGHT, BAR_WIDTH, Ctx } from '../../app';
-import { BoardInfo, Col, Fab, HeaderIcon, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, Row, ThemedIcon, ThemedText } from '../../components';
+import { BoardInfo, Col, Fab, HeaderIcon, HeaderThemedText, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, Row, ThemedIcon, ThemedText } from '../../components';
 import { catalogModes, catalogSorts, State } from '../../context/state';
 import { hasBoardsErrors, hasThreadsErrors, isOnline } from '../../context/temp';
 import { Repo } from '../../data/repo';
@@ -21,7 +21,7 @@ export const CatalogHeaderLeft = () => {
     return <HeaderIcon name='menu' onPress={() => navigation.openDrawer()} />;
 };
 export const CatalogHeaderTitle = () => {
-    const { state, setState, setTemp } = React.useContext(Ctx);
+    const { state, setState, setTemp, config } = React.useContext(Ctx);
     const sailor = useNavigation();
     const [selectBoard, setSelectBoard] = React.useState(false);
     const [showBoardInfo, setShowBoardInfo] = React.useState(false);
@@ -32,7 +32,7 @@ export const CatalogHeaderTitle = () => {
         return <Col style={{ flex: 1 }}>
             <TouchableNativeFeedback onPress={() => { sailor.navigate(SETUP_BOARDS_KEY) }}>
                 <Col style={{ flex: 1 }}>
-                    <ThemedText content={'Setup boards\nTap here'} />
+                    <HeaderThemedText content={'Setup boards\nTap here'} />
                 </Col>
             </TouchableNativeFeedback></Col>;
     }
@@ -46,7 +46,7 @@ export const CatalogHeaderTitle = () => {
     const inputStyle = {
         flex: 1,
         padding: 10,
-        fontSize: 16,
+        fontSize: 16 * config.uiFontScale,
         backgroundColor: theme.colors.background,
         color: theme.colors.text,
     };
@@ -56,7 +56,7 @@ export const CatalogHeaderTitle = () => {
             onLongPress={() => { setShowBoardInfo(true) }}
             onPress={() => setSelectBoard(true)}>
             <Col style={{ flex: 1 }}>
-                <ThemedText content={`/${board.code}/`} />
+                <HeaderThemedText content={`/${board.code}/`} />
                 <ThemedText content={`${board.name}`} />
             </Col>
         </TouchableNativeFeedback>
@@ -124,64 +124,62 @@ export const CatalogHeaderRight = () => {
 
     const nextCatalogMode = (state.catalogViewMode + 1) % 2;
     return <Row >
-        <HeaderIcon name={'search'} onPress={() => setTemp(prev => ({ ...prev, catalogFilter: '' }))} />
+        {temp.catalogFilter === null && <HeaderIcon name={'search'} onPress={() => setTemp(prev => ({ ...prev, catalogFilter: '' }))} />}
         <HeaderIcon name='ellipsis-vertical' onPress={() => setCatalogActions(true)} />
 
-        {catalogActions &&
-            <ModalMenu
-                visible={catalogActions}
-                onClose={() => setCatalogActions(false)}
-                items={[
-                    ['Refresh', 'refresh', async () => {
-                        setCatalogActions(false);
-                        await loadThreads(state, setTemp, true);
-                    },],
-                    ['Sort...', "options", () => {
-                        setCatalogActions(false);
-                        setSortActions(true);
-                    }],
-                    ['reverse', 'swap-vertical', () => {
-                        setCatalogActions(false);
-                        setTemp(prev => ({ ...prev, isComputingThreads: true }));
-                        async function defer() {
-                            setState({ ...state, catalogRev: !state.catalogRev });
-                            setTemp(prev => ({ ...prev, threads: prev.threads.reverse(), isComputingThreads: false }));
-                        }
-                        defer()
-                    }],
-                    [`View as ${catalogModes[nextCatalogMode]}`, catalogModes[nextCatalogMode], async () => {
-                        setCatalogActions(false);
-                        setState({ ...state, catalogViewMode: nextCatalogMode });
-                        await State.set('catalogViewMode', nextCatalogMode);
-                    }],
-                    ['Go top', 'arrow-up', async () => {
-                        setCatalogActions(false);
-                        temp.catalogReflist.current?.scrollToIndex({ animated: true, index: 0 });
-                    }],
-                    ['Go bottom', 'arrow-down', async () => {
-                        setCatalogActions(false);
-                        temp.catalogReflist.current?.scrollToEnd({ animated: true, index: temp.threads.length - 1 });
-                    }],
-                ]} />}
+        <ModalMenu
+            visible={catalogActions}
+            onClose={() => setCatalogActions(false)}
+            items={[
+                ['Refresh', 'refresh', async () => {
+                    setCatalogActions(false);
+                    await loadThreads(state, setTemp, true);
+                },],
+                ['Sort...', "options", () => {
+                    setCatalogActions(false);
+                    setSortActions(true);
+                }],
+                [state.catalogRev ? 'reverse (currently on)' : 'reverse', 'swap-vertical', () => {
+                    setCatalogActions(false);
+                    setTemp(prev => ({ ...prev, isComputingThreads: true }));
+                    async function defer() {
+                        setState({ ...state, catalogRev: !state.catalogRev });
+                        setTemp(prev => ({ ...prev, threads: prev.threads.reverse(), isComputingThreads: false }));
+                    }
+                    defer()
+                }],
+                [`View as ${catalogModes[nextCatalogMode]}`, catalogModes[nextCatalogMode], async () => {
+                    setCatalogActions(false);
+                    setState({ ...state, catalogViewMode: nextCatalogMode });
+                    await State.set('catalogViewMode', nextCatalogMode);
+                }],
+                ['Go top', 'arrow-up', async () => {
+                    setCatalogActions(false);
+                    temp.catalogReflist.current?.scrollToIndex({ animated: true, index: 0 });
+                }],
+                ['Go bottom', 'arrow-down', async () => {
+                    setCatalogActions(false);
+                    temp.catalogReflist.current?.scrollToEnd({ animated: true });
+                }],
+            ]} />
 
-        {sortActions &&
-            <ModalMenu
-                visible={sortActions}
-                onClose={() => setSortActions(false)}
-                items={catalogSorts.map(({ name, sort, icon }, index) => {
-                    return [name, icon, async () => {
-                        setSortActions(false);
-                        setTemp(prev => ({ ...prev, isComputingThreads: true }));
-                        async function defer() {
-                            setState({ ...state, catalogSort: index });
-                            setTemp(prev => ({ ...prev, threads: prev.threads.sort(sort), isComputingThreads: false }));
-                            await State.set('catalogSort', index);
-                        }
-                        defer()
+        <ModalMenu
+            visible={sortActions}
+            onClose={() => setSortActions(false)}
+            items={catalogSorts.map(({ name, sort, icon }, index) => {
+                return [name, icon, async () => {
+                    setSortActions(false);
+                    setTemp(prev => ({ ...prev, isComputingThreads: true }));
+                    async function defer() {
+                        setState({ ...state, catalogSort: index });
+                        setTemp(prev => ({ ...prev, threads: prev.threads.sort(sort), isComputingThreads: false }));
+                        await State.set('catalogSort', index);
+                    }
+                    defer()
 
-                    }, state.catalogSort === index]
-                })}
-            />}
+                }, state.catalogSort === index]
+            })}
+        />
     </Row>;
 };
 export const Catalog = () => {
@@ -383,7 +381,7 @@ export const Catalog = () => {
                     value={temp.catalogFilter}
                     onChangeText={text => setTemp({ ...temp, catalogFilter: text })}
                     style={{
-                        fontSize: 16,
+                        fontSize: 16 * config.uiFontScale,
                         padding: 10,
                         color: theme.colors.text,
                         flex: 1,

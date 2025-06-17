@@ -1,10 +1,10 @@
 import { useNavigation, useTheme } from "@react-navigation/native";
-import React from "react";
+import React, { useRef } from "react";
 import { ActivityIndicator, Button, FlatList, TouchableNativeFeedback } from "react-native";
 import { TextInput } from "react-native-gesture-handler";
 
 import { BAR_HEIGHT, Ctx } from "../../app";
-import { BoardInfo, Col, HeaderIcon, ModalView, Row, ThemedText } from "../../components";
+import { BoardInfo, Col, HeaderIcon, HeaderThemedText, ModalMenu, ModalView, Row, ThemedAsset, ThemedText } from "../../components";
 import { hasBoardsErrors } from "../../context/temp";
 import { loadBoards } from "../../data/utils";
 
@@ -12,22 +12,42 @@ export const SETUP_BOARDS_KEY = 'SetupBoards';
 
 export const SetupBoardsHeaderTitle = () => {
     return <Col>
+        <HeaderThemedText content={`Setup boards`} />
         <ThemedText content={`Tap to enable a board`} />
     </Col>;
 };
 export const SetupBoardsHeaderRight = () => {
     const { state, setState, temp, setTemp } = React.useContext(Ctx);
+    const [setupBoardsActions, setSetupBoardsActions] = React.useState(false);
+    let items = [
+        ["reload", "reload", async () => {
+            setSetupBoardsActions(false);
+            await loadBoards(state, setState, setTemp, true);
+        }],
+
+    ];
+
+    if (state.boards !== null) {
+        items.push(['Go top', 'arrow-up', async () => {
+            setSetupBoardsActions(false);
+            temp.setupBoardsReflist.current?.scrollToIndex({ animated: true, index: 0 });
+        }]);
+        items.push(['Go bottom', 'arrow-down', async () => {
+            setSetupBoardsActions(false);
+            temp.setupBoardsReflist.current?.scrollToEnd({ animated: true });
+        }]);
+    }
+
 
     return <Row>
-        {temp.setupBoardsFilter !== null ?
-            <HeaderIcon name={'close'} onPress={() => { setTemp({ ...temp, setupBoardsFilter: null }); }} /> :
-            <Row>
-                <HeaderIcon name={'reload'} onPress={async () => {
-                    await loadBoards(state, setState, setTemp, true);
-                }} />
-                <HeaderIcon name={'search'} onPress={() => { setTemp({ ...temp, setupBoardsFilter: '' }); }} />
-            </Row>
-        }
+        {temp.setupBoardsFilter === null && <HeaderIcon name={'search'} onPress={() => { setTemp({ ...temp, setupBoardsFilter: '' }); }} />}
+        <HeaderIcon name={'ellipsis-vertical'} onPress={() => { setSetupBoardsActions(true); }} />
+
+        <ModalMenu
+            visible={setupBoardsActions}
+            onClose={() => { setSetupBoardsActions(false) }}
+            items={items}
+        />
     </Row>;
 };
 export const SetupBoards = () => {
@@ -36,15 +56,19 @@ export const SetupBoards = () => {
     const sailor = useNavigation();
     const [activeBoards, setActiveBoards] = React.useState(state.activeBoards);
     const [showInfo, setShowInfo] = React.useState(null);
+    const reflist = useRef(null);
 
     React.useEffect(() => {
         const unsubscribe = sailor.addListener('beforeRemove', (e) => {
+            if (!temp.setupBoardsReflist) {
+                setTemp({ ...temp, setupBoardsReflist: reflist });
+            }
             if (temp.setupBoardsFilter !== null) {
                 setTemp({ ...temp, setupBoardsFilter: null });
                 e.preventDefault();
                 return;
             }
-            setState(prev => ({ ...prev, activeBoards: activeBoards.sort((a, b) => a.code > b.code) }));
+            setState(prev => ({ ...prev, activeBoards: activeBoards.sort((a, b) => a.code.localeCompare(b.code)) }));
             return;
 
         });
@@ -81,7 +105,7 @@ export const SetupBoards = () => {
                     <ThemedText content={'boardsfetcherror'} />
                     <ThemedText content={'Malformed request'} />
                     <ThemedText content={'TODO: SAD IMAGE'} />
-                    <Button title={'Retry'} onPress={async () => { await loadBoards(state, setTemp, true); }} />
+                    <Button title={'Retry'} onPress={async () => { await loadBoards(state, setState, setTemp, true); }} />
                 </Col>
             }
             {temp.boardsFetchErrorResponse !== null &&
@@ -89,7 +113,7 @@ export const SetupBoards = () => {
                     <ThemedText content={'boardsfetcherror'} />
                     <ThemedText content={'The server returned an error'} />
                     <ThemedText content={'TODO: SAD IMAGE'} />
-                    <Button title={'Retry'} onPress={async () => { await loadBoards(state, setTemp, true); }} />
+                    <Button title={'Retry'} onPress={async () => { await loadBoards(state, setState, setTemp, true); }} />
                 </Col>
             }
             {temp.boardsFetchErrorUnknown !== null &&
@@ -97,7 +121,7 @@ export const SetupBoards = () => {
                     <ThemedText content={'boardsfetcherror'} />
                     <ThemedText content={'The server returned an unknown error'} />
                     <ThemedText content={'TODO: SAD IMAGE'} />
-                    <Button title={'Retry'} onPress={async () => { await loadBoards(state, setTemp, true); }} />
+                    <Button title={'Retry'} onPress={async () => { await loadBoards(state, setState, setTemp, true); }} />
                 </Col>
             }
         </Col>;
@@ -117,27 +141,41 @@ export const SetupBoards = () => {
     if (state.boards.length === 0) {
         return <Col style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
             <ThemedText content={'This server has no boards'} />
-            <ThemedText content={'TODO: SAD IMAGE'} />
+            <ThemedAsset name={'error'} width={200} height={200} />
         </Col>;
     }
 
-    return <Col style={{ flex: 1 }}>
+    return <Col style={{ flex: 1, backgroundColor: theme.colors.card }}>
         {temp.setupBoardsFilter !== null &&
-            <Row style={{ height: BAR_HEIGHT, borderWidth: 1, backgroundColor: theme.colors.card, justifyContent: 'space-between' }}>
-                <Row style={{ flex: 1, padding: 5, itemsAlign: 'center' }}>
-                    <TextInput placeholder="Search..." onChangeText={text => setTemp({ ...temp, setupBoardsFilter: text })} />
-                </Row>
+            <Row style={{
+                backgroundColor: theme.colors.background,
+                height: BAR_HEIGHT,
+                justifyContent: 'space-between'
+            }}>
+                <TextInput
+                    placeholder='Search in the catalog...'
+                    value={temp.setupBoardsFilter}
+                    onChangeText={text => setTemp({ ...temp, setupBoardsFilter: text })}
+                    style={{
+                        fontSize: 16 * config.uiFontScale,
+                        padding: 10,
+                        color: theme.colors.text,
+                        flex: 1,
+                    }}
+                />
                 <HeaderIcon name={'close'} onPress={() => { setTemp({ ...temp, setupBoardsFilter: null }); }} />
-            </Row>}
+            </Row>
+        }
 
         <FlatList
+            ref={reflist}
             data={state.boards.filter(item => item.name.toLowerCase().includes((temp.setupBoardsFilter || '').toLowerCase())).sort((a, b) => a.code > b.code)}
             keyExtractor={(item) => item.code}
             renderItem={({ item }) => <BoardItem item={item} setShowInfo={setShowInfo} activeBoards={activeBoards} setActiveBoards={setActiveBoards} />}
             ListEmptyComponent={<NoBoardsFound />}
-            ListFooterComponent={<Col style={{ padding: 10, gap: 10, }}>
-                <ThemedText content={'Selected boards: ' + activeBoards.length} />
-                <ThemedText content={'Total boards: ' + state.boards.length} />
+            ListFooterComponent={<Col style={{ height: 100 }} />}
+            ListHeaderComponent={<Col style={{ padding: 10 }}>
+                <ThemedText content={`Enabled boards: ${activeBoards.length}/${state.boards.length}`} />
             </Col>}
         />
 
@@ -158,13 +196,14 @@ const BoardItem = ({ item, activeBoards, setActiveBoards, setShowInfo }) => {
         overflow: 'hidden',
         justifyContent: 'space-between',
         alignContent: 'center', alignItems: 'center',
-        backgroundColor: theme.colors.card,
+        backgroundColor: theme.colors.background,
         flex: 1,
     };
     const selectedStyle = {
         ...style,
-        backgroundColor: 'darkgreen'
+        backgroundColor: theme.colors.primary,
     };
+    const isSelected = activeBoards.includes(item.code);
 
     return <Row style={{ flex: 1, margin: 5, borderRadius: config.borderRadius, overflow: 'hidden' }}>
         <TouchableNativeFeedback
@@ -177,13 +216,12 @@ const BoardItem = ({ item, activeBoards, setActiveBoards, setShowInfo }) => {
                         [...prev, item.code];
                 });
             }}>
-            <Row style={activeBoards.includes(item.code) ? selectedStyle : style} >
-                <ThemedText content={`/${item.code}/ - ${item.name}`} />
+            <Row style={isSelected ? selectedStyle : style} >
+                <ThemedText style={{ color: isSelected ? 'black' : theme.colors.text }} content={`/${item.code}/ - ${item.name}`} />
             </Row>
         </TouchableNativeFeedback>
     </Row>;
 };
-
 const NoBoardsFound = () => {
     return <Col>
         <ThemedText content={'No boards found'} />

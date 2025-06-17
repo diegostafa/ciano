@@ -6,13 +6,13 @@ import React, { useCallback, useRef } from 'react';
 import { ActivityIndicator, BackHandler, FlatList, Image, Linking, Pressable, ScrollView, TextInput, TouchableHighlight, TouchableNativeFeedback, useWindowDimensions } from 'react-native';
 import ImageCropPicker from 'react-native-image-crop-picker';
 
-import { Ctx } from '../../app';
-import { Col, Fab, HeaderIcon, HtmlText, ModalAlert, ModalLocalMediaPreview, ModalMediaPreview, ModalMenu, ModalView, Row, ThemedIcon, ThemedText } from '../../components';
+import { BAR_HEIGHT, Ctx } from '../../app';
+import { Col, Fab, HeaderIcon, HtmlText, ListSeparator, ModalAlert, ModalLocalMediaPreview, ModalMediaPreview, ModalMenu, ModalView, Row, ThemedIcon, ThemedText } from '../../components';
 import { State, threadSorts } from '../../context/state';
 import { hasCommentsErrors } from '../../context/temp';
 import { Repo } from '../../data/repo';
 import { loadComments, uploadComment } from '../../data/utils';
-import { getCurrFullBoard, getRepliesTo, getThreadHeaderSignature, quotes, relativeTime } from '../../helpers';
+import { commentContains, getCurrFullBoard, getRepliesTo, getThreadHeaderSignature, quotes, relativeTime } from '../../helpers';
 export const THREAD_KEY = 'Thread';
 
 const getDefaultForm = (config, thread) => {
@@ -26,7 +26,6 @@ const getDefaultForm = (config, thread) => {
         media: null,
     };
 };
-
 export const ThreadHeaderTitle = () => {
     const { state, config } = React.useContext(Ctx);
     const { width } = useWindowDimensions();
@@ -58,7 +57,7 @@ export const ThreadHeaderRight = () => {
                 setState(prev => ({ ...prev, watching: prev.watching.filter(item => item.thread.id !== thread.id) }));
             }
             ] :
-            ["watch, eye", () => {
+            ["watch", "eye", () => {
                 setThreadActions(false);
                 setState(prev => ({
                     ...prev, watching: [...prev.watching, {
@@ -74,11 +73,11 @@ export const ThreadHeaderRight = () => {
             setThreadActions(false);
             setSortActions(true);
         }],
-        ['reverse', 'swap-vertical', () => {
+        [state.threadRev ? 'reverse (currently on)' : 'reverse', 'swap-vertical', () => {
             setThreadActions(false);
             setTemp(prev => ({ ...prev, isComputingComments: true }));
             async function defer() {
-                setState({ ...state, threadRev: !state.threadRev });
+                setState(prev => ({ ...prev, threadRev: !prev.threadRev }));
                 // don't sort op
                 if (temp.comments.length > 0) {
                     const head = temp.comments[0];
@@ -102,43 +101,39 @@ export const ThreadHeaderRight = () => {
     if (!config.loadFaster) {
         items.push(['Go Bottom', 'arrow-down', () => {
             setThreadActions(false);
-            temp.threadReflist.current?.scrollToEnd();
+            temp.threadReflist.current?.scrollToEnd({ animated: true });
         }]);
     }
     return <Row style={{ backgroundColor: theme.colors.card }}>
-        <HeaderIcon name='search' onPress={() => { }} />
+        {temp.threadFilter === null && <HeaderIcon name={'search'} onPress={() => setTemp(prev => ({ ...prev, threadFilter: '' }))} />}
         <HeaderIcon name='ellipsis-vertical' onPress={() => { setThreadActions(true) }} />
-
-        {threadActions &&
-            <ModalMenu
-                visible={threadActions}
-                onClose={() => { setThreadActions(false) }}
-                items={items}
-            />}
-
-        {sortActions &&
-            <ModalMenu
-                visible={sortActions}
-                onClose={() => setSortActions(false)}
-                items={threadSorts.map(({ name, sort, icon }, index) => {
-                    return [name, icon, async () => {
-                        setSortActions(false);
-                        setTemp(prev => ({ ...prev, isComputingComments: true }));
-                        async function defer() {
-                            setState({ ...state, threadSort: index });
-                            await State.set('catalogSort', index);
-                            // don't sort op
-                            if (temp.comments.length > 0) {
-                                const head = temp.comments[0];
-                                const tail = temp.comments.slice(1).sort(sort({ state: state, comments: temp.comments }));
-                                setTemp({ ...temp, comments: [head, ...tail] });
-                            }
-                            setTemp(prev => ({ ...prev, isComputingComments: false }));
+        <ModalMenu
+            visible={threadActions}
+            onClose={() => { setThreadActions(false) }}
+            items={items}
+        />
+        <ModalMenu
+            visible={sortActions}
+            onClose={() => setSortActions(false)}
+            items={threadSorts.map(({ name, sort, icon }, index) => {
+                return [name, icon, async () => {
+                    setSortActions(false);
+                    setTemp(prev => ({ ...prev, isComputingComments: true }));
+                    async function defer() {
+                        setState({ ...state, threadSort: index });
+                        await State.set('catalogSort', index);
+                        // don't sort op
+                        if (temp.comments.length > 0) {
+                            const head = temp.comments[0];
+                            const tail = temp.comments.slice(1).sort(sort({ state: state, comments: temp.comments }));
+                            setTemp({ ...temp, comments: [head, ...tail] });
                         }
-                        defer()
-                    }]
-                })}
-            />}
+                        setTemp(prev => ({ ...prev, isComputingComments: false }));
+                    }
+                    defer()
+                }]
+            })}
+        />
     </Row>;
 };
 export const Thread = () => {
@@ -205,6 +200,28 @@ export const Thread = () => {
     }
 
     return <Col style={{ flex: 1, backgroundColor: theme.colors.card }}>
+        {temp.threadFilter !== null &&
+            <Row style={{
+                backgroundColor: theme.colors.background,
+                width: width,
+                height: BAR_HEIGHT,
+                justifyContent: 'space-between'
+            }}>
+                <TextInput
+                    placeholder='Search in the thread...'
+                    value={temp.threadFilter}
+                    onChangeText={text => setTemp({ ...temp, threadFilter: text })}
+                    style={{
+                        fontSize: 16 * config.uiFontScale,
+                        padding: 10,
+                        color: theme.colors.text,
+                        flex: 1,
+                    }}
+                />
+                <HeaderIcon name={'close'} onPress={() => { setTemp({ ...temp, threadFilter: null }); }} />
+            </Row>
+        }
+
         <CommentList
             repliesStack={repliesStack} setRepliesStack={setRepliesStack}
             selectedComment={selectedComment} setSelectedComment={setSelectedComment}
@@ -317,6 +334,12 @@ const CommentList = ({ selectedComment, setSelectedComment, repliesStack, setRep
     const { state, config, temp, setTemp } = React.useContext(Ctx);
     const { width } = useWindowDimensions();
 
+    let comments = temp.comments;
+    if (temp.threadFilter !== null) {
+        const head = temp.comments[0];
+        const tail = temp.comments.slice(1).filter(item => commentContains(item, temp.threadFilter));
+        comments = [head, ...tail];
+    }
 
     const renderItem = useCallback(({ item, index }) => (
         <CommentTile
@@ -339,14 +362,14 @@ const CommentList = ({ selectedComment, setSelectedComment, repliesStack, setRep
 
     return <FlatList
         ref={temp.threadReflist}
-        data={temp.comments}
+        data={comments}
         keyExtractor={keyExtractor}
         windowSize={10}
         initialNumToRender={config.loadFaster ? 10 : temp.comments.length}
         maxToRenderPerBatch={50}
         updateCellsBatchingPeriod={50}
         removeClippedSubviews
-        // ItemSeparatorComponent={ListSeparator}
+        ItemSeparatorComponent={config.commentSeparator ? ListSeparator : undefined}
         ListFooterComponent={<ThreadInfo />}
         renderItem={renderItem}
         onRefresh={handleRefresh}
@@ -546,7 +569,7 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                         value={form.data.alias || ''}
                         style={{
                             backgroundColor: theme.colors.highlight,
-                            fontSize: 16,
+                            fontSize: 16 * config.uiFontScale,
                             paddingLeft: 20,
                             color: theme.colors.text
                         }}
@@ -582,7 +605,7 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                     style={{
                         flex: 1,
                         padding: 10,
-                        fontSize: 16,
+                        fontSize: 16 * config.uiFontScale,
                         color: theme.colors.text,
                         backgroundColor: theme.colors.highlight
                     }}

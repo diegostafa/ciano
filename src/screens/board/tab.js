@@ -1,6 +1,6 @@
-import React from 'react';
+/* eslint-disable react/react-in-jsx-scope */
 
-import { BAR_HEIGHT, Ctx, Stack } from '../../app.js';
+import { BAR_HEIGHT, Stack } from '../../app.js';
 import { CATALOG_KEY, Catalog, CatalogHeaderLeft, CatalogHeaderRight, CatalogHeaderTitle } from './catalog.js';
 import { CREATE_THREAD_KEY, CreateThread, CreateThreadHeaderRight, CreateThreadHeaderTitle } from './create_thread.js';
 import { SETUP_BOARDS_KEY, SetupBoards, SetupBoardsHeaderRight, SetupBoardsHeaderTitle } from './setup_boards.js';
@@ -9,7 +9,6 @@ import { THREAD_KEY, Thread, ThreadHeaderRight, ThreadHeaderTitle } from './thre
 export const BOARD_TAB_KEY = 'BoardTab';
 
 export const BoardTab = () => {
-    const { temp } = React.useContext(Ctx);
     return <Stack.Navigator>
         <Stack.Screen
             name={CATALOG_KEY}
@@ -50,7 +49,6 @@ export const BoardTab = () => {
                 headerStyle: { height: BAR_HEIGHT },
                 headerTitle: SetupBoardsHeaderTitle,
                 headerRight: SetupBoardsHeaderRight,
-                headerShown: temp.setupBoardsFilter === null,
             }}
         />
     </Stack.Navigator>;

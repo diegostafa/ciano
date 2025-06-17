@@ -5,6 +5,12 @@ import RNBlobUtil from 'react-native-blob-util';
 import { BOARD_NAV_KEY, CATALOG_KEY } from './app';
 import { Repo } from './data/repo';
 
+export const commentContains = (comment, filter) => {
+    const lowerFilter = filter.toLowerCase();
+    return (comment.com && comment.com.toLowerCase().includes(lowerFilter)) ||
+        (comment.file_name && comment.file_name.toLowerCase().includes(lowerFilter)) ||
+        (comment.media_desc && comment.media_desc.toLowerCase().includes(lowerFilter));
+};
 export const threadContains = (thread, filter) => {
     const lowerFilter = filter.toLowerCase();
     return (thread.sub && thread.sub.toLowerCase().includes(lowerFilter)) ||

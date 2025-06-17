@@ -76,7 +76,7 @@ export const CreateThread = () => {
     };
     const inputStyle = {
         backgroundColor: theme.colors.highlight,
-        fontSize: 16,
+        fontSize: 16 * config.uiFontScale,
         paddingLeft: 10,
         paddingRight: 10,
         color: theme.colors.text

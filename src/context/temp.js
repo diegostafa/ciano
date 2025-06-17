@@ -15,9 +15,11 @@ const defaultTemp = {
 
     catalogReflist: null,
     threadReflist: null,
+    setupBoardsReflist: null,
 
     catalogFilter: null,
     setupBoardsFilter: null,
+    threadFilter: null,
 
     mediaDownloadError: null,
     mediaDownloadSuccess: null,

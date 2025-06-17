@@ -9,7 +9,7 @@ import { Repo } from '../data/repo';
 import { getThreadSignature, historyAdd, threadContains } from '../helpers';
 
 export const History = () => {
-    const { state, setState } = React.useContext(Ctx);
+    const { state, setState, config } = React.useContext(Ctx);
     const { width, height } = useWindowDimensions();
     const isLandscape = width > height;
     const th = height / (isLandscape ? 6 : 16);
@@ -58,7 +58,7 @@ export const History = () => {
                         flex: 1,
                         height: searchPad,
                         padding: 10,
-                        fontSize: 16,
+                        fontSize: 16 * config.uiFontScale,
                         backgroundColor: theme.colors.background,
                         color: theme.colors.text,
                     }} />

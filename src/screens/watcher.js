@@ -76,14 +76,15 @@ export const Watcher = () => {
             renderItem={({ item }) => <WatcherItem item={item} />}
             ListEmptyComponent={<NoWatchedThreads />}
             ItemSeparatorComponent={<ListSeparator />}
+            contentContainerStyle={state.watching ? { flexGrow: 1 } : undefined}
         />
     </Col>;
 };
 
 const NoWatchedThreads = () => {
-    return <Col style={{ gap: 10 }}>
+    return <Col style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 }}>
         <ThemedText content={'You are not following any thread'} />
-        <ThemedAsset name={'empty'} width={200} height={200} />
+        <ThemedAsset name={'error'} width={200} height={200} />
     </Col>
 };
 

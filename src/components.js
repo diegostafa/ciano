@@ -152,12 +152,14 @@ export const ModalMenu = ({ visible, onClose, items }) => {
         content={
             <ScrollView>
                 {items.map(([value, icon, action, isActive]) => {
-                    return <TouchableNativeFeedback key={value} onPress={action}>
-                        <Row style={btnStyle}>
-                            {icon && <ThemedIcon name={icon} size={20} />}
-                            <ThemedText content={capitalize(value)} style={isActive ? activeTextStyle : textStyle} />
-                        </Row>
-                    </TouchableNativeFeedback>
+                    return <Col key={value} style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}>
+                        <TouchableNativeFeedback onPress={action}>
+                            <Row style={btnStyle}>
+                                {icon && <ThemedIcon accent name={icon} size={20} />}
+                                <ThemedText content={capitalize(value)} style={isActive ? activeTextStyle : textStyle} />
+                            </Row>
+                        </TouchableNativeFeedback>
+                    </Col>
                 })}
             </ScrollView>
         }
@@ -172,6 +174,11 @@ export const ThemedText = ({ content, style, line }) => {
     }
     return <Text ellipsizeMode='tail' numberOfLines={line ? 1 : undefined} style={{ ...style, color: theme.colors.text, fontSize }}>{content}</Text>;
 };
+export const HeaderThemedText = ({ content, style, line }) => {
+    const { config } = useContext(Ctx);
+    return <ThemedText line={line} style={{ ...style, fontWeight: 'bold', fontSize: 18 * config.uiFontScale }} content={content} />
+};
+
 export const HtmlText = React.memo(({ value, onLinkPress, raw }) => {
     const theme = useTheme();
     const { config } = useContext(Ctx);

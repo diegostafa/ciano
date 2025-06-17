@@ -23,7 +23,7 @@ export const Menu = () => {
         alignItems: 'center',
     };
     const textStyle = {
-        fontSize: 16,
+        fontSize: 16 * config.uiFontScale,
         fontWeight: 'bold',
     };
     const outerStyle = {
@@ -84,7 +84,7 @@ export const Menu = () => {
                     <ThemedIcon accent name={'information-circle'} />
                     <Col style={{ overflow: 'hidden', flex: 1, }}>
                         <ThemedText content={ABOUT_KEY} style={textStyle} />
-                        <ThemedText line content={'Contacts and extra information '} />
+                        <ThemedText line content={'Contacts and extra information'} />
                     </Col>
                 </Row>
             </TouchableNativeFeedback>
