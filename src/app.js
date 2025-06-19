@@ -4,7 +4,7 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
-import { ActivityIndicator, AppState, Platform, useColorScheme, useWindowDimensions } from 'react-native';
+import { AppState, Platform, useColorScheme, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
 
@@ -82,7 +82,9 @@ export const App = () => {
         }
     }, [config, state, watcherTask]);
 
-    if (!state || !config) { return <Col><ActivityIndicator /></Col>; }
+    if (!state || !config) {
+        return <Col style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }} />;
+    }
 
     const theme = colorscheme === 'dark' ?
         config.highContrast ? DarkThemeHighContrast : DarkTheme :

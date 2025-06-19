@@ -84,7 +84,7 @@ export const Menu = () => {
                     <ThemedIcon accent name={'information-circle'} />
                     <Col style={{ overflow: 'hidden', flex: 1, }}>
                         <ThemedText content={ABOUT_KEY} style={textStyle} />
-                        <ThemedText line content={'Contacts and extra information'} />
+                        <ThemedText line content={'Contacts, license and bug reporting'} />
                     </Col>
                 </Row>
             </TouchableNativeFeedback>

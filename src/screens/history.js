@@ -66,10 +66,7 @@ export const History = () => {
 
         <Col style={{ height: height - searchPad - headerPad, backgroundColor: theme.colors.card }}>
             {history.length === 0 ?
-                <Col style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                    <ThemedAsset name={"error"} width={200} height={200} />
-                    <ThemedText content={'There is no history to show'} />
-                </Col> :
+                <ThemedAsset msg={"'There is no history to show'"} name={"placeholder"} /> :
                 <FlatList
                     data={history}
                     renderItem={({ index }) => {
@@ -92,14 +89,14 @@ export const History = () => {
 const HistoryTile = ({ item, th, setForget }) => {
     const sailor = useNavigation();
     const theme = useTheme();
-    const { state, setState } = React.useContext(Ctx);
+    const { state, setState, config } = React.useContext(Ctx);
     const img = Repo(state.api).media.thumb(item);
     const margin = 5;
     const padding = 10;
     const imgSz = th - padding * 2 - margin;
     const sign = getThreadSignature(item);
 
-    return <Col style={{ marginLeft: 5, marginRight: 5, borderRadius: 10, overflow: 'hidden', marginTop: margin, backgroundColor: theme.colors.background }}>
+    return <Col style={{ marginLeft: 5, marginRight: 5, borderRadius: config.borderRadius, overflow: 'hidden', marginTop: margin, backgroundColor: theme.colors.background }}>
         <TouchableNativeFeedback
             onLongPress={() => { setForget(item); }}
             onPress={() => {

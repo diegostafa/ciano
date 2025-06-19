@@ -19,6 +19,7 @@ export const DarkTheme = {
     dark: true,
     colors: {
         primary: 'rgb(165, 221, 255)',
+        primaryInverted: 'rgb(0, 0, 0)',
         background: '#1d2021',
         card: 'rgb(18, 18, 18)',
         text: 'rgb(229, 229, 231)',

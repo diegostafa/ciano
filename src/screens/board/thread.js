@@ -1,13 +1,14 @@
 /* eslint-disable react/display-name */
 import { Marquee } from '@animatereactnative/marquee';
-import { useFocusEffect, useTheme } from '@react-navigation/native';
+import { useNavigation, useTheme } from '@react-navigation/native';
 import { filesize } from 'filesize';
 import React, { useCallback, useRef } from 'react';
-import { ActivityIndicator, BackHandler, FlatList, Image, Linking, Pressable, ScrollView, TextInput, TouchableHighlight, TouchableNativeFeedback, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Linking, Pressable, ScrollView, TextInput, TouchableHighlight, TouchableNativeFeedback, useWindowDimensions } from 'react-native';
 import ImageCropPicker from 'react-native-image-crop-picker';
+import { SearchBar } from 'react-native-screens';
 
-import { BAR_HEIGHT, Ctx } from '../../app';
-import { Col, Fab, HeaderIcon, HtmlText, ListSeparator, ModalAlert, ModalLocalMediaPreview, ModalMediaPreview, ModalMenu, ModalView, Row, ThemedIcon, ThemedText } from '../../components';
+import { Ctx } from '../../app';
+import { Col, Fab, HeaderIcon, HtmlText, ListSeparator, ModalAlert, ModalLocalMediaPreview, ModalMediaPreview, ModalMenu, ModalView, Row, ThemedAsset, ThemedIcon, ThemedText, UpdateGap } from '../../components';
 import { State, threadSorts } from '../../context/state';
 import { hasCommentsErrors } from '../../context/temp';
 import { Repo } from '../../data/repo';
@@ -139,6 +140,7 @@ export const ThreadHeaderRight = () => {
 export const Thread = () => {
     const { state, config, temp, setTemp } = React.useContext(Ctx);
     const { width } = useWindowDimensions();
+    const sailor = useNavigation();
     const theme = useTheme();
     const thread = state.history.at(-1);
     const reflist = useRef(null);
@@ -148,19 +150,24 @@ export const Thread = () => {
     const [form, setForm] = React.useState(getDefaultForm(config, thread));
     const board = getCurrFullBoard(state);
 
-    useFocusEffect(
-        useCallback(() => {
-            const onBackPress = () => {
-                if (createComment) {
-                    setCreateComment(false);
-                    return true;
-                }
-                return false;
-            };
-            const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-            return () => subscription.remove();
-        }, [createComment])
-    );
+    React.useEffect(() => {
+        const unsubscribe = sailor.addListener('beforeRemove', (e) => {
+            if (createComment) {
+                setCreateComment(false);
+                return;
+            }
+            if (temp.threadFilter !== null) {
+                setTemp(prev => ({ ...prev, threadFilter: null }));
+                e.preventDefault();
+                return;
+            }
+            return;
+
+        });
+        return unsubscribe;
+
+    }, [createComment, sailor, setTemp, temp.threadFilter]);
+
     React.useEffect(() => {
         if (hasCommentsErrors(temp)) {
             return;
@@ -176,51 +183,36 @@ export const Thread = () => {
         }
     }, [temp.comments, setTemp, state, temp.isFetchingComments, temp, thread.id, config])
 
-    if (temp.isFetchingComments || !temp.comments) {
+    if (temp.isFetchingComments) {
         return <ScrollView style={{ flex: 1, backgroundColor: theme.colors.card }}>
             <CommentTile
                 comment={thread}
                 setSelectedComment={setSelectedComment}
-                index={0}
                 tw={width}
             />
-            <ActivityIndicator />
-            <ThemedText content={'FETCHING COMMENTS'} />
+            <ThemedAsset msg={"Loading comments..."} name={'placeholder'} loading />
             <ThreadInfo />
-
             <ModalMediaPreview />
         </ScrollView>;
     }
-
+    if (temp.comments === null) {
+        return <UpdateGap />;
+    }
     if (temp.isComputingComments) {
-        return <Col style={{ flex: 1, alignContent: 'center', alignItems: 'center' }}>
-            <ActivityIndicator />
-            <ThemedText content={'sorting...'} />
-        </Col>;
+        return <ThemedAsset
+            msg={"Sorting comments..."}
+            name={'placeholder'}
+            loading
+        />;
     }
 
     return <Col style={{ flex: 1, backgroundColor: theme.colors.card }}>
-        {temp.threadFilter !== null &&
-            <Row style={{
-                backgroundColor: theme.colors.background,
-                width: width,
-                height: BAR_HEIGHT,
-                justifyContent: 'space-between'
-            }}>
-                <TextInput
-                    placeholder='Search in the thread...'
-                    value={temp.threadFilter}
-                    onChangeText={text => setTemp({ ...temp, threadFilter: text })}
-                    style={{
-                        fontSize: 16 * config.uiFontScale,
-                        padding: 10,
-                        color: theme.colors.text,
-                        flex: 1,
-                    }}
-                />
-                <HeaderIcon name={'close'} onPress={() => { setTemp({ ...temp, threadFilter: null }); }} />
-            </Row>
-        }
+        {temp.threadFilter !== null && <SearchBar
+            placeholder='Search for a comment...'
+            value={temp.threadFilter}
+            onChangeText={text => setTemp(prev => ({ ...prev, threadFilter: text }))}
+            onClose={() => { setTemp(prev => ({ ...prev, threadFilter: null })); }}
+        />}
 
         <CommentList
             repliesStack={repliesStack} setRepliesStack={setRepliesStack}
@@ -283,11 +275,10 @@ const RepliesModal = ({ repliesStack, setRepliesStack, setSelectedComment }) => 
                     updateCellsBatchingPeriod={50}
                     removeClippedSubviews
                     keyExtractor={(item) => String(item.id)}
-                    renderItem={({ item, index }) => {
+                    renderItem={({ item }) => {
                         return <Row style={{ alignItems: 'center', justifyContent: 'space-between' }}>
                             <Col style={{ flex: 1 }}>
                                 <CommentTile
-                                    index={index}
                                     comment={item}
                                     tw={width}
                                     repliesStack={repliesStack} setRepliesStack={setRepliesStack}
@@ -320,15 +311,7 @@ const RepliesModal = ({ repliesStack, setRepliesStack, setSelectedComment }) => 
     />;
 };
 const NoComments = () => {
-    const { state } = React.useContext(Ctx);
-    const thread = state.history.at(-1);
-    const tw = useWindowDimensions().width;
-
-    return <Col>
-        <CommentTile comment={thread} tw={tw} index={0} />
-        <ThemedText content={'TODO: THERE ARE NO COMMENTS'} />
-        <ModalMediaPreview />
-    </Col>;
+    return <ThemedAsset name={'placeholder'} msg={`There are no comments here`} />;
 };
 const CommentList = ({ selectedComment, setSelectedComment, repliesStack, setRepliesStack }) => {
     const { state, config, temp, setTemp } = React.useContext(Ctx);
@@ -341,10 +324,9 @@ const CommentList = ({ selectedComment, setSelectedComment, repliesStack, setRep
         comments = [head, ...tail];
     }
 
-    const renderItem = useCallback(({ item, index }) => (
+    const renderItem = useCallback(({ item }) => (
         <CommentTile
             comment={item}
-            index={index}
             repliesStack={repliesStack}
             setRepliesStack={setRepliesStack}
             selectedComment={selectedComment}
@@ -439,7 +421,7 @@ const CommentTile = React.memo(({ comment, selectedComment, setSelectedComment, 
 
                             {img &&
                                 <Col>
-                                    <HtmlText value={`<info>File: ${comment.file_name}.${comment.media_ext}</info>`} />
+                                    <HtmlText value={`<info>Attachment: ${comment.file_name}.${comment.media_ext}</info>`} />
                                     {comment.media_size && <HtmlText value={`<info>Size: ${filesize(comment.media_size)} </info>`} />}
                                 </Col>}
                         </Col>

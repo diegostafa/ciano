@@ -1,7 +1,7 @@
-/* eslint-disable react/react-in-jsx-scope */
-import { useFocusEffect, useNavigation, useTheme } from '@react-navigation/native';
-import { useCallback, useContext, useState } from 'react';
-import { BackHandler, FlatList, Image, Text, TouchableNativeFeedback } from 'react-native';
+
+import { useNavigation, useTheme } from '@react-navigation/native';
+import React, { useContext, useState } from 'react';
+import { FlatList, Image, Text, TouchableNativeFeedback } from 'react-native';
 
 import { BOTTOM_NAV_KEY, Ctx } from '../app';
 import { Col, HeaderIcon, HtmlText, ListSeparator, ModalAlert, Row, ThemedAsset, ThemedText } from '../components';
@@ -47,21 +47,22 @@ export const WatcherHeaderRight = () => {
 export const Watcher = () => {
     const { state, setState, temp, setTemp } = useContext(Ctx);
     const theme = useTheme();
+    const sailor = useNavigation();
     const [isRefreshing, setIsRefreshing] = useState(false);
 
-    useFocusEffect(
-        useCallback(() => {
-            const onBackPress = () => {
-                if (temp.watcherMultiSelection.size > 0) {
-                    setTemp({ ...temp, watcherMultiSelection: new Set() });
-                    return true;
-                }
-                return false;
-            };
-            const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-            return () => subscription.remove();
-        }, [temp, setTemp])
-    );
+    React.useEffect(() => {
+        const unsubscribe = sailor.addListener('beforeRemove', (e) => {
+            if (temp.watcherMultiSelection.size > 0) {
+                setTemp({ ...temp, watcherMultiSelection: new Set() });
+                e.preventDefault();
+                return;
+            }
+            return;
+
+        });
+        return unsubscribe;
+
+    }, [sailor, setTemp, temp]);
 
     return <Col style={{ flex: 1, backgroundColor: theme.colors.card }}>
         <FlatList
@@ -84,7 +85,7 @@ export const Watcher = () => {
 const NoWatchedThreads = () => {
     return <Col style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 }}>
         <ThemedText content={'You are not following any thread'} />
-        <ThemedAsset name={'error'} width={200} height={200} />
+        <ThemedAsset name={'error'} />
     </Col>
 };
 

@@ -14,7 +14,7 @@ export const About = () => {
     const { width, height } = useWindowDimensions();
     const isLandscape = width > height;
     return <ScrollView style={{ padding: 20, flex: 1, gap: 20 }}>
-        <ThemedText content={'Ciano'} style={{ fontSize: 20 * config.uiFontScale, textAlign: 'center' }} />
+        <ThemedText content={'Ciano'} style={{ fontSize: 24 * config.uiFontScale, fontWeight: 'bold', textAlign: 'center' }} />
         <ThemedText content={'Version: 1.0.0'} style={{ textAlign: 'center' }} />
         <Col style={{ flex: 1, marginTop: 20, gap: 20, }}>
             <Col style={{
@@ -55,8 +55,8 @@ export const About = () => {
                 </Col>
             </Col>
 
-            <Col style={{ flex: 1, marginTop: 30, alignContent: 'center', alignItems: 'center' }}>
-                <ThemedAsset name={'fullLogo'} width={200} height={200} />
+            <Col style={{ flex: 1, marginTop: 30, justifyContent: 'center', alignItems: 'center' }}>
+                <ThemedAsset name={'fullLogo'} />
             </Col>
         </Col>
     </ScrollView>;

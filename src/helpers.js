@@ -128,10 +128,12 @@ export const getImageAsset = (theme, name) => {
         light: {
             fullLogo: require('../assets/light/full-logo.png'),
             error: require('../assets/light/error.png'),
+            placeholder: require('../assets/light/placeholder.png'),
         },
         dark: {
             fullLogo: require('../assets/dark/full-logo.png'),
             error: require('../assets/dark/error.png'),
+            placeholder: require('../assets/dark/placeholder.png'),
         },
     };
     return images[theme]?.[name] || null;

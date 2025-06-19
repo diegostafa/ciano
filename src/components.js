@@ -4,7 +4,7 @@ import { ImageZoom } from '@likashefqet/react-native-image-zoom';
 import { useTheme } from '@react-navigation/native';
 import { filesize } from 'filesize';
 import React, { useContext, useRef } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Switch, Text, TouchableNativeFeedback, TouchableWithoutFeedback, useColorScheme, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Switch, Text, TextInput, TouchableNativeFeedback, TouchableWithoutFeedback, useColorScheme, useWindowDimensions, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import HTMLView from 'react-native-htmlview';
@@ -12,7 +12,7 @@ import Snackbar from 'react-native-snackbar';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
 
-import { Ctx } from './app';
+import { BAR_HEIGHT, Ctx } from './app';
 import { Repo } from './data/repo';
 import { capitalize, downloadMedia, getImageAsset, isGif, isImage, isVideo } from './helpers';
 import { DarkHtmlTheme, LightHtmlTheme } from './theme';
@@ -64,7 +64,7 @@ export const Fab = ({ onPress, child }) => {
         </TouchableNativeFeedback>
     </View>;
 };
-export const ModalView = ({ content, visible, onClose, fullscreen, noBackdrop, animation }) => {
+export const ModalView = ({ content, visible, onClose, fullscreen, noBackdrop, animation, size }) => {
     const { width, height } = useWindowDimensions();
     const isVertical = width < height;
     const theme = useTheme();
@@ -86,7 +86,7 @@ export const ModalView = ({ content, visible, onClose, fullscreen, noBackdrop, a
                 <Col style={{
                     borderWidth: fullscreen ? 0 : 1,
                     borderColor: theme.colors.highlight,
-                    width: fullscreen ? '100%' : isVertical ? '90%' : '50%',
+                    width: fullscreen ? '100%' : isVertical ? size || '90%' : '50%',
                     maxHeight: fullscreen ? '100%' : isVertical ? '80%' : '90%',
                     borderRadius: config.borderRadius,
                     backgroundColor: theme.colors.card,
@@ -147,6 +147,7 @@ export const ModalMenu = ({ visible, onClose, items }) => {
     const activeTextStyle = { ...textStyle, color: theme.colors.primary };
 
     return <ModalView
+        size={"70%"}
         visible={visible}
         onClose={onClose}
         content={
@@ -172,13 +173,16 @@ export const ThemedText = ({ content, style, line }) => {
     if (style && 'fontSize' in style) {
         fontSize = style.fontSize * config.uiFontScale;
     }
-    return <Text ellipsizeMode='tail' numberOfLines={line ? 1 : undefined} style={{ ...style, color: theme.colors.text, fontSize }}>{content}</Text>;
+    const defaultStyle = {
+        color: theme.colors.text,
+        fontSize
+    };
+    return <Text ellipsizeMode='tail' numberOfLines={line ? 1 : undefined} style={{ ...defaultStyle, ...style }}>{content}</Text>;
 };
 export const HeaderThemedText = ({ content, style, line }) => {
     const { config } = useContext(Ctx);
     return <ThemedText line={line} style={{ ...style, fontWeight: 'bold', fontSize: 18 * config.uiFontScale }} content={content} />
 };
-
 export const HtmlText = React.memo(({ value, onLinkPress, raw }) => {
     const theme = useTheme();
     const { config } = useContext(Ctx);
@@ -267,10 +271,8 @@ const MediaPreview = ({ comment, onClose }) => {
             left={'OK'}
             onPressLeft={() => { setTemp({ ...temp, mediaDownloadError: null }); }}
         />
-        {loadError && <Col style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 10 }}>
-            <ThemedText content={'The preview could not be loaded'} />
-            <ThemedAsset name={'error'} width={200} height={200} />
-        </Col>}
+        {loadError &&
+            <ThemedAsset name={'error'} msg={'The preview could not be loaded'} />}
 
         {!loadError && showHeader &&
             <Row style={{
@@ -615,9 +617,56 @@ export const BoardInfo = ({ board }) => {
             </Row>}
     </Col>;
 };
-export const ThemedAsset = ({ name, width, height, desc }) => {
+export const ThemedAsset = ({ name, msg, desc, retry, loading }) => {
     const theme = useColorScheme();
-    return <Image
-        style={{ width, height }}
-        source={getImageAsset(theme, name)} />;
+    const { config } = useContext(Ctx);
+    return <Col style={{ flex: 1, gap: 10, justifyContent: 'center', alignItems: 'center' }}>
+        {loading && <Loader />}
+        <ThemedText content={msg} style={{ textAlign: 'center' }} />
+        <Image
+            style={{ width: 200, height: 200 }}
+            source={getImageAsset(theme, name)} />
+        {retry &&
+            <Col style={{ overflow: 'hidden', borderRadius: config.borderRadius }}>
+                <TouchableNativeFeedback>
+                    <Col style={{ padding: 10, backgroundColor: theme.colors.primary }}>
+                        <ThemedText content={"Retry"} style={{ color: theme.colors.primaryInverted }} />
+                    </Col>
+                </TouchableNativeFeedback>
+            </Col>}
+    </Col>;
+
+};
+export const UpdateGap = () => {
+    return <Col style={{ flex: 1 }} />;
+};
+export const Loader = () => {
+    const theme = useTheme();
+    return <ActivityIndicator size={'large'} color={theme.colors.primary} />;
+}
+export const SearchBar = ({ placeholder, value, onChangeText, onClose }) => {
+    const { width } = useWindowDimensions();
+    const theme = useTheme();
+    const { config } = useContext(Ctx);
+
+    return <Row style={{
+        backgroundColor: theme.colors.background,
+        width: width,
+        height: BAR_HEIGHT,
+        justifyContent: 'space-between'
+    }}>
+        <TextInput
+            placeholder={placeholder}
+            value={value}
+            onChangeText={onChangeText}
+            style={{
+                fontSize: 16 * config.uiFontScale,
+                padding: 10,
+                color: theme.colors.text,
+                flex: 1,
+            }}
+        />
+        <HeaderIcon name={'close'} onPress={onClose} />
+    </Row>;
+
 };

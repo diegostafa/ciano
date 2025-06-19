@@ -57,7 +57,6 @@ export const api = {
             }
             return data.Ok;
         },
-
         postComment: async (form, media) => {
             const multipartData = [];
 
@@ -72,8 +71,6 @@ export const api = {
                     data: RNBlobUtil.wrap(media.path)
                 });
             }
-
-
             const response = await RNBlobUtil.fetch(
                 'POST',
                 `${BLU_SERVER}/create_comment`,
@@ -86,7 +83,6 @@ export const api = {
             }
             return data.Ok;
         }
-
     },
     chan: {
         name: '4chan',
