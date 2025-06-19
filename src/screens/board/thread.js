@@ -5,10 +5,9 @@ import { filesize } from 'filesize';
 import React, { useCallback, useRef } from 'react';
 import { ActivityIndicator, FlatList, Image, Linking, Pressable, ScrollView, TextInput, TouchableHighlight, TouchableNativeFeedback, useWindowDimensions } from 'react-native';
 import ImageCropPicker from 'react-native-image-crop-picker';
-import { SearchBar } from 'react-native-screens';
 
 import { Ctx } from '../../app';
-import { Col, Fab, HeaderIcon, HtmlText, ListSeparator, ModalAlert, ModalLocalMediaPreview, ModalMediaPreview, ModalMenu, ModalView, Row, ThemedAsset, ThemedIcon, ThemedText, UpdateGap } from '../../components';
+import { Col, Fab, HeaderIcon, HtmlText, ListSeparator, ModalAlert, ModalLocalMediaPreview, ModalMediaPreview, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedIcon, ThemedText, UpdateGap } from '../../components';
 import { State, threadSorts } from '../../context/state';
 import { hasCommentsErrors } from '../../context/temp';
 import { Repo } from '../../data/repo';

@@ -149,6 +149,7 @@ export const uploadComment = async (state, setState, setTemp, data) => {
     setTemp(prev => ({ ...prev, isUploadingComment: false }));
 };
 export const updateWatcher = async (state, setState) => {
+    console.log('updateWatcher');
     const newWatching = state.watching.map(async watched => {
         const newComments = await Repo(state.api).comments.getRemote(watched.boardId, watched.threadId);
         const diff = newComments.slice(watched.last);

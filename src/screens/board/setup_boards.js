@@ -1,10 +1,9 @@
 import { useNavigation, useTheme } from "@react-navigation/native";
 import React, { useRef } from "react";
-import { Button, FlatList, TouchableNativeFeedback } from "react-native";
-import { SearchBar } from "react-native-screens";
+import { FlatList, TouchableNativeFeedback } from "react-native";
 
 import { Ctx } from "../../app";
-import { BoardInfo, Col, HeaderIcon, HeaderThemedText, ModalMenu, ModalView, Row, ThemedAsset, ThemedText, UpdateGap } from "../../components";
+import { BoardInfo, Col, HeaderIcon, HeaderThemedText, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedText, UpdateGap } from "../../components";
 import { hasBoardsErrors } from "../../context/temp";
 import { loadBoards } from "../../data/utils";
 
@@ -86,43 +85,28 @@ export const SetupBoards = () => {
     }, [config, setState, setTemp, state, temp]);
 
     if (temp.boardsFetchErrorTimeout !== null) {
-        return <Col>
-            <ThemedText content={'boardsfetcherror'} />
-            <ThemedText content={'The server is unreachable'} />
-            <ThemedAsset name={'placeholder'} />
-            <Button title={'Retry'} onPress={async () => { await loadBoards(state, setState, setTemp, true); }} />
-        </Col>;
+        return <ThemedAsset
+            msg={'The server is unreachable'}
+            name={'placeholder'}
+            retry={async () => { await loadBoards(state, setState, setTemp, true); }} />;
     }
     if (temp.boardsFetchErrorRequest !== null) {
-        return <Col>
-            <ThemedText content={'boardsfetcherror'} />
-            <ThemedText content={'Malformed request'} />
-            <ThemedAsset name={'placeholder'} />
-            <Button title={'Retry'} onPress={async () => { await loadBoards(state, setState, setTemp, true); }} />
-        </Col>;
+        return <ThemedAsset
+            msg={'Malformed request'}
+            name={'placeholder'}
+            retry={async () => { await loadBoards(state, setState, setTemp, true); }} />;
     }
     if (temp.boardsFetchErrorResponse !== null) {
-        return <Col>
-            <ThemedText content={'boardsfetcherror'} />
-            <ThemedText content={'The server returned an error'} />
-            <ThemedAsset name={'placeholder'} />
-            <Button title={'Retry'} onPress={async () => { await loadBoards(state, setState, setTemp, true); }} />
-        </Col>;
+        return <ThemedAsset
+            msg={'The server returned an error'}
+            name={'placeholder'}
+            retry={async () => { await loadBoards(state, setState, setTemp, true); }} />;
     }
     if (temp.boardsFetchErrorUnknown !== null) {
-        return <Col>
-            <ThemedText content={'boardsfetcherror'} />
-            <ThemedText content={'The server returned an unknown error'} />
-            <ThemedAsset name={'placeholder'} />
-            <Button title={'Retry'} onPress={async () => { await loadBoards(state, setState, setTemp, true); }} />
-        </Col>;
-    }
-    if (temp.isFetchingBoards) {
         return <ThemedAsset
-            msg={"Loading your boards..."}
+            msg={'The server returned an unknown error'}
             name={'placeholder'}
-            loading
-        />;
+            retry={async () => { await loadBoards(state, setState, setTemp, true); }} />;
     }
     if (state.boards === null) {
         return <UpdateGap />;

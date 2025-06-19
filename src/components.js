@@ -4,7 +4,7 @@ import { ImageZoom } from '@likashefqet/react-native-image-zoom';
 import { useTheme } from '@react-navigation/native';
 import { filesize } from 'filesize';
 import React, { useContext, useRef } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Switch, Text, TextInput, TouchableNativeFeedback, TouchableWithoutFeedback, useColorScheme, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Switch, Text, TextInput, TouchableNativeFeedback, TouchableWithoutFeedback, useWindowDimensions, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import HTMLView from 'react-native-htmlview';
@@ -618,7 +618,7 @@ export const BoardInfo = ({ board }) => {
     </Col>;
 };
 export const ThemedAsset = ({ name, msg, desc, retry, loading }) => {
-    const theme = useColorScheme();
+    const theme = useTheme();
     const { config } = useContext(Ctx);
     return <Col style={{ flex: 1, gap: 10, justifyContent: 'center', alignItems: 'center' }}>
         {loading && <Loader />}
@@ -628,14 +628,13 @@ export const ThemedAsset = ({ name, msg, desc, retry, loading }) => {
             source={getImageAsset(theme, name)} />
         {retry &&
             <Col style={{ overflow: 'hidden', borderRadius: config.borderRadius }}>
-                <TouchableNativeFeedback>
-                    <Col style={{ padding: 10, backgroundColor: theme.colors.primary }}>
-                        <ThemedText content={"Retry"} style={{ color: theme.colors.primaryInverted }} />
+                <TouchableNativeFeedback onPress={retry}>
+                    <Col style={{ padding: 15, backgroundColor: theme.colors.primary }}>
+                        <ThemedText content={"Retry"} style={{ fontWeight: 'bold', fontSize: 18, color: theme.colors.primaryInverted }} />,
                     </Col>
                 </TouchableNativeFeedback>
             </Col>}
     </Col>;
-
 };
 export const UpdateGap = () => {
     return <Col style={{ flex: 1 }} />;
@@ -653,7 +652,9 @@ export const SearchBar = ({ placeholder, value, onChangeText, onClose }) => {
         backgroundColor: theme.colors.background,
         width: width,
         height: BAR_HEIGHT,
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.primary
     }}>
         <TextInput
             placeholder={placeholder}
@@ -668,5 +669,4 @@ export const SearchBar = ({ placeholder, value, onChangeText, onClose }) => {
         />
         <HeaderIcon name={'close'} onPress={onClose} />
     </Row>;
-
 };

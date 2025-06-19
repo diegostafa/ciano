@@ -2,10 +2,9 @@ import { useNavigation, useTheme } from '@react-navigation/native';
 import React, { useRef } from 'react';
 import { FlatList, Image, ScrollView, TouchableNativeFeedback, useWindowDimensions } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
-import { SearchBar } from 'react-native-screens';
 
 import { BAR_HEIGHT, BAR_WIDTH, Ctx } from '../../app';
-import { BoardInfo, Col, Fab, HeaderIcon, HeaderThemedText, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, Row, ThemedAsset, ThemedIcon, ThemedText, UpdateGap } from '../../components';
+import { BoardInfo, Col, Fab, HeaderIcon, HeaderThemedText, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedIcon, ThemedText, UpdateGap } from '../../components';
 import { catalogModes, catalogSorts, State } from '../../context/state';
 import { hasBoardsErrors, hasThreadsErrors, isOnline } from '../../context/temp';
 import { Repo } from '../../data/repo';
@@ -60,8 +59,8 @@ export const CatalogHeaderTitle = () => {
             onLongPress={() => { setShowBoardInfo(true) }}
             onPress={() => setSelectBoard(true)}>
             <Col style={{ flex: 1 }}>
-                <HeaderThemedText style={{ textAlign: 'center' }} content={`/${board.code}/`} />
-                <ThemedText style={{ textAlign: 'center' }} content={`${board.name}`} />
+                <HeaderThemedText content={`/${board.code}/`} />
+                <ThemedText content={`${board.name}`} />
             </Col>
         </TouchableNativeFeedback>
 
@@ -320,10 +319,10 @@ export const Catalog = () => {
         return <ThemedAsset name={"placeholder"} msg={"Sorting in your threads"} />;
     }
     if (temp.isFetchingBoards) {
-        return <ThemedAsset name={"placeholder"} msg={"Loading your boards"} loading />;
+        return <ThemedAsset name={"placeholder"} msg={"Loading boards"} loading />;
     }
     if (temp.isFetchingThreads) {
-        return <ThemedAsset name={"placeholder"} msg={"Loading your threads!\nThis might take a bit of time"} loading />;
+        return <ThemedAsset name={"placeholder"} msg={"Loading threads!\nThis might take a bit of time"} loading />;
     }
     if (state.activeBoards.length === 0) {
         return <ThemedAsset name={"placeholder"} msg={"It is rather empty in here...\nYou should try to enable at least one board!"} />;
@@ -420,7 +419,7 @@ const GridCatalog = ({ width, height, setSelectedThread }) => {
             onRefresh={async () => await loadThreads(state, setTemp, true)}
             refreshing={temp.isFetchingThreads}
             ListEmptyComponent={<NoThreads />}
-            ListFooterComponent={CatalogFooter}
+            ListFooterComponent={<CatalogFooter threads={threads} />}
         />;
     }
 
@@ -439,7 +438,7 @@ const GridCatalog = ({ width, height, setSelectedThread }) => {
         onRefresh={async () => await loadThreads(state, setTemp, true)}
         refreshing={temp.isFetchingThreads}
         ListEmptyComponent={<NoThreads />}
-        ListFooterComponent={CatalogFooter}
+        ListFooterComponent={<CatalogFooter threads={threads} />}
     />;
 }
 const ListCatalog = ({ width, height, setSelectedThread }) => {
@@ -470,13 +469,13 @@ const ListCatalog = ({ width, height, setSelectedThread }) => {
         updateCellsBatchingPeriod={50}
         removeClippedSubviews
         data={threads}
-        renderItem={({ item, index }) => <ListTile thread={item} tw={tw} th={th} setSelectedThread={setSelectedThread} />}
+        renderItem={({ item }) => <ListTile thread={item} tw={tw} th={th} setSelectedThread={setSelectedThread} />}
         keyExtractor={(item) => String(item.id)}
         onRefresh={async () => await loadThreads(state, setTemp, true)}
         refreshing={temp.isFetchingThreads}
         // ItemSeparatorComponent={ListSeparator}
         ListEmptyComponent={<NoThreads />}
-        ListFooterComponent={CatalogFooter}
+        ListFooterComponent={<CatalogFooter threads={threads} />}
     />;
 };
 const GridTile = ({ thread, tw, th, setSelectedThread }) => {
@@ -596,8 +595,8 @@ const ListTile = ({ thread, th, setSelectedThread }) => {
         </Col>
     </Row>;
 };
-const CatalogFooter = () => {
-    const { temp, config } = React.useContext(Ctx);
+const CatalogFooter = ({ threads }) => {
+    const { config } = React.useContext(Ctx);
     const theme = useTheme();
     return <Col style={{
         flex: 1,
@@ -606,6 +605,6 @@ const CatalogFooter = () => {
         borderRadius: config.borderRadius,
         backgroundColor: theme.colors.card
     }}>
-        <ThemedText content={`${temp.threads.length} Threads`} />
+        <ThemedText style={{ textAlign: 'center' }} content={`${threads.length} Threads`} />
     </Col>;
 }
