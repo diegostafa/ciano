@@ -23,6 +23,7 @@ export const CatalogHeaderLeft = () => {
 };
 export const CatalogHeaderTitle = () => {
     const { state, setState, setTemp, config } = React.useContext(Ctx);
+    const { width } = useWindowDimensions();
     const sailor = useNavigation();
     const [selectBoard, setSelectBoard] = React.useState(false);
     const [showBoardInfo, setShowBoardInfo] = React.useState(false);
@@ -53,13 +54,14 @@ export const CatalogHeaderTitle = () => {
         color: theme.colors.text,
     };
 
-    return <Row style={{ flex: 1, margin: 0, overflow: 'hidden' }}>
+    const iconsWidth = (26 + 20) * 3;
+    return <Row style={{ width: width - iconsWidth, margin: 0, overflow: 'hidden' }}>
         <TouchableNativeFeedback
             onLongPress={() => { setShowBoardInfo(true) }}
             onPress={() => setSelectBoard(true)}>
             <Col style={{ flex: 1 }}>
-                <HeaderThemedText content={`/${board.code}/`} />
-                <ThemedText content={`${board.name}`} />
+                <HeaderThemedText style={{ textAlign: 'center' }} content={`/${board.code}/`} />
+                <ThemedText style={{ textAlign: 'center' }} content={`${board.name}`} />
             </Col>
         </TouchableNativeFeedback>
 

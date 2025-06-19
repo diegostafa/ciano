@@ -18,7 +18,6 @@ export const BoardTab = () => {
                 headerTitle: CatalogHeaderTitle,
                 headerRight: CatalogHeaderRight,
                 headerStyle: { height: BAR_HEIGHT },
-                headerTitleContainerStyle: { margin: 0, padding: 0, flex: 1, width: '100% ' },
             }}
         />
         <Stack.Screen
