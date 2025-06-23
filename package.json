@@ -30,6 +30,7 @@
         "eslint-plugin-react": "^7.37.5",
         "eslint-plugin-react-native": "^5.0.0",
         "filesize": "^10.1.6",
+        "he": "^1.2.0",
         "react": "19.0.0",
         "react-native": "0.79.0",
         "react-native-blob-util": "^0.22.2",

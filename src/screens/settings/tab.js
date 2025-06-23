@@ -1,6 +1,6 @@
 /* eslint-disable react/react-in-jsx-scope */
 
-import { BAR_HEIGHT, Stack } from '../../app.js';
+import { HEADER_HEIGHT, Stack } from '../../app.js';
 import { About, ABOUT_KEY } from './about.js';
 import { Accessibility, ACCESSIBILITY_KEY } from './accessibility.js';
 import { Advanced, ADVANCED_KEY } from './advanced.js';
@@ -13,7 +13,7 @@ export const SETTINGS_TAB_KEY = 'SettingsTab';
 
 export const SettingsTab = () => {
     const style = {
-        headerStyle: { height: BAR_HEIGHT },
+        headerStyle: { height: HEADER_HEIGHT },
     }
     return <Stack.Navigator>
         <Stack.Screen

@@ -1,25 +1,25 @@
-import { useNavigation, useTheme } from "@react-navigation/native";
-import React, { useRef } from "react";
-import { FlatList, TouchableNativeFeedback } from "react-native";
+import { useNavigation, useTheme } from '@react-navigation/native';
+import React, { useRef } from 'react';
+import { FlatList, TouchableNativeFeedback } from 'react-native';
 
-import { Ctx } from "../../app";
-import { BoardInfo, Col, HeaderIcon, HeaderThemedText, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedText, UpdateGap } from "../../components";
-import { hasBoardsErrors } from "../../context/temp";
-import { loadBoards } from "../../data/utils";
+import { Ctx } from '../../app';
+import { BoardInfo, Col, HeaderIcon, HeaderThemedText, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedText, UpdateGap } from '../../components';
+import { hasBoardsErrors } from '../../context/temp';
+import { loadBoards } from '../../data/utils';
 
 export const SETUP_BOARDS_KEY = 'SetupBoards';
 
 export const SetupBoardsHeaderTitle = () => {
     return <Col>
         <HeaderThemedText content={`Setup boards`} />
-        <ThemedText content={`Tap to enable a board and hold for info`} />
+        <ThemedText content={`Tap to enable a board or hold for info`} />
     </Col>;
 };
 export const SetupBoardsHeaderRight = () => {
     const { state, setState, temp, setTemp } = React.useContext(Ctx);
     const [setupBoardsActions, setSetupBoardsActions] = React.useState(false);
     let items = [
-        ["reload", "reload", async () => {
+        ['reload', 'reload', async () => {
             setSetupBoardsActions(false);
             await loadBoards(state, setState, setTemp, true);
         }],
@@ -53,13 +53,16 @@ export const SetupBoards = () => {
     const sailor = useNavigation();
     const [activeBoards, setActiveBoards] = React.useState(state.activeBoards);
     const [showInfo, setShowInfo] = React.useState(null);
-    const reflist = useRef(null);
+    const setupBoardsReflist = useRef(null);
+
+    React.useEffect(() => {
+        if (!temp.setupBoardsReflist) {
+            setTemp(prev => ({ ...prev, setupBoardsReflist }));
+        }
+    }, [setTemp, temp.setupBoardsReflist]);
 
     React.useEffect(() => {
         const unsubscribe = sailor.addListener('beforeRemove', (e) => {
-            if (!temp.setupBoardsReflist) {
-                setTemp(prev => ({ ...prev, setupBoardsReflist: reflist }));
-            }
             if (temp.setupBoardsFilter !== null) {
                 setTemp(prev => ({ ...prev, setupBoardsFilter: null }));
                 e.preventDefault();
@@ -78,7 +81,7 @@ export const SetupBoards = () => {
         if (temp.isFetchingBoards) {
             return;
         }
-        if (!state.boards) {
+        if (!state.boards || state.boards.length === 0) {
             loadBoards(state, setState, setTemp, true);
             return;
         }
@@ -113,7 +116,7 @@ export const SetupBoards = () => {
     }
     if (state.boards.length === 0) {
         return <ThemedAsset
-            msg={"The server has no boards"}
+            msg={'The server has no boards'}
             name={'placeholder'}
         />;
     }
@@ -127,17 +130,22 @@ export const SetupBoards = () => {
         />}
         <FlatList
             numColumns={2}
-            ref={reflist}
+            onRefresh={async () => { await loadBoards(state, setState, setTemp, true); }}
+            refreshing={temp.isFetchingBoards}
+            ref={setupBoardsReflist}
             data={state.boards.filter(item => item.name.toLowerCase().includes((temp.setupBoardsFilter || '').toLowerCase())).sort((a, b) => a.code.localeCompare(b.code))}
             keyExtractor={(item) => item.code}
             renderItem={({ item }) => <BoardItem item={item} setShowInfo={setShowInfo} activeBoards={activeBoards} setActiveBoards={setActiveBoards} />}
             ListEmptyComponent={<NoBoardsFound />}
-            ListFooterComponent={<Col style={{ padding: 20 }}>
-                <ThemedText style={{ textAlign: 'center' }} content={`Viewing boards from ${state.api.name}`} />
-            </Col>}
-            ListHeaderComponent={<Col style={{ padding: 10 }}>
-                <ThemedText style={{ textAlign: 'center' }} content={`Enabled boards: ${activeBoards.length}/${state.boards.length}`} />
-            </Col>}
+            ListFooterComponent={
+                <Col style={{ padding: 10 }}>
+                    <ThemedText style={{ textAlign: 'center' }} content={`Viewing boards from ${state.api.name}`} />
+                </Col>
+            }
+            ListHeaderComponent={
+                <Col style={{ padding: 10 }}>
+                    <ThemedText style={{ textAlign: 'center' }} content={`Enabled boards: ${activeBoards.length}/${state.boards.length}`} />
+                </Col>}
         />
         {showInfo && <ModalView
             visible={showInfo !== null}

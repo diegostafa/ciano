@@ -3,8 +3,8 @@ import React, { useRef } from 'react';
 import { FlatList, Image, ScrollView, TouchableNativeFeedback, useWindowDimensions } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
 
-import { BAR_HEIGHT, BAR_WIDTH, Ctx } from '../../app';
-import { BoardInfo, Col, Fab, HeaderIcon, HeaderThemedText, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedIcon, ThemedText, UpdateGap } from '../../components';
+import { Ctx, HEADER_HEIGHT, NAVBAR_WIDTH } from '../../app';
+import { BoardInfo, Col, Fab, FooterList, HeaderIcon, HeaderThemedText, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedIcon, ThemedText, UpdateGap } from '../../components';
 import { catalogModes, catalogSorts, State } from '../../context/state';
 import { hasBoardsErrors, hasThreadsErrors, isOnline } from '../../context/temp';
 import { Repo } from '../../data/repo';
@@ -28,15 +28,17 @@ export const CatalogHeaderTitle = () => {
     const [showBoardInfo, setShowBoardInfo] = React.useState(false);
     const theme = useTheme();
     const [filter, setFilter] = React.useState('');
+    const iconsWidth = (26 + 20) * 3;
 
     if (state.activeBoards.length === 0) {
-        return <Col style={{ flex: 1 }}>
+        return <Row style={{ width: width - iconsWidth, margin: 0, overflow: 'hidden' }}>
             <TouchableNativeFeedback onPress={() => { sailor.navigate(SETUP_BOARDS_KEY) }}>
                 <Col style={{ flex: 1 }}>
                     <HeaderThemedText content={'Setup boards'} />
                     <ThemedText content={'Tap here'} />
                 </Col>
-            </TouchableNativeFeedback></Col>;
+            </TouchableNativeFeedback>
+        </Row>;
     }
 
     if (!state.board) {
@@ -53,7 +55,6 @@ export const CatalogHeaderTitle = () => {
         color: theme.colors.text,
     };
 
-    const iconsWidth = (26 + 20) * 3;
     return <Row style={{ width: width - iconsWidth, margin: 0, overflow: 'hidden' }}>
         <TouchableNativeFeedback
             onLongPress={() => { setShowBoardInfo(true) }}
@@ -83,7 +84,7 @@ export const CatalogHeaderTitle = () => {
                             <TextInput
                                 onChangeText={text => setFilter(text)}
                                 value={filter}
-                                placeholder='Search for an active board...'
+                                placeholder='Search for a board...'
                                 style={inputStyle} />
                         </Col>
                         <TouchableNativeFeedback onPress={() => {
@@ -102,8 +103,11 @@ export const CatalogHeaderTitle = () => {
                         keyExtractor={item => item.code}
                         data={activeBoards.filter(item => item.name.toLowerCase().includes(filter.toLowerCase())).sort((a, b) => a.code.localeCompare(b.code))}
                         renderItem={({ item }) => {
-
                             return <TouchableNativeFeedback onPress={async () => {
+                                if (item.code === state.board) {
+                                    setSelectBoard(false);
+                                    return;
+                                }
                                 const newState = { ...state, board: item.code };
                                 setState(newState);
                                 setSelectBoard(false);
@@ -138,7 +142,7 @@ export const CatalogHeaderRight = () => {
                     setCatalogActions(false);
                     await loadThreads(state, setTemp, true);
                 },],
-                ['Sort...', "options", () => {
+                ['Sort...', 'options', () => {
                     setCatalogActions(false);
                     setSortActions(true);
                 }],
@@ -262,70 +266,70 @@ export const Catalog = () => {
     if (temp.boardsFetchErrorTimeout !== null) {
         return <ThemedAsset
             msg={'The server is unreachable'}
-            name={"error"}
+            name={'error'}
             retry={async () => { await loadBoards(state, setState, setTemp, true); }}
         />;
     }
     if (temp.boardsFetchErrorRequest !== null) {
         return <ThemedAsset
             msg={'Malformed request'}
-            name={"error"}
+            name={'error'}
             retry={async () => { await loadBoards(state, setState, setTemp, true); }}
         />;
     }
     if (temp.boardsFetchErrorResponse !== null) {
         return <ThemedAsset
             msg={'The server returned an error'}
-            name={"error"}
+            name={'error'}
             retry={async () => { await loadBoards(state, setState, setTemp, true); }}
         />;
     }
     if (temp.boardsFetchErrorUnknown !== null) {
         return <ThemedAsset
             msg={'Unknown error'}
-            name={"error"}
+            name={'error'}
             retry={async () => { await loadBoards(state, setState, setTemp, true); }}
         />;
     }
     if (temp.threadsFetchErrorTimeout !== null) {
         return <ThemedAsset
             msg={'The server is unreachable'}
-            name={"error"}
+            name={'error'}
             retry={async () => { await loadThreads(state, setTemp, true); }}
         />;
     }
     if (temp.threadsFetchErrorRequest !== null) {
         return <ThemedAsset
             msg={'Malformed request'}
-            name={"error"}
+            name={'error'}
             retry={async () => { await loadThreads(state, setTemp, true); }}
         />;
     }
     if (temp.threadsFetchErrorResponse !== null) {
         return <ThemedAsset
             msg={'The server returned an error'}
-            name={"error"}
+            name={'error'}
             retry={async () => { await loadThreads(state, setTemp, true); }}
         />;
     }
     if (temp.threadsFetchErrorUnknown !== null) {
         return <ThemedAsset
             msg={'The server returned an unknown error'}
-            name={"error"}
+            name={'error'}
             retry={async () => { await loadThreads(state, setTemp, true); }}
         />;
     }
     if (temp.isComputingThreads) {
-        return <ThemedAsset name={"placeholder"} msg={"Sorting in your threads"} />;
+        return <ThemedAsset name={'placeholder'} msg={'Sorting in your threads'} />;
     }
     if (temp.isFetchingBoards) {
-        return <ThemedAsset name={"placeholder"} msg={"Loading boards"} loading />;
+        return <ThemedAsset name={'placeholder'} msg={'Loading boards'} loading />;
     }
     if (temp.isFetchingThreads) {
-        return <ThemedAsset name={"placeholder"} msg={"Loading threads!\nThis might take a bit of time"} loading />;
+        return <ThemedAsset name={'placeholder'} msg={'Loading threads!\nThis might take a bit of time'} loading />;
     }
     if (state.activeBoards.length === 0) {
-        return <ThemedAsset name={"placeholder"} msg={"It is rather empty in here...\nYou should try to enable at least one board!"} />;
+        return <ThemedAsset name={'placeholder'} msg={'It is rather empty in here...\nYou should try to enable at least one board!'} />;
     }
     if (temp.threads === null) {
         return <UpdateGap />;
@@ -345,11 +349,11 @@ export const Catalog = () => {
             onClose={() => { setSelectedThread(null); }}
             items={[
                 (isWatching ?
-                    ["Unwatch", "eye-off", () => {
+                    ['Unwatch', 'eye-off', () => {
                         setState(prev => ({ ...prev, watching: prev.watching.filter(item => item.thread.id !== selectedThread.id) }));
                         setSelectedThread(null);
                     }] :
-                    ["watch", "eye", () => {
+                    ['watch', 'eye', () => {
                         setState(prev => ({
                             ...prev, watching: [...prev.watching, {
                                 thread: selectedThread,
@@ -373,15 +377,10 @@ export const Catalog = () => {
 };
 const NoThreads = () => {
     const { temp } = React.useContext(Ctx);
-
     if (temp.catalogFilter === null) {
-        return <Col style={{ flex: 1 }}>
-            <ThemedText content={'There are no threads here, be the first one to post!'} />
-        </Col>;
+        return <ThemedAsset name={'placeholder'} msg={'There are no threads here, be the first one to post!'} />;
     }
-    return <Col style={{ flex: 1 }}>
-        <ThemedText content={'No threads found'} />
-    </Col>;
+    return <ThemedAsset name={'placeholder'} msg={'No threads found'} />;
 
 };
 const GridCatalog = ({ width, height, setSelectedThread }) => {
@@ -397,14 +396,15 @@ const GridCatalog = ({ width, height, setSelectedThread }) => {
 
     if (isVertical) {
         tw = width / config.catalogGridCols;
-        th = (height - (BAR_HEIGHT * 2)) / config.catalogGridRows;
+        th = (height - (HEADER_HEIGHT * 2)) / config.catalogGridRows;
     } else {
-        tw = (width - BAR_WIDTH) / config.catalogGridColsLandscape;
-        th = (height - BAR_HEIGHT) / config.catalogGridRowsLandscape;
+        tw = (width - NAVBAR_WIDTH) / config.catalogGridColsLandscape;
+        th = (height - HEADER_HEIGHT) / config.catalogGridRowsLandscape;
     }
 
     if (isVertical) {
         return <FlatList
+            contentContainerStyle={{ flexGrow: 1 }}
             key={0}
             ref={temp.catalogReflist}
             windowSize={10}
@@ -424,6 +424,7 @@ const GridCatalog = ({ width, height, setSelectedThread }) => {
     }
 
     return <FlatList
+        contentContainerStyle={{ flexGrow: 1 }}
         key={2}
         ref={temp.catalogReflist}
         windowSize={10}
@@ -454,13 +455,14 @@ const ListCatalog = ({ width, height, setSelectedThread }) => {
 
     if (isVertical) {
         tw = width;
-        th = (height - (BAR_HEIGHT * 2)) / config.catalogListRows;
+        th = (height - (HEADER_HEIGHT * 2)) / config.catalogListRows;
     } else {
-        tw = (width - BAR_WIDTH);
-        th = (height - BAR_HEIGHT) / config.catalogListRowsLandscape;
+        tw = (width - NAVBAR_WIDTH);
+        th = (height - HEADER_HEIGHT) / config.catalogListRowsLandscape;
     }
 
     return <FlatList
+        contentContainerStyle={{ flexGrow: 1 }}
         key={1}
         ref={temp.catalogReflist}
         windowSize={10}
@@ -531,7 +533,7 @@ const GridTile = ({ thread, tw, th, setSelectedThread }) => {
 
                 <Row style={{ marginTop: 10, justifyContent: 'space-between', alignItems: 'center' }}>
                     <HtmlText value={`<info>${thread.replies}R, ${thread.images}I</info>`} />
-                    {isWatched && <Col><ThemedIcon name={"eye"} size={14} accent /></Col>}
+                    {isWatched && <Col><ThemedIcon name={'eye'} size={14} accent /></Col>}
                 </Row>
             </Col>
         </TouchableNativeFeedback>
@@ -588,7 +590,7 @@ const ListTile = ({ thread, th, setSelectedThread }) => {
                     </Col>
                     <Row style={{ marginTop: 7, justifyContent: 'space-between', alignItems: 'center' }}>
                         <HtmlText value={`<info>${thread.replies} ${thread.replies === 1 ? 'Reply' : 'Replies'}, ${thread.images} ${thread.images === 1 ? 'Image' : 'Images'}</info>`} />
-                        {isWatched && <Col><ThemedIcon name={"eye"} size={14} accent /></Col>}
+                        {isWatched && <Col><ThemedIcon name={'eye'} size={14} accent /></Col>}
                     </Row>
                 </Col>
             </TouchableNativeFeedback>
@@ -596,15 +598,6 @@ const ListTile = ({ thread, th, setSelectedThread }) => {
     </Row>;
 };
 const CatalogFooter = ({ threads }) => {
-    const { config } = React.useContext(Ctx);
-    const theme = useTheme();
-    return <Col style={{
-        flex: 1,
-        height: 150,
-        padding: 10,
-        borderRadius: config.borderRadius,
-        backgroundColor: theme.colors.card
-    }}>
-        <ThemedText style={{ textAlign: 'center' }} content={`${threads.length} Threads`} />
-    </Col>;
+    return <FooterList child={<ThemedText style={{ textAlign: 'center' }} content={`${threads.length} Threads`} />}
+    />
 }

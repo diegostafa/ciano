@@ -1,12 +1,13 @@
-import { CommonActions, DrawerActions, useNavigation, useTheme } from '@react-navigation/native';
+import { useNavigation, useTheme } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { FlatList, Image, TouchableNativeFeedback, useWindowDimensions } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
 
-import { BAR_HEIGHT, BOARD_TAB_KEY, BOTTOM_NAV_KEY, Ctx, THREAD_KEY } from '../app';
-import { Col, HeaderIcon, HtmlText, ModalAlert, Row, ThemedAsset, ThemedText } from '../components';
+import { Ctx, HEADER_HEIGHT } from '../app';
+import { Col, HeaderIcon, ModalAlert, Row, ThemedAsset, ThemedText } from '../components';
 import { Repo } from '../data/repo';
-import { getThreadSignature, historyAdd, threadContains } from '../helpers';
+import { getThreadHistorySignature, historyAdd, threadContains } from '../helpers';
+import { THREAD_KEY } from './board/thread';
 
 export const History = () => {
     const { state, setState, config } = React.useContext(Ctx);
@@ -15,12 +16,23 @@ export const History = () => {
     const th = height / (isLandscape ? 6 : 16);
     const [filter, setFilter] = React.useState('');
     const [forget, setForget] = useState(null);
+    const [open, setOpen] = useState(null);
     const [forgetAll, setForgetAll] = useState(false);
     const theme = useTheme();
-    const headerPad = BAR_HEIGHT;
+    const headerPad = HEADER_HEIGHT;
     const noHistory = state.history.length === 0;
     const searchPad = noHistory ? 0 : 40;
     const history = state.history.filter(item => threadContains(item, filter))
+    const sailor = useNavigation();
+
+    React.useEffect(() => {
+        if (!open) {
+            return;
+        }
+        historyAdd(state, setState, open);
+        sailor.navigate(THREAD_KEY);
+        setOpen(null);
+    }, [open, setOpen, sailor, state, setState]);
 
     return <Col style={{ flex: 1, overflow: 'hidden' }}>
         <ModalAlert
@@ -66,12 +78,12 @@ export const History = () => {
 
         <Col style={{ height: height - searchPad - headerPad, backgroundColor: theme.colors.card }}>
             {history.length === 0 ?
-                <ThemedAsset msg={"'There is no history to show'"} name={"placeholder"} /> :
+                <ThemedAsset msg={'There is no history to show'} name={'placeholder'} /> :
                 <FlatList
                     data={history}
                     renderItem={({ index }) => {
                         const item = history[history.length - 1 - index];
-                        return <HistoryTile item={item} th={th} setForget={setForget} />;
+                        return <HistoryTile item={item} th={th} setForget={setForget} setOpen={setOpen} />;
                     }}
                     keyExtractor={(item) => String(item.id)}
                 />
@@ -86,33 +98,18 @@ export const History = () => {
         </Row>
     </Col>;
 };
-const HistoryTile = ({ item, th, setForget }) => {
-    const sailor = useNavigation();
+const HistoryTile = ({ item, th, setForget, setOpen }) => {
     const theme = useTheme();
-    const { state, setState, config } = React.useContext(Ctx);
+    const { state, config } = React.useContext(Ctx);
     const img = Repo(state.api).media.thumb(item);
     const margin = 5;
     const padding = 10;
     const imgSz = th - padding * 2 - margin;
-    const sign = getThreadSignature(item);
 
     return <Col style={{ marginLeft: 5, marginRight: 5, borderRadius: config.borderRadius, overflow: 'hidden', marginTop: margin, backgroundColor: theme.colors.background }}>
         <TouchableNativeFeedback
             onLongPress={() => { setForget(item); }}
-            onPress={() => {
-                historyAdd(state, setState, item);
-                sailor.dispatch(DrawerActions.closeDrawer());
-                sailor.dispatch(CommonActions.navigate({
-                    name: BOTTOM_NAV_KEY,
-                    params: {
-                        screen: BOARD_TAB_KEY,
-                        params: {
-                            screen: THREAD_KEY,
-                        }
-                    }
-                })
-                );
-            }}>
+            onPress={() => { setOpen(item); }}>
             <Col>
                 <Row style={{ overflow: 'hidden', marginRight: 10, alignItems: 'center', padding, height: th, gap: 15 }} >
                     <Image src={img} style={{
@@ -121,7 +118,9 @@ const HistoryTile = ({ item, th, setForget }) => {
                         width: imgSz,
                         height: imgSz,
                     }} />
-                    <HtmlText value={sign} />
+                    <Col style={{ overflow: 'hidden', flex: 1 }}>
+                        <ThemedText line content={getThreadHistorySignature(item)} />
+                    </Col>
                 </Row>
             </Col>
         </TouchableNativeFeedback>

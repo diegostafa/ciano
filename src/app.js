@@ -1,4 +1,4 @@
-import { addEventListener } from "@react-native-community/netinfo";
+import { addEventListener } from '@react-native-community/netinfo';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
@@ -12,12 +12,12 @@ import { Col, TabIcon } from './components.js';
 import { Config } from './context/config.js';
 import { State } from './context/state.js';
 import { Temp } from './context/temp.js';
-import { updateWatcher } from "./data/utils.js";
+import { updateWatcher } from './data/utils.js';
 import { BOARD_TAB_KEY, BoardTab } from './screens/board/tab.js';
 import { THREAD_KEY } from './screens/board/thread.js';
-import { History } from "./screens/history.js";
+import { History } from './screens/history.js';
 import { SETTINGS_TAB_KEY, SettingsTab } from './screens/settings/tab.js';
-import { Watcher, WATCHER_TAB_KEY, WatcherHeaderRight } from "./screens/watcher.js";
+import { Watcher, WATCHER_TAB_KEY, WatcherHeaderRight } from './screens/watcher.js';
 import { DarkTheme, DarkThemeHighContrast, LightTheme, LightThemeHighContrast } from './theme.js';
 enableScreens();
 
@@ -25,8 +25,8 @@ export const Tab = createBottomTabNavigator();
 export const Stack = createStackNavigator();
 export const Ctx = React.createContext();
 export const Drawer = createDrawerNavigator();
-export const BAR_HEIGHT = 48;
-export const BAR_WIDTH = 128;
+export const HEADER_HEIGHT = 48;
+export const NAVBAR_WIDTH = 128;
 export const DRAWER_WIDTH = 300;
 export const BOTTOM_NAV_KEY = 'BottomNav';
 export const isIos = () => Platform.OS === 'ios';
@@ -93,7 +93,7 @@ export const App = () => {
     return <Ctx.Provider value={{ state, setState, config, setConfig, temp, setTemp }}>
         <NavigationContainer theme={theme} >
             <Drawer.Navigator
-                keyboardShouldPersistTaps="handled"
+                keyboardShouldPersistTaps='handled'
                 screenOptions={{
                     headerShown: false,
                     drawerStyle: {
@@ -104,7 +104,8 @@ export const App = () => {
                 drawerContent={History} >
                 <Drawer.Screen name={BOTTOM_NAV_KEY} component={BottomNav} />
             </Drawer.Navigator>
-        </NavigationContainer></Ctx.Provider>;
+        </NavigationContainer>
+    </Ctx.Provider>;
 };
 const BottomNav = () => {
     const { width, height } = useWindowDimensions();
@@ -115,11 +116,11 @@ const BottomNav = () => {
             initialRouteName={BOARD_TAB_KEY}
             screenOptions={{
                 tabBarVariant: isAndroid() && !isVertical ? 'material' : undefined,
-                height: BAR_HEIGHT,
+                height: HEADER_HEIGHT,
                 tabBarPosition: isVertical ? 'bottom' : 'left',
                 tabBarHideOnKeyboard: true,
                 tabBarLabelPosition: !isVertical ? 'below-icon' : undefined,
-                tabBarStyle: { width: !isVertical ? BAR_WIDTH : undefined },
+                tabBarStyle: { width: !isVertical ? NAVBAR_WIDTH : undefined },
             }}>
 
             <Tab.Screen
@@ -128,7 +129,7 @@ const BottomNav = () => {
                 options={{
                     headerRight: WatcherHeaderRight,
                     tabBarIcon: TabIcon('notifications'),
-                    headerStyle: { height: BAR_HEIGHT },
+                    headerStyle: { height: HEADER_HEIGHT },
                     title: 'Watcher'
                 }}
             />

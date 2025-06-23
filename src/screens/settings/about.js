@@ -24,7 +24,7 @@ export const About = () => {
 
                 <Col style={{ overflow: 'hidden', borderRadius: config.borderRadius }}>
                     <TouchableNativeFeedback
-                        accessibilityHint="This button will open an external browser and redirect you to our GitHub page"
+                        accessibilityHint='This button will open an external browser and redirect you to our GitHub page'
                         onPress={() => {
                             const url = 'https://github.com/diegostaga/ciano';
                             Linking.canOpenURL(url).then(() => {
@@ -40,7 +40,7 @@ export const About = () => {
 
                 <Col style={{ overflow: 'hidden', borderRadius: config.borderRadius, marginTop: isLandscape ? 0 : 20 }}>
                     <TouchableNativeFeedback
-                        accessibilityHint="This button will open an external browser and redirect you to our GitHub page to submit and issue"
+                        accessibilityHint='This button will open an external browser and redirect you to our GitHub page to submit and issue'
                         onPress={() => {
                             const url = 'https://github.com/diegostaga/ciano/issues/new';
                             Linking.canOpenURL(url).then(() => {

@@ -28,6 +28,7 @@ export const DarkTheme = {
         highlight: 'rgba(255, 255, 255, 0.1)',
         formBg: 'rgb(50, 50, 55)',
 
+        err: 'rgb(255, 123, 123)',
         lastVisited: 'rgba(214, 255, 250, 0.2)',
         danger: 'rgba(255, 0,0, 0.1)',
         safe: 'rgba(0, 0, 0, 0)',

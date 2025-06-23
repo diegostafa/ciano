@@ -14,7 +14,7 @@ const defaultState = {
     catalogRev: false,
     threadRev: false,
     showNoConnectionNotice: true,
-    api: api.chan,
+    api: api.ciano,
 };
 export const State = {
     get: async (key) => getLocal(key),
@@ -35,7 +35,7 @@ export const State = {
     },
     restore: async (fromApi) => {
         let restored = {};
-        const tempApi = fromApi !== undefined ? fromApi : (await getLocal("api").catch(() => null)) || defaultState.api;
+        const tempApi = fromApi !== undefined ? fromApi : (await getLocal('api').catch(() => null)) || defaultState.api;
         restored.board = (await getLocal(`${tempApi.name}/board`).catch(() => null)) || defaultState.board;
         restored.boards = (await getLocal(`${tempApi.name}/boards`).catch(() => null)) || defaultState.boards;
         restored.activeBoards = (await getLocal(`${tempApi.name}/activeBoards`).catch(() => null)) || defaultState.activeBoards;

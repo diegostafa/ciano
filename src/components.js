@@ -4,7 +4,7 @@ import { ImageZoom } from '@likashefqet/react-native-image-zoom';
 import { useTheme } from '@react-navigation/native';
 import { filesize } from 'filesize';
 import React, { useContext, useRef } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Switch, Text, TextInput, TouchableNativeFeedback, TouchableWithoutFeedback, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Switch, Text, TextInput, TouchableNativeFeedback, TouchableWithoutFeedback, useColorScheme, useWindowDimensions, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import HTMLView from 'react-native-htmlview';
@@ -12,14 +12,14 @@ import Snackbar from 'react-native-snackbar';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
 
-import { BAR_HEIGHT, Ctx } from './app';
+import { Ctx, HEADER_HEIGHT } from './app';
 import { Repo } from './data/repo';
 import { capitalize, downloadMedia, getImageAsset, isGif, isImage, isVideo } from './helpers';
 import { DarkHtmlTheme, LightHtmlTheme } from './theme';
 
-export const ThemedIcon = ({ name, size, accent }) => {
+export const ThemedIcon = ({ name, size, accent, inverted, err }) => {
     const theme = useTheme();
-    return <Icon name={name} size={size || 28} color={accent ? theme.colors.primary : theme.colors.text} />;
+    return <Icon name={name} size={size || 28} color={err ? theme.colors.err : inverted ? theme.colors.primaryInverted : accent ? theme.colors.primary : theme.colors.text} />;
 };
 export const HeaderIcon = ({ name, onPress, size }) => {
     return <Col style={{
@@ -49,7 +49,6 @@ export const Fab = ({ onPress, child }) => {
         width: size,
         borderRadius: '50%',
         overflow: 'hidden',
-
     }}>
         <TouchableNativeFeedback onPress={onPress}>
             <Col style={{
@@ -59,7 +58,7 @@ export const Fab = ({ onPress, child }) => {
                 height: size,
                 width: size,
             }}>
-                {child || <ThemedIcon name={'add'} />}
+                {child || <ThemedIcon name={'add'} inverted />}
             </Col>
         </TouchableNativeFeedback>
     </View>;
@@ -147,7 +146,7 @@ export const ModalMenu = ({ visible, onClose, items }) => {
     const activeTextStyle = { ...textStyle, color: theme.colors.primary };
 
     return <ModalView
-        size={"70%"}
+        size={'70%'}
         visible={visible}
         onClose={onClose}
         content={
@@ -177,7 +176,13 @@ export const ThemedText = ({ content, style, line }) => {
         color: theme.colors.text,
         fontSize
     };
-    return <Text ellipsizeMode='tail' numberOfLines={line ? 1 : undefined} style={{ ...defaultStyle, ...style }}>{content}</Text>;
+
+    if (line) {
+        return <Col style={{ overflow: 'hidden', flex: 1 }}>
+            <Text ellipsizeMode='tail' numberOfLines={1} style={{ ...defaultStyle, ...style }}>{content}</Text>
+        </Col>;
+    }
+    return <Text style={{ ...defaultStyle, ...style }}>{content}</Text>;
 };
 export const HeaderThemedText = ({ content, style, line }) => {
     const { config } = useContext(Ctx);
@@ -277,7 +282,6 @@ const MediaPreview = ({ comment, onClose }) => {
         {!loadError && showHeader &&
             <Row style={{
                 top: 0,
-                flex: 1,
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 zIndex: 4,
@@ -286,15 +290,9 @@ const MediaPreview = ({ comment, onClose }) => {
                 padding: 10,
                 backgroundColor: theme.colors.overlay,
             }}>
-                <Marquee
-                    speed={config.disableMovingElements ? 0 : 0.3}
+                <Title
                     spacing={width - 150}
-                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
-                    <ThemedText
-                        style={{ fontWeight: 'bold', }}
-                        content={`${comment.file_name}.${comment.media_ext}  (${filesize(comment.media_size)})`}
-                    />
-                </Marquee>
+                    title={`${comment.file_name}.${comment.media_ext}\n(${filesize(comment.media_size)})`} />
 
                 <Row style={{ gap: 10 }}>
                     <HeaderIcon name={'download'} onPress={async () => {
@@ -418,22 +416,18 @@ const LocalMediaPreview = ({ media, onClose }) => {
     const smallest = Math.min(width, height);
     const [isLoading, setIsLoading] = React.useState(true);
     const [showHeader, setShowHeader] = React.useState(true);
-
     const ext = media.mime.split('/').pop();
     const name = media.path.split('/').pop();
     const size = media.size;
-
     const is_image = isImage(ext);
     const is_gif = isGif(ext);
     const is_video = isVideo(ext);
     const videoref = useRef(null);
 
-
     return <Col style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         {showHeader &&
             <Row style={{
                 top: 0,
-                flex: 1,
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 zIndex: 4,
@@ -442,17 +436,9 @@ const LocalMediaPreview = ({ media, onClose }) => {
                 padding: 10,
                 backgroundColor: theme.colors.overlay,
             }}>
-
-                <Marquee
-                    speed={config.disableMovingElements ? 0 : 0.3}
+                <Title
                     spacing={width - 150}
-                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
-                    <ThemedText
-                        style={{ fontWeight: 'bold', }}
-                        content={`${name} (${filesize(size)})`}
-                    />
-                </Marquee>
-
+                    title={`${name} (${filesize(size)})`} />
                 <Row style={{ gap: 10 }}>
                     <HeaderIcon name={'close'} onPress={onClose} />
                 </Row>
@@ -541,7 +527,7 @@ export const BooleanConfig = ({ title, description, isEnabled, onToggle }) => {
         <Switch
             trackColor={{ false: '#767577', true: '#81b0ff' }}
             thumbColor={isEnabled ? '#f5dd4b' : '#f4f3f4'}
-            ios_backgroundColor="#3e3e3e"
+            ios_backgroundColor='#3e3e3e'
             onValueChange={onToggle}
             value={isEnabled}
         />
@@ -575,10 +561,10 @@ export const BoardInfo = ({ board }) => {
                 <ThemedText content={`Name:`} />
                 <ThemedText content={board.name} />
             </Row>}
-        {board.description &&
+        {board.desc &&
             <Row style={infoOuter}>
                 <ThemedText content={`Description:`} />
-                <ThemedText content={board.description} />
+                <ThemedText content={board.desc} />
             </Row>}
         {board.max_sub_len &&
             <Row style={infoOuter}>
@@ -618,19 +604,22 @@ export const BoardInfo = ({ board }) => {
     </Col>;
 };
 export const ThemedAsset = ({ name, msg, desc, retry, loading }) => {
-    const theme = useTheme();
+    const colorscheme = useColorScheme();
+    const theme = colorscheme === 'dark' ? 'dark' : 'light';
     const { config } = useContext(Ctx);
+    const asset = getImageAsset(theme, name);
+    console.log(asset);
     return <Col style={{ flex: 1, gap: 10, justifyContent: 'center', alignItems: 'center' }}>
         {loading && <Loader />}
         <ThemedText content={msg} style={{ textAlign: 'center' }} />
         <Image
             style={{ width: 200, height: 200 }}
-            source={getImageAsset(theme, name)} />
+            source={asset} />
         {retry &&
             <Col style={{ overflow: 'hidden', borderRadius: config.borderRadius }}>
                 <TouchableNativeFeedback onPress={retry}>
                     <Col style={{ padding: 15, backgroundColor: theme.colors.primary }}>
-                        <ThemedText content={"Retry"} style={{ fontWeight: 'bold', fontSize: 18, color: theme.colors.primaryInverted }} />,
+                        <ThemedText content={'Retry'} style={{ fontWeight: 'bold', fontSize: 18, color: theme.colors.primaryInverted }} />
                     </Col>
                 </TouchableNativeFeedback>
             </Col>}
@@ -651,7 +640,7 @@ export const SearchBar = ({ placeholder, value, onChangeText, onClose }) => {
     return <Row style={{
         backgroundColor: theme.colors.background,
         width: width,
-        height: BAR_HEIGHT,
+        height: HEADER_HEIGHT,
         justifyContent: 'space-between',
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.primary
@@ -669,4 +658,47 @@ export const SearchBar = ({ placeholder, value, onChangeText, onClose }) => {
         />
         <HeaderIcon name={'close'} onPress={onClose} />
     </Row>;
+};
+export const Title = ({ title, spacing, onPress }) => {
+    const { config } = useContext(Ctx);
+
+    if (!config.disableMovingElements) {
+        return <Marquee
+            speed={0.3}
+            spacing={spacing}
+            style={{ flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
+            <HtmlText value={title} raw />
+        </Marquee>;
+    }
+
+    return <Row>
+        <TouchableNativeFeedback onPress={onPress}>
+            <ThemedText line content={title} />
+        </TouchableNativeFeedback>
+    </Row>;
+};
+
+export const FooterList = ({ child }) => {
+    const { config } = useContext(Ctx);
+    const theme = useTheme();
+    return <Col style={{
+        padding: 10,
+        paddingTop: 50,
+        paddingBottom: 50,
+        borderTopRightRadius: config.borderRadius,
+        borderTopLeftRadius: config.borderRadius,
+        backgroundColor: theme.colors.background
+    }}>{child}</Col>
+};
+export const HeaderList = ({ child }) => {
+    const { config } = useContext(Ctx);
+    const theme = useTheme();
+    return <Col style={{
+        padding: 10,
+        paddingTop: 50,
+        paddingBottom: 50,
+        borderBottomRightRadius: config.borderRadius,
+        borderBottomLeftRadius: config.borderRadius,
+        backgroundColor: theme.colors.background
+    }}>{child}</Col>
 };

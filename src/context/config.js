@@ -1,4 +1,4 @@
-import { getLocal, setLocal } from "../helpers";
+import { getLocal, setLocal } from '../helpers';
 
 const defaultConfig = {
     // appearance
@@ -18,6 +18,7 @@ const defaultConfig = {
     // behaviour
     defaultName: null,
     showNames: true,
+    showOptionalFields: false,
     swipeToReply: false,
     showCatalogThumbnails: true,
     autoWatchThreads: true,

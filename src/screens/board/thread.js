@@ -1,5 +1,4 @@
 /* eslint-disable react/display-name */
-import { Marquee } from '@animatereactnative/marquee';
 import { useNavigation, useTheme } from '@react-navigation/native';
 import { filesize } from 'filesize';
 import React, { useCallback, useRef } from 'react';
@@ -7,7 +6,7 @@ import { ActivityIndicator, FlatList, Image, Linking, Pressable, ScrollView, Tex
 import ImageCropPicker from 'react-native-image-crop-picker';
 
 import { Ctx } from '../../app';
-import { Col, Fab, HeaderIcon, HtmlText, ListSeparator, ModalAlert, ModalLocalMediaPreview, ModalMediaPreview, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedIcon, ThemedText, UpdateGap } from '../../components';
+import { Col, Fab, FooterList, HeaderIcon, HtmlText, ListSeparator, ModalAlert, ModalLocalMediaPreview, ModalMediaPreview, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedIcon, ThemedText, Title, UpdateGap } from '../../components';
 import { State, threadSorts } from '../../context/state';
 import { hasCommentsErrors } from '../../context/temp';
 import { Repo } from '../../data/repo';
@@ -27,18 +26,22 @@ const getDefaultForm = (config, thread) => {
     };
 };
 export const ThreadHeaderTitle = () => {
-    const { state, config } = React.useContext(Ctx);
+    const { state } = React.useContext(Ctx);
     const { width } = useWindowDimensions();
     const thread = state.history.at(-1);
     const titleWidth = width - 150;
     const title = getThreadHeaderSignature(thread);
+    const [showInfo, setShowInfo] = React.useState(false);
 
-    return <Marquee
-        speed={config.disableMovingElements ? 0 : 0.3}
-        spacing={titleWidth}
-        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
-        <HtmlText value={`<header>${title}</header>`} raw />
-    </Marquee>;
+    return <Row>
+        <Title spacing={titleWidth} title={`<header>${title}</header>`} onPress={() => setShowInfo(true)} />;
+        <ModalView
+            visible={showInfo}
+            onClose={() => setShowInfo(false)}
+            content={<Col>
+                <ThemedText content={title} />
+            </Col>} />
+    </Row>;
 };
 export const ThreadHeaderRight = () => {
     const { state, setState, temp, setTemp, config } = React.useContext(Ctx);
@@ -52,12 +55,12 @@ export const ThreadHeaderRight = () => {
     const items = [
         (temp.comments !== null &&
             isWatching ?
-            ["unwatch", "eye-off", () => {
+            ['unwatch', 'eye-off', () => {
                 setThreadActions(false);
                 setState(prev => ({ ...prev, watching: prev.watching.filter(item => item.thread.id !== thread.id) }));
             }
             ] :
-            ["watch", "eye", () => {
+            ['watch', 'eye', () => {
                 setThreadActions(false);
                 setState(prev => ({
                     ...prev, watching: [...prev.watching, {
@@ -189,7 +192,7 @@ export const Thread = () => {
                 setSelectedComment={setSelectedComment}
                 tw={width}
             />
-            <ThemedAsset msg={"Loading comments..."} name={'placeholder'} loading />
+            <ThemedAsset msg={'Loading comments...'} name={'placeholder'} loading />
             <ThreadInfo />
             <ModalMediaPreview />
         </ScrollView>;
@@ -199,7 +202,7 @@ export const Thread = () => {
     }
     if (temp.isComputingComments) {
         return <ThemedAsset
-            msg={"Sorting comments..."}
+            msg={'Sorting comments...'}
             name={'placeholder'}
             loading
         />;
@@ -478,6 +481,10 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
     const { width } = useWindowDimensions();
     const [viewMode, setViewMode] = React.useState(2);
     const handleSize = 32;
+    const [formMediaError, setFormMediaError] = React.useState(null);
+    const [formNameError, setFormNameError] = React.useState(null);
+    const [formComError, setFormComError] = React.useState(null);
+    const [formSubError, setFormSubError] = React.useState(null);
 
     if (temp.isUploadingComment) {
         return <Row style={{
@@ -488,7 +495,7 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
             gap: 10,
             alignItems: 'center',
         }}>
-            <ActivityIndicator size="large" />
+            <ActivityIndicator size='large' />
             <ThemedText content={'Uploading your comment...'} />
         </Row>
     }
@@ -524,12 +531,15 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                     <TouchableHighlight onPress={() => {
                         setTemp(prev => ({ ...prev, selectedLocalMedia: form.media }));
                     }}>
-                        <Image src={form.media.path} resizeMode="contain" style={{ width: 100, height: 100, borderRadius: config.borderRadius, }} />
+                        <Image src={form.media.path} resizeMode='contain' style={{ width: 100, height: 100, borderRadius: config.borderRadius, }} />
                     </TouchableHighlight>
                     <Col style={{ flex: 1, paddingLeft: 10, justifyContent: 'space-between' }}>
                         <Col>
                             <ThemedText content={`Name: ${form.media.path.split('/').pop()}`} />
-                            <ThemedText content={`Size: ${filesize(form.media.size)}`} />
+                            {formMediaError !== null ?
+                                <ThemedText style={{ color: theme.colors.danger }} content={`Size: ${filesize(form.media.size)} (${formMediaError})`} /> :
+                                <ThemedText content={`Size: ${filesize(form.media.size)}`} />
+                            }
                             <ThemedText content={`Type: ${form.media.mime}`} />
                         </Col>
                         <TouchableNativeFeedback onPress={() => {
@@ -568,11 +578,16 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                 <Col>
                     <TouchableNativeFeedback onPress={() => {
                         ImageCropPicker.openPicker({
-                            mediaType: "any",
+                            mediaType: 'any',
                             multiple: false
                         }).then((media) => {
                             setForm({ ...form, media });
-                            console.log(media);
+                            const fsize = filesize(media.size);
+                            const maxSize = filesize(getCurrFullBoard(state.board).maxMediaSize);
+                            if (fsize > maxSize) {
+                                setFormMediaError(`File is too big (max is ${maxSize})`);
+                                return;
+                            }
                         });
                     }}>
                         <Col style={{ padding: 10, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -627,10 +642,10 @@ const ThreadInfo = () => {
     const { state } = React.useContext(Ctx);
     const thread = state.history.at(-1);
 
-    return <Col style={{ padding: 15 }}>
+    return <FooterList child={<Col>
         <ThemedText content={`Replies: ${thread.replies}`} />
         <ThemedText content={`Images: ${thread.images}`} />
-    </Col>;
+    </Col>} />;
 };
 const CommentMenu = ({ selectedComment, setSelectedComment }) => {
     const { state, setState, temp, config } = React.useContext(Ctx);

@@ -23,7 +23,7 @@ export const Advanced = () => {
                 setState(s);
             }}>
                 <Col>
-                    <ThemedText content={"clear state"} />
+                    <ThemedText content={'clear state'} />
                 </Col>
             </TouchableNativeFeedback>
         </Col>
@@ -32,7 +32,7 @@ export const Advanced = () => {
                 setTemp(Temp.default);
             }}>
                 <Col>
-                    <ThemedText content={"clear temp"} />
+                    <ThemedText content={'clear temp'} />
                 </Col>
             </TouchableNativeFeedback>
         </Col>
@@ -43,7 +43,7 @@ export const Advanced = () => {
                 setConfig(c);
             }}>
                 <Col>
-                    <ThemedText content={"clear conf"} />
+                    <ThemedText content={'clear conf'} />
                 </Col>
             </TouchableNativeFeedback>
         </Col>
@@ -63,7 +63,7 @@ export const Advanced = () => {
                 setTemp(Temp.switchApi(temp));
             }}>
                 <Col>
-                    <ThemedText content={"switch api, current: " + state.api.name} />
+                    <ThemedText content={'switch api, current: ' + state.api.name} />
                 </Col>
             </TouchableNativeFeedback>
         </Col>
@@ -72,7 +72,7 @@ export const Advanced = () => {
                 await AsyncStorage.clear();
             }}>
                 <Col>
-                    <ThemedText content={"clear all cache"} />
+                    <ThemedText content={'clear all cache'} />
                 </Col>
             </TouchableNativeFeedback>
         </Col>

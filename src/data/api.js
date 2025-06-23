@@ -1,7 +1,7 @@
 import axios from 'axios';
 import RNBlobUtil from 'react-native-blob-util';
 
-const BLU_SERVER = `http://192.168.78.97:3000`;
+const BLU_SERVER = `https://blu-8ql1.onrender.com`;
 const CHAN_SERVER = 'https://a.4cdn.org';
 const TIMEOUT = 8000;
 

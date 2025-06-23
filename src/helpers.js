@@ -1,10 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { formatDistanceToNow } from 'date-fns';
+import { decode } from 'he';
 import RNBlobUtil from 'react-native-blob-util';
 
 import { BOARD_NAV_KEY, CATALOG_KEY } from './app';
 import { Repo } from './data/repo';
 
+export const stripHtml = (str) => {
+    return str.replace(/<[^>]*>/g, '');
+};
 export const commentContains = (comment, filter) => {
     const lowerFilter = filter.toLowerCase();
     return (comment.com && comment.com.toLowerCase().includes(lowerFilter)) ||
@@ -41,7 +45,7 @@ export const getComment = (comments, threadId) => {
     return comments.find(item => item.id === threadId);
 };
 export const getRepliesTo = (comments, comment) => {
-    return comments.filter(item => item.com && item.com.includes("&gt;&gt;" + comment.id));
+    return comments.filter(item => item.com && item.com.includes('&gt;&gt;' + comment.id));
 };
 export const quotes = (comment) => {
     if (!comment.com) {
@@ -50,11 +54,17 @@ export const quotes = (comment) => {
     const matches = comment.com.match(/&gt;&gt;\d+/g) || [];
     return matches.map(match => Number(match.slice(8)));
 }
+export const getThreadHistorySignature = (thread) => {
+    const content = decode(stripHtml((thread.sub || thread.com)));
+    const board = `/${thread.board}/`;
+    return board + ' - ' + content;
+};
 export const getThreadSignature = (thread) => {
     const board = `<info>/${thread.board}/ - </info>`;
     let text = thread.sub ? `${board}<sub>${thread.sub}</sub>` : `${board}<com>${thread.com}</com>`;
     text = firstSplitAt(text, '<br>');
     text = firstSplitAt(text, '\n');
+    console.log(text);
     return text;
 }
 export const getThreadHeaderSignature = (thread) => {
@@ -113,13 +123,13 @@ export const downloadMedia = async (setTemp, state, comment) => {
         else {
             setTemp(prev => ({
                 ...prev,
-                mediaDownloadError: "Returned status code " + result.statusCode,
+                mediaDownloadError: 'Returned status code ' + result.statusCode,
             }));
         }
     } catch (error) {
         setTemp(prev => ({
             ...prev,
-            mediaDownloadError: "Returned error: " + error,
+            mediaDownloadError: 'Returned error: ' + error,
         }));
     }
 };

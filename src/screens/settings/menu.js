@@ -38,7 +38,7 @@ export const Menu = () => {
             <TouchableNativeFeedback onPress={() => { sailor.navigate(APPEARANCE_KEY); }}>
                 <Row style={style}>
                     <ThemedIcon accent name={'color-palette'} />
-                    <Col style={{ overflow: 'hidden', flex: 1, }}>
+                    <Col>
                         <ThemedText content={APPEARANCE_KEY} style={textStyle} />
                         <ThemedText line content={'Theme, borders, date format and more'} />
                     </Col>
@@ -49,7 +49,7 @@ export const Menu = () => {
             <TouchableNativeFeedback onPress={() => { sailor.navigate(ACCESSIBILITY_KEY); }}>
                 <Row style={style}>
                     <ThemedIcon accent name={'accessibility'} />
-                    <Col style={{ overflow: 'hidden', flex: 1, }}>
+                    <Col>
                         <ThemedText content={ACCESSIBILITY_KEY} style={textStyle} />
                         <ThemedText line content={'Fonts, high contrast, visual noise and more'} />
                     </Col>
@@ -60,7 +60,7 @@ export const Menu = () => {
             <TouchableNativeFeedback onPress={() => { sailor.navigate(BEHAVIOUR_KEY); }}>
                 <Row style={style}>
                     <ThemedIcon accent name={'build'} />
-                    <Col style={{ overflow: 'hidden', flex: 1, }}>
+                    <Col>
                         <ThemedText content={BEHAVIOUR_KEY} style={textStyle} />
                         <ThemedText line content={'Timers, notifications, tweaks and more'} />
                     </Col>
@@ -71,7 +71,7 @@ export const Menu = () => {
             <TouchableNativeFeedback onPress={() => { sailor.navigate(ADVANCED_KEY); }}>
                 <Row style={style}>
                     <ThemedIcon accent name={'code'} />
-                    <Col style={{ overflow: 'hidden', flex: 1, }}>
+                    <Col>
                         <ThemedText content={ADVANCED_KEY} style={textStyle} />
                         <ThemedText line content={'Experimental features'} />
                     </Col>
@@ -82,7 +82,7 @@ export const Menu = () => {
             <TouchableNativeFeedback onPress={() => { sailor.navigate(ABOUT_KEY); }}>
                 <Row style={style}>
                     <ThemedIcon accent name={'information-circle'} />
-                    <Col style={{ overflow: 'hidden', flex: 1, }}>
+                    <Col>
                         <ThemedText content={ABOUT_KEY} style={textStyle} />
                         <ThemedText line content={'Contacts, license and bug reporting'} />
                     </Col>

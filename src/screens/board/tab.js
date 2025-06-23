@@ -1,6 +1,6 @@
 /* eslint-disable react/react-in-jsx-scope */
 
-import { BAR_HEIGHT, Stack } from '../../app.js';
+import { HEADER_HEIGHT, Stack } from '../../app.js';
 import { CATALOG_KEY, Catalog, CatalogHeaderLeft, CatalogHeaderRight, CatalogHeaderTitle } from './catalog.js';
 import { CREATE_THREAD_KEY, CreateThread, CreateThreadHeaderRight, CreateThreadHeaderTitle } from './create_thread.js';
 import { SETUP_BOARDS_KEY, SetupBoards, SetupBoardsHeaderRight, SetupBoardsHeaderTitle } from './setup_boards.js';
@@ -17,7 +17,7 @@ export const BoardTab = () => {
                 headerLeft: CatalogHeaderLeft,
                 headerTitle: CatalogHeaderTitle,
                 headerRight: CatalogHeaderRight,
-                headerStyle: { height: BAR_HEIGHT },
+                headerStyle: { height: HEADER_HEIGHT },
             }}
         />
         <Stack.Screen
@@ -26,7 +26,7 @@ export const BoardTab = () => {
             options={{
                 headerTitle: ThreadHeaderTitle,
                 headerRight: ThreadHeaderRight,
-                headerStyle: { height: BAR_HEIGHT },
+                headerStyle: { height: HEADER_HEIGHT },
                 animation: 'slide_from_right',
             }}
         />
@@ -35,7 +35,7 @@ export const BoardTab = () => {
             component={CreateThread}
             options={{
                 animation: 'slide_from_bottom',
-                headerStyle: { height: BAR_HEIGHT },
+                headerStyle: { height: HEADER_HEIGHT },
                 headerTitle: CreateThreadHeaderTitle,
                 headerRight: CreateThreadHeaderRight,
             }}
@@ -45,7 +45,7 @@ export const BoardTab = () => {
             component={SetupBoards}
             options={{
                 animation: 'slide_from_bottom',
-                headerStyle: { height: BAR_HEIGHT },
+                headerStyle: { height: HEADER_HEIGHT },
                 headerTitle: SetupBoardsHeaderTitle,
                 headerRight: SetupBoardsHeaderRight,
             }}

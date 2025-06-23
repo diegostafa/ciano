@@ -1,6 +1,6 @@
-import { catalogSorts, threadSorts } from "../context/state";
-import { quotes } from "../helpers";
-import { Repo } from "./repo";
+import { catalogSorts, threadSorts } from '../context/state';
+import { quotes } from '../helpers';
+import { Repo } from './repo';
 
 export const loadBoards = async (state, setState, setTemp, forceRefresh) => {
     setTemp(prev => ({
@@ -16,6 +16,8 @@ export const loadBoards = async (state, setState, setTemp, forceRefresh) => {
         const boards = forceRefresh ?
             await Repo(state.api).boards.getRemote() :
             await Repo(state.api).boards.getLocalOrRemote();
+
+        console.log(boards);
 
         setState({ ...state, boards });
     }
@@ -125,9 +127,8 @@ export const uploadComment = async (state, setState, setTemp, data) => {
         isUploadingComment: true,
     }));
 
-
     try {
-        const comment = await Repo(state.api).comments.create(data.form, data.form);
+        const comment = await Repo(state.api).comments.create(data.form, data.media);
         setState(prev => ({ ...prev, myComments: [...prev.myComments, comment.id] }))
     }
     catch (err) {
@@ -148,6 +149,40 @@ export const uploadComment = async (state, setState, setTemp, data) => {
 
     setTemp(prev => ({ ...prev, isUploadingComment: false }));
 };
+export const uploadThread = async (state, setState, setTemp, data) => {
+    setTemp(prev => ({
+        ...prev,
+        uploadThreadErrorTimeout: null,
+        uploadThreadErrorResponse: null,
+        uploadThreadErrorRequest: null,
+        uploadThreadErrorUnknown: null,
+        isUploadingThread: true,
+    }));
+
+    try {
+        const thread = await Repo(state.api).threads.create(data.form,);
+        setState(prev => ({ ...prev, myComments: [...prev.myComments, thread.id] }))
+        await loadThreads(state, setState, null, true);
+        return thread
+    }
+    catch (err) {
+        console.log(err);
+        if (err.code === 'ECONNABORTED') {
+            setTemp(prev => ({ ...prev, uploadThreadErrorTimeout: true }));
+        }
+        else if (err.response) {
+            setTemp(prev => ({ ...prev, uploadThreadErrorResponse: true }));
+        }
+        else if (err.request) {
+            setTemp(prev => ({ ...prev, uploadThreadErrorRequest: true }));
+        }
+        else {
+            setTemp(prev => ({ ...prev, uploadThreadErrorUnknown: true }));
+        }
+    }
+    setTemp(prev => ({ ...prev, isUploadingThread: false }));
+};
+
 export const updateWatcher = async (state, setState) => {
     console.log('updateWatcher');
     const newWatching = state.watching.map(async watched => {

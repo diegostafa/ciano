@@ -68,7 +68,7 @@ export const hasCommentsErrors = (temp) => {
         temp.commentsFetchErrorUnknown !== null;
 };
 export const isOnline = (temp) => {
-    return temp.connType !== "none";
+    return temp.connType !== 'none';
 };
 
 export const Temp = {
