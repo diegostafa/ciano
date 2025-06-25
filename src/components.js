@@ -6,7 +6,7 @@ import SegmentedControl from '@react-native-segmented-control/segmented-control'
 import { useTheme } from '@react-navigation/native';
 import { filesize } from 'filesize';
 import React, { useContext, useRef } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Switch, Text, TextInput, TouchableNativeFeedback, TouchableWithoutFeedback, useColorScheme, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Switch, Text, TextInput, TouchableNativeFeedback, TouchableOpacity, TouchableWithoutFeedback, useColorScheme, useWindowDimensions, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import HTMLView from 'react-native-htmlview';
@@ -14,7 +14,7 @@ import Snackbar from 'react-native-snackbar';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
 
-import { Ctx, HEADER_HEIGHT } from './app';
+import { Ctx, HEADER_HEIGHT, isAndroid } from './app';
 import { Config } from './context/config';
 import { Repo } from './data/repo';
 import { capitalize, downloadMedia, getImageAsset, isGif, isImage, isVideo } from './helpers';
@@ -29,11 +29,11 @@ export const HeaderIcon = ({ name, onPress, size }) => {
         overflow: 'hidden',
         borderRadius: '50%',
     }}>
-        <TouchableNativeFeedback onPress={onPress}>
+        <ThemedButton onPress={onPress}>
             <Col style={{ padding: 10 }}>
                 <ThemedIcon name={name} size={size || 26} />
             </Col>
-        </TouchableNativeFeedback>
+        </ThemedButton>
     </Col>;
 };
 export const TabIcon = (name) => ({ color }) => {
@@ -53,7 +53,7 @@ export const Fab = ({ onPress, child }) => {
         borderRadius: '50%',
         overflow: 'hidden',
     }}>
-        <TouchableNativeFeedback onPress={onPress}>
+        <ThemedButton onPress={onPress}>
             <Col style={{
                 backgroundColor: theme.colors.primary,
                 justifyContent: 'center',
@@ -63,7 +63,7 @@ export const Fab = ({ onPress, child }) => {
             }}>
                 {child || <ThemedIcon name={'add'} inverted />}
             </Col>
-        </TouchableNativeFeedback>
+        </ThemedButton>
     </View>;
 };
 export const ModalView = ({ content, visible, onClose, fullscreen, noBackdrop, animation, size }) => {
@@ -124,19 +124,19 @@ export const ModalAlert = ({ msg, visible, left, right, onClose, onPressLeft, on
                 </Col>
 
                 <Row style={{ justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: theme.colors.border }}>
-                    {left && <TouchableNativeFeedback onPress={onPressLeft}>
+                    {left && <ThemedButton onPress={onPressLeft}>
                         <Col style={leftStyle}>
                             <ThemedText content={left} />
                         </Col>
-                    </TouchableNativeFeedback>}
+                    </ThemedButton>}
 
                     {left && right && <Col style={{ width: 1, backgroundColor: theme.colors.border }} />}
 
-                    {right && <TouchableNativeFeedback onPress={onPressRight}>
+                    {right && <ThemedButton onPress={onPressRight}>
                         <Col style={rightStyle}>
                             <ThemedText content={right} />
                         </Col>
-                    </TouchableNativeFeedback>}
+                    </ThemedButton>}
                 </Row>
             </Col>
         }
@@ -156,12 +156,12 @@ export const ModalMenu = ({ visible, onClose, items }) => {
             <ScrollView>
                 {items.map(([value, icon, action, isActive]) => {
                     return <Col key={value} style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.border }}>
-                        <TouchableNativeFeedback onPress={action}>
+                        <ThemedButton onPress={action}>
                             <Row style={btnStyle}>
                                 {icon && <ThemedIcon accent name={icon} size={20} />}
                                 <ThemedText content={capitalize(value)} style={isActive ? activeTextStyle : textStyle} />
                             </Row>
-                        </TouchableNativeFeedback>
+                        </ThemedButton>
                     </Col>
                 })}
             </ScrollView>
@@ -229,7 +229,7 @@ export const HeaderButton = ({ child, enabled, onPress }) => {
         marginRight: 5,
         backgroundColor: enabled ? theme.colors.primary : 'gray',
     }}>
-        <TouchableNativeFeedback onPress={onPress}>
+        <ThemedButton onPress={onPress}>
             <Col style={{
                 justifyContent: 'space-between',
                 paddingLeft: 15,
@@ -239,7 +239,7 @@ export const HeaderButton = ({ child, enabled, onPress }) => {
             }}>
                 {child}
             </Col>
-        </TouchableNativeFeedback>
+        </ThemedButton>
     </Col>;
 };
 export const ListSeparator = () => {
@@ -630,7 +630,7 @@ export const ThemedAsset = ({ name, msg, desc, retry, loading }) => {
     const { config } = useContext(Ctx);
     const asset = getImageAsset(colorscheme, name);
     const theme = useTheme();
-    return <Col style={{ flex: 1, gap: 10, justifyContent: 'center', alignItems: 'center' }}>
+    return <Col style={{ flex: 1, gap: 10, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.card }}>
         {loading && <Loader />}
         <ThemedText content={msg} style={{ textAlign: 'center' }} />
         <Image
@@ -638,11 +638,11 @@ export const ThemedAsset = ({ name, msg, desc, retry, loading }) => {
             source={asset} />
         {retry &&
             <Col style={{ overflow: 'hidden', borderRadius: config.borderRadius }}>
-                <TouchableNativeFeedback onPress={retry}>
+                <ThemedButton onPress={retry}>
                     <Col style={{ padding: 15, backgroundColor: theme.colors.primary }}>
                         <ThemedText content={'Retry'} style={{ fontWeight: 'bold', fontSize: 18, color: theme.colors.primaryInverted }} />
                     </Col>
-                </TouchableNativeFeedback>
+                </ThemedButton>
             </Col>}
     </Col>;
 };
@@ -783,3 +783,11 @@ export const EnumProp = ({ propName, desc, values }) => {
         />
     </Col>;
 };
+export const ThemedButton = ({ children, onPress, onLongPress }) => {
+    if (isAndroid()) {
+        return <TouchableNativeFeedback onPress={onPress} onLongPress={onLongPress}>
+            {children}
+        </TouchableNativeFeedback>;
+    }
+    return <TouchableOpacity onPress={onPress} onLongPress={onLongPress}>{children}</TouchableOpacity>;
+}

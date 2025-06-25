@@ -14,7 +14,7 @@ export const Behaviour = () => {
     return <ScrollView style={{ backgroundColor: theme.colors.card, }}>
         <Col style={{ padding: 10, gap: 10 }}>
             <Section title={'Catalog'}>
-                <ToggleProp propName={'showThumbnails'} desc={'Show thumbnails?'} />
+                <ToggleProp propName={'showCatalogThumbnails'} desc={'Show thumbnails?'} />
             </Section>
 
             <Section title={'Thread'}>

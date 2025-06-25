@@ -1,9 +1,9 @@
 import { useNavigation, useTheme } from '@react-navigation/native';
 import React, { useRef } from 'react';
-import { FlatList, TouchableNativeFeedback } from 'react-native';
+import { FlatList } from 'react-native';
 
 import { Ctx } from '../../app';
-import { BoardInfo, Col, HeaderIcon, HeaderThemedText, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedText, UpdateGap } from '../../components';
+import { BoardInfo, Col, HeaderIcon, HeaderThemedText, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedButton, ThemedText, UpdateGap } from '../../components';
 import { hasBoardsErrors } from '../../context/temp';
 import { loadBoards } from '../../data/utils';
 
@@ -81,7 +81,7 @@ export const SetupBoards = () => {
         if (temp.isFetchingBoards) {
             return;
         }
-        if (!state.boards || state.boards.length === 0) {
+        if (!state.boards) {
             loadBoards(state, setState, setTemp, true);
             return;
         }
@@ -110,6 +110,13 @@ export const SetupBoards = () => {
             msg={'The server returned an unknown error'}
             name={'placeholder'}
             retry={async () => { await loadBoards(state, setState, setTemp, true); }} />;
+    }
+    if (temp.isFetchingBoards) {
+        return <ThemedAsset
+            name={'placeholder'}
+            msg={'Loading boards'}
+            loading
+        />;
     }
     if (state.boards === null) {
         return <UpdateGap />;
@@ -172,7 +179,7 @@ const BoardItem = ({ item, activeBoards, setActiveBoards, setShowInfo }) => {
     const isSelected = activeBoards.includes(item.code);
 
     return <Row style={{ flex: 1, margin: 5, borderRadius: config.borderRadius, overflow: 'hidden' }}>
-        <TouchableNativeFeedback
+        <ThemedButton
             onLongPress={() => { setShowInfo(item); }}
             onPress={() => {
                 setActiveBoards(prev => {
@@ -185,7 +192,7 @@ const BoardItem = ({ item, activeBoards, setActiveBoards, setShowInfo }) => {
             <Row style={isSelected ? selectedStyle : style} >
                 <ThemedText style={{ color: isSelected ? theme.colors.primaryInverted : theme.colors.text }} content={`/${item.code}/ - ${item.name}`} />
             </Row>
-        </TouchableNativeFeedback>
+        </ThemedButton>
     </Row>;
 };
 const NoBoardsFound = () => {

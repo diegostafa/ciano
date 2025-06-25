@@ -1,10 +1,10 @@
 /* eslint-disable react/react-in-jsx-scope */
 import { useNavigation, useTheme } from '@react-navigation/native';
 import { useContext } from 'react';
-import { ScrollView, TouchableNativeFeedback } from 'react-native';
+import { ScrollView } from 'react-native';
 
 import { Ctx } from '../../app';
-import { Col, Row, ThemedIcon, ThemedText } from '../../components';
+import { Col, Row, ThemedButton, ThemedIcon, ThemedText } from '../../components';
 import { ABOUT_KEY } from './about';
 import { ACCESSIBILITY_KEY } from './accessibility';
 import { ADVANCED_KEY } from './advanced';
@@ -35,7 +35,7 @@ export const Menu = () => {
 
     return <ScrollView style={{ paddingLeft: 10, paddingRight: 10, backgroundColor: theme.colors.card }}>
         <Col style={outerStyle}>
-            <TouchableNativeFeedback onPress={() => { sailor.navigate(APPEARANCE_KEY); }}>
+            <ThemedButton onPress={() => { sailor.navigate(APPEARANCE_KEY); }}>
                 <Row style={style}>
                     <ThemedIcon accent name={'color-palette'} />
                     <Col style={{ overflow: 'hidden', flex: 1 }}>
@@ -43,10 +43,10 @@ export const Menu = () => {
                         <ThemedText line content={'Theme, borders, date format and more'} />
                     </Col>
                 </Row>
-            </TouchableNativeFeedback>
+            </ThemedButton>
         </Col>
         <Col style={outerStyle}>
-            <TouchableNativeFeedback onPress={() => { sailor.navigate(BEHAVIOUR_KEY); }}>
+            <ThemedButton onPress={() => { sailor.navigate(BEHAVIOUR_KEY); }}>
                 <Row style={style}>
                     <ThemedIcon accent name={'build'} />
                     <Col style={{ overflow: 'hidden', flex: 1 }}>
@@ -54,10 +54,10 @@ export const Menu = () => {
                         <ThemedText line content={'Timers, notifications, tweaks and more'} />
                     </Col>
                 </Row>
-            </TouchableNativeFeedback>
+            </ThemedButton>
         </Col>
         <Col style={outerStyle}>
-            <TouchableNativeFeedback onPress={() => { sailor.navigate(ACCESSIBILITY_KEY); }}>
+            <ThemedButton onPress={() => { sailor.navigate(ACCESSIBILITY_KEY); }}>
                 <Row style={style}>
                     <ThemedIcon accent name={'accessibility'} />
                     <Col style={{ overflow: 'hidden', flex: 1 }}>
@@ -65,10 +65,10 @@ export const Menu = () => {
                         <ThemedText line content={'Fonts, high contrast, visual noise and more'} />
                     </Col>
                 </Row>
-            </TouchableNativeFeedback>
+            </ThemedButton>
         </Col>
         <Col style={outerStyle}>
-            <TouchableNativeFeedback onPress={() => { sailor.navigate(ADVANCED_KEY); }}>
+            <ThemedButton onPress={() => { sailor.navigate(ADVANCED_KEY); }}>
                 <Row style={style}>
                     <ThemedIcon accent name={'code'} />
                     <Col style={{ overflow: 'hidden', flex: 1 }}>
@@ -76,10 +76,10 @@ export const Menu = () => {
                         <ThemedText line content={'Experimental features'} />
                     </Col>
                 </Row>
-            </TouchableNativeFeedback>
+            </ThemedButton>
         </Col>
         <Col style={outerStyle}>
-            <TouchableNativeFeedback onPress={() => { sailor.navigate(ABOUT_KEY); }}>
+            <ThemedButton onPress={() => { sailor.navigate(ABOUT_KEY); }}>
                 <Row style={style}>
                     <ThemedIcon accent name={'information-circle'} />
                     <Col style={{ overflow: 'hidden', flex: 1 }}>
@@ -87,7 +87,7 @@ export const Menu = () => {
                         <ThemedText line content={'Contacts, license and bug reporting'} />
                     </Col>
                 </Row>
-            </TouchableNativeFeedback>
+            </ThemedButton>
         </Col>
     </ScrollView>;
 };

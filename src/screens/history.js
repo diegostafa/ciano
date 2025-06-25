@@ -1,10 +1,10 @@
 import { useNavigation, useTheme } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { FlatList, Image, TouchableNativeFeedback, useWindowDimensions } from 'react-native';
+import { FlatList, Image, useWindowDimensions } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
 
 import { Ctx, HEADER_HEIGHT } from '../app';
-import { Col, HeaderIcon, ModalAlert, Row, ThemedAsset, ThemedText } from '../components';
+import { Col, HeaderIcon, ModalAlert, Row, ThemedAsset, ThemedButton, ThemedText } from '../components';
 import { Repo } from '../data/repo';
 import { getThreadHistorySignature, historyAdd, threadContains } from '../helpers';
 import { THREAD_KEY } from './board/thread';
@@ -114,7 +114,7 @@ const HistoryTile = ({ item, th, setForget, setOpen }) => {
         marginTop: margin, backgroundColor:
             theme.colors.background
     }}>
-        <TouchableNativeFeedback
+        <ThemedButton
             onLongPress={() => { setForget(item); }}
             onPress={() => { setOpen(item); }}>
             <Row style={{ overflow: 'hidden', marginRight: 10, alignItems: 'center', padding, height: th, gap: 15 }} >
@@ -128,6 +128,6 @@ const HistoryTile = ({ item, th, setForget, setOpen }) => {
                     <ThemedText line content={getThreadHistorySignature(item)} />
                 </Col>
             </Row>
-        </TouchableNativeFeedback>
+        </ThemedButton>
     </Col>;
 };

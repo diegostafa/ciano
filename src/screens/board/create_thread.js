@@ -1,12 +1,12 @@
 import { useNavigation, useTheme } from '@react-navigation/native';
 import { filesize } from 'filesize';
 import React from 'react';
-import { Image, KeyboardAvoidingView, TouchableHighlight, TouchableNativeFeedback } from 'react-native';
+import { Image, KeyboardAvoidingView, TouchableHighlight } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
 import ImageCropPicker from 'react-native-image-crop-picker';
 
 import { Ctx, HEADER_HEIGHT, isIos } from '../../app';
-import { Col, HeaderButton, HeaderThemedText, ModalAlert, ModalLocalMediaPreview, Row, ThemedIcon, ThemedText } from '../../components';
+import { Col, HeaderButton, HeaderThemedText, ModalAlert, ModalLocalMediaPreview, Row, ThemedButton, ThemedIcon, ThemedText } from '../../components';
 import { hasFormErrors } from '../../context/temp';
 import { uploadThread } from '../../data/utils';
 import { getCurrFullBoard } from '../../helpers';
@@ -16,9 +16,9 @@ export const CREATE_THREAD_KEY = 'CreateThread';
 export const CreateThreadHeaderTitle = () => {
     const { state } = React.useContext(Ctx);
     return <Col>
-        <TouchableNativeFeedback>
+        <ThemedButton>
             <HeaderThemedText content={`Create a thread in /${state.board}/`} />
-        </TouchableNativeFeedback>
+        </ThemedButton>
     </Col>;
 };
 export const CreateThreadHeaderRight = () => {
@@ -144,14 +144,14 @@ export const CreateThread = () => {
                                 <ThemedText style={laberTextStyle} content={'Attached file'} />
                             </Row>
                             <Col style={{ position: 'absolute', top: 1, right: 1, backgroundColor: theme.colors.danger, overflow: 'hidden' }}>
-                                <TouchableNativeFeedback onPress={() => {
+                                <ThemedButton onPress={() => {
                                     setTemp(prev => ({ ...prev, formMediaError: null }));
                                     setForm(prev => ({ ...prev, media: null }));
                                 }}>
                                     <Col style={{ padding: 10 }}>
                                         <ThemedText style={{ fontWeight: 'bold' }} content={"Remove"} />
                                     </Col>
-                                </TouchableNativeFeedback>
+                                </ThemedButton>
                             </Col>
                         </Row>
                         <Row style={{ backgroundColor: theme.colors.background, padding: 10, gap: 10, alignItems: 'center' }}>
@@ -191,7 +191,7 @@ export const CreateThread = () => {
                 </Col>
                 {form.media === null &&
                     <Col style={{ ...outerStyle, borderBottomLeftRadius: 0, borderBottomRightRadius: config.borderRadius, overflow: 'hidden' }}>
-                        <TouchableNativeFeedback onPress={() => {
+                        <ThemedButton onPress={() => {
                             ImageCropPicker.openPicker({
                                 mediaType: 'any',
                                 multiple: false
@@ -207,7 +207,7 @@ export const CreateThread = () => {
                             <Col style={{ width: 50, flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                                 <ThemedIcon name={"attach"} size={32} />
                             </Col>
-                        </TouchableNativeFeedback>
+                        </ThemedButton>
                     </Col>
                 }
             </Row>

@@ -1,10 +1,10 @@
 import { useNavigation, useTheme } from '@react-navigation/native';
 import React, { useRef } from 'react';
-import { FlatList, Image, ScrollView, TouchableNativeFeedback, useWindowDimensions } from 'react-native';
+import { FlatList, Image, ScrollView, useWindowDimensions } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
 
 import { Ctx, HEADER_HEIGHT, NAVBAR_WIDTH } from '../../app';
-import { BoardInfo, Col, Fab, FooterList, HeaderIcon, HeaderThemedText, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedIcon, ThemedText, UpdateGap } from '../../components';
+import { BoardInfo, Col, Fab, FooterList, HeaderIcon, HeaderThemedText, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedButton, ThemedIcon, ThemedText, UpdateGap } from '../../components';
 import { catalogModes, catalogSorts, State } from '../../context/state';
 import { hasBoardsErrors, hasThreadsErrors, isOnline } from '../../context/temp';
 import { Repo } from '../../data/repo';
@@ -32,12 +32,12 @@ export const CatalogHeaderTitle = () => {
 
     if (state.activeBoards.length === 0) {
         return <Row style={{ width: width - iconsWidth, margin: 0, overflow: 'hidden' }}>
-            <TouchableNativeFeedback onPress={() => { sailor.navigate(SETUP_BOARDS_KEY) }}>
+            <ThemedButton onPress={() => { sailor.navigate(SETUP_BOARDS_KEY) }}>
                 <Col style={{ flex: 1 }}>
                     <HeaderThemedText content={'Setup boards'} />
                     <ThemedText content={'Tap here'} />
                 </Col>
-            </TouchableNativeFeedback>
+            </ThemedButton>
         </Row>;
     }
 
@@ -56,14 +56,14 @@ export const CatalogHeaderTitle = () => {
     };
 
     return <Row style={{ width: width - iconsWidth, margin: 0, overflow: 'hidden' }}>
-        <TouchableNativeFeedback
+        <ThemedButton
             onLongPress={() => { setShowBoardInfo(true) }}
             onPress={() => setSelectBoard(true)}>
             <Col style={{ flex: 1 }}>
                 <HeaderThemedText content={`/${board.code}/`} />
                 <ThemedText content={`${board.name}`} />
             </Col>
-        </TouchableNativeFeedback>
+        </ThemedButton>
 
         <ModalView
             visible={showBoardInfo}
@@ -87,14 +87,14 @@ export const CatalogHeaderTitle = () => {
                                 placeholder='Search for a board...'
                                 style={inputStyle} />
                         </Col>
-                        <TouchableNativeFeedback onPress={() => {
+                        <ThemedButton onPress={() => {
                             setSelectBoard(false);
                             sailor.navigate(SETUP_BOARDS_KEY);
                         }}>
                             <Col style={{ padding: 10 }}>
                                 <ThemedIcon name={'settings'} />
                             </Col>
-                        </TouchableNativeFeedback>
+                        </ThemedButton>
                     </Row>
                     <FlatList
                         ListEmptyComponent={<Col style={{ padding: 10 }}>
@@ -103,7 +103,7 @@ export const CatalogHeaderTitle = () => {
                         keyExtractor={item => item.code}
                         data={activeBoards.filter(item => item.name.toLowerCase().includes(filter.toLowerCase())).sort((a, b) => a.code.localeCompare(b.code))}
                         renderItem={({ item }) => {
-                            return <TouchableNativeFeedback onPress={async () => {
+                            return <ThemedButton onPress={async () => {
                                 if (item.code === state.board) {
                                     setSelectBoard(false);
                                     return;
@@ -116,7 +116,7 @@ export const CatalogHeaderTitle = () => {
                                 <Col style={{ padding: 15, backgroundColor: item.code === state.board ? theme.colors.highlight : undefined }}>
                                     <ThemedText content={`/${item.code}/ - ${item.name}`} />
                                 </Col>
-                            </TouchableNativeFeedback>
+                            </ThemedButton>
                         }}
                     />
                 </Col>} />
@@ -347,12 +347,6 @@ export const Catalog = () => {
     if (temp.threads === null) {
         return <UpdateGap />;
     }
-    if (temp.threads.length === 0) {
-        if (temp.catalogFilter === null) {
-            return <ThemedAsset name={'placeholder'} msg={'There are no threads here, be the first poster!'} />;
-        }
-        return <ThemedAsset name={'placeholder'} msg={'No threads found'} />;
-    }
 
     const isWatching = selectedThread !== null && state.watching.some(item => item.thread.id === selectedThread.id);
     return <Col style={{ flex: 1, backgroundColor: theme.colors.card }}>
@@ -430,6 +424,7 @@ const GridCatalog = ({ width, height, setSelectedThread }) => {
             onRefresh={async () => await loadThreads(state, setTemp, true)}
             refreshing={temp.isFetchingThreads}
             ListFooterComponent={<CatalogFooter threads={threads} />}
+            ListEmptyComponent={<NoThreads />}
         />;
     }
 
@@ -449,6 +444,7 @@ const GridCatalog = ({ width, height, setSelectedThread }) => {
         onRefresh={async () => await loadThreads(state, setTemp, true)}
         refreshing={temp.isFetchingThreads}
         ListFooterComponent={<CatalogFooter threads={threads} />}
+        ListEmptyComponent={<NoThreads />}
     />;
 }
 const ListCatalog = ({ width, height, setSelectedThread }) => {
@@ -486,6 +482,7 @@ const ListCatalog = ({ width, height, setSelectedThread }) => {
         refreshing={temp.isFetchingThreads}
         // ItemSeparatorComponent={ListSeparator}
         ListFooterComponent={<CatalogFooter threads={threads} />}
+        ListEmptyComponent={<NoThreads />}
     />;
 };
 const GridTile = ({ thread, tw, th, setSelectedThread }) => {
@@ -504,7 +501,7 @@ const GridTile = ({ thread, tw, th, setSelectedThread }) => {
         overflow: 'hidden',
     }}>
         {config.showCatalogThumbnails &&
-            <TouchableNativeFeedback
+            <ThemedButton
                 onPress={() => { setTemp({ ...temp, selectedMediaComment: thread }); }}>
                 <Image src={img}
                     style={{
@@ -515,10 +512,10 @@ const GridTile = ({ thread, tw, th, setSelectedThread }) => {
                         borderBottomLeftRadius: 0,
                         borderBottomRightRadius: 0,
                     }} />
-            </TouchableNativeFeedback>
+            </ThemedButton>
         }
 
-        <TouchableNativeFeedback
+        <ThemedButton
             onLongPress={() => { setSelectedThread(thread); }}
             onPress={async () => {
                 historyAdd(state, setState, thread)
@@ -544,7 +541,7 @@ const GridTile = ({ thread, tw, th, setSelectedThread }) => {
                     {isWatched && <Col><ThemedIcon name={'eye'} size={14} accent /></Col>}
                 </Row>
             </Col>
-        </TouchableNativeFeedback>
+        </ThemedButton>
     </Col>;
 };
 const ListTile = ({ thread, th, setSelectedThread }) => {
@@ -564,11 +561,11 @@ const ListTile = ({ thread, th, setSelectedThread }) => {
         paddingRight: 5,
     }}>
         {config.showCatalogThumbnails &&
-            <TouchableNativeFeedback
+            <ThemedButton
                 onPress={() => { setTemp({ ...temp, selectedMediaComment: thread }); }}>
                 <Image src={img}
                     style={{ borderRadius: config.borderRadius, width: imgH, height: imgH }} />
-            </TouchableNativeFeedback>
+            </ThemedButton>
         }
 
         <Col style={{
@@ -577,7 +574,7 @@ const ListTile = ({ thread, th, setSelectedThread }) => {
             flex: 1,
             marginLeft: 5,
         }}>
-            <TouchableNativeFeedback
+            <ThemedButton
                 onLongPress={() => { setSelectedThread(thread); }}
                 onPress={async () => {
                     historyAdd(state, setState, thread);
@@ -601,7 +598,7 @@ const ListTile = ({ thread, th, setSelectedThread }) => {
                         {isWatched && <Col><ThemedIcon name={'eye'} size={14} accent /></Col>}
                     </Row>
                 </Col>
-            </TouchableNativeFeedback>
+            </ThemedButton>
         </Col>
     </Row>;
 };
@@ -609,4 +606,12 @@ const CatalogFooter = ({ threads }) => {
     if (threads.length === 0) return undefined;
     let suffix = threads.length === 1 ? 'thread' : 'threads';
     return <FooterList child={<ThemedText style={{ textAlign: 'center' }} content={`${threads.length} ${suffix}`} />} />
+}
+
+const NoThreads = () => {
+    const { temp } = React.useContext(Ctx);
+    if (temp.catalogFilter === null) {
+        return <ThemedAsset name={'placeholder'} msg={'There are no threads here, be the first poster!'} />;
+    }
+    return <ThemedAsset name={'placeholder'} msg={'No threads found'} />;
 }

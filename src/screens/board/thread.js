@@ -3,11 +3,11 @@ import { Marquee } from '@animatereactnative/marquee';
 import { useNavigation, useTheme } from '@react-navigation/native';
 import { filesize } from 'filesize';
 import React, { useCallback, useRef } from 'react';
-import { ActivityIndicator, FlatList, Image, Linking, Pressable, ScrollView, TextInput, TouchableHighlight, TouchableNativeFeedback, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Linking, Pressable, ScrollView, TextInput, TouchableHighlight, useWindowDimensions } from 'react-native';
 import ImageCropPicker from 'react-native-image-crop-picker';
 
 import { Ctx, HEADER_HEIGHT } from '../../app';
-import { Col, Fab, FooterList, HeaderIcon, HtmlText, ListSeparator, ModalAlert, ModalLocalMediaPreview, ModalMediaPreview, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedIcon, ThemedText, UpdateGap } from '../../components';
+import { Col, Fab, FooterList, HeaderIcon, HtmlText, ListSeparator, ModalAlert, ModalLocalMediaPreview, ModalMediaPreview, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedButton, ThemedIcon, ThemedText, UpdateGap } from '../../components';
 import { State, threadSorts } from '../../context/state';
 import { hasCommentsErrors } from '../../context/temp';
 import { Repo } from '../../data/repo';
@@ -303,20 +303,20 @@ const RepliesModal = ({ repliesStack, setRepliesStack, setSelectedComment }) => 
             <Row style={{ position: 'relative', bottom: 0, borderRadius: config.borderRadius, }}>
                 {repliesStack.length > 1 &&
                     <Col style={btnOuterStyle}>
-                        <TouchableNativeFeedback onPress={() => setRepliesStack(repliesStack.slice(0, -1))}>
+                        <ThemedButton onPress={() => setRepliesStack(repliesStack.slice(0, -1))}>
                             <Col style={btnStyle}>
                                 <ThemedText content={`Back (${repliesStack.length - 1})`} />
                             </Col>
-                        </TouchableNativeFeedback>
+                        </ThemedButton>
                     </Col>
                 }
                 <Col style={btnOuterStyle}>
-                    <TouchableNativeFeedback
+                    <ThemedButton
                         onPress={() => setRepliesStack([])}>
                         <Col style={btnStyle}>
                             <ThemedText content='Close' />
                         </Col>
-                    </TouchableNativeFeedback>
+                    </ThemedButton>
                 </Col>
             </Row>
         </Col>}
@@ -418,10 +418,10 @@ const CommentTile = React.memo(({ comment, selectedComment, setSelectedComment, 
                 <Col style={{ padding: 8 }}>
                     <Row>
                         {img &&
-                            <TouchableNativeFeedback
+                            <ThemedButton
                                 onPress={() => { setTemp(prev => ({ ...prev, selectedMediaComment: comment })); }}>
                                 <Image src={img} style={{ borderRadius: config.borderRadius, width: thumbWidth, height: thumbWidth, marginRight: 8 }} />
-                            </TouchableNativeFeedback>}
+                            </ThemedButton>}
 
                         <Col style={{ flex: 1 }}>
                             {comment.sub && <HtmlText value={`<sub>${comment.sub}</sub>`} />}
@@ -461,7 +461,7 @@ const CommentTile = React.memo(({ comment, selectedComment, setSelectedComment, 
                         borderColor: 'red',
                         overflow: 'hidden',
                     }}>
-                        <TouchableNativeFeedback
+                        <ThemedButton
                             onPress={() => setRepliesStack([...repliesStack, replies])}>
                             <Row style={{
                                 flex: 1,
@@ -473,7 +473,7 @@ const CommentTile = React.memo(({ comment, selectedComment, setSelectedComment, 
                                 <HtmlText value={`<replies>View ${replies.length} ${reply}</replies>`} />
                                 <ThemedIcon name='chevron-down-outline' size={20} color={theme.colors.text} />
                             </Row>
-                        </TouchableNativeFeedback>
+                        </ThemedButton>
                     </Row>
                 </Row>}
         </Col>
@@ -520,7 +520,7 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
             width: width,
             backgroundColor: theme.colors.card, overflow: 'hidden'
         }}>
-            <TouchableNativeFeedback onPress={() => {
+            <ThemedButton onPress={() => {
                 setViewMode(prev => (prev + 1) % 3);
             }}>
                 <Col style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -529,7 +529,7 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                         <ThemedIcon name='chevron-up-outline' size={handleSize} />
                     }
                 </Col>
-            </TouchableNativeFeedback>
+            </ThemedButton>
         </Col>
         {form.media &&
             <Col style={{ marginTop: 10, marginLeft: 10, marginRight: 10, }}>
@@ -548,13 +548,13 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                             }
                             <ThemedText content={`Type: ${form.media.mime}`} />
                         </Col>
-                        <TouchableNativeFeedback onPress={() => {
+                        <ThemedButton onPress={() => {
                             setForm({ ...form, media: null });
                         }}>
                             <Col style={{ padding: 10, width: '30%', alignItems: 'center', backgroundColor: theme.colors.danger, borderRadius: config.borderRadius }}>
                                 <ThemedText content={`Remove`} />
                             </Col>
-                        </TouchableNativeFeedback>
+                        </ThemedButton>
                     </Col>
                 </Row>
             </Col>}
@@ -582,7 +582,7 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                 backgroundColor: theme.colors.highlight
             }}>
                 <Col>
-                    <TouchableNativeFeedback onPress={() => {
+                    <ThemedButton onPress={() => {
                         ImageCropPicker.openPicker({
                             mediaType: 'any',
                             multiple: false
@@ -598,7 +598,7 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                         <Col style={{ padding: 10, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                             <ThemedIcon name={'attach'} size={22} />
                         </Col>
-                    </TouchableNativeFeedback>
+                    </ThemedButton>
 
                 </Col>
                 <TextInput
@@ -615,7 +615,7 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                     onChangeText={(text) => setForm({ ...form, data: { ...form.data, com: text } })}
                 />
                 <Col>
-                    <TouchableNativeFeedback onPress={async () => {
+                    <ThemedButton onPress={async () => {
                         const data = form;
                         setForm(getDefaultForm(config, thread))
                         await uploadComment(state, setState, setTemp, data);
@@ -637,7 +637,7 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                         <Col style={{ padding: 10, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                             <ThemedIcon name={'send'} size={22} />
                         </Col>
-                    </TouchableNativeFeedback>
+                    </ThemedButton>
                 </Col>
             </Row>
         </Col>

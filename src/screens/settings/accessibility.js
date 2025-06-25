@@ -19,7 +19,7 @@ export const Accessibility = () => {
                 <SliderProp min={0.5} max={2} step={0.25} propName={'uiFontScale'} desc={`UI font scaling: ${config.uiFontScale}x`} />
                 <SliderProp min={0.5} max={2} step={0.25} propName={'htmlFontScale'} desc={`Comments font scaling: ${config.htmlFontScale}x`} />
                 <ThemedText content={"Preview:"} />
-                <Col style={{ padding: 10, backgroundColor: theme.colors.highlight }}>
+                <Col style={{ padding: 10, borderRadius: config.borderRadius, backgroundColor: theme.colors.highlight }}>
                     <HtmlText value={'<sub>This is a subject</sub>'} raw />
                     <HtmlText value={'<com>This is a comment</com>'} raw />
                 </Col>

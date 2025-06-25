@@ -1,10 +1,10 @@
 /* eslint-disable react/react-in-jsx-scope */
 import { useTheme } from '@react-navigation/native';
 import { useContext } from 'react';
-import { Linking, ScrollView, TouchableNativeFeedback, useWindowDimensions } from 'react-native';
+import { Linking, ScrollView, useWindowDimensions } from 'react-native';
 
 import { Ctx } from '../../app';
-import { Col, Row, ThemedAsset, ThemedIcon, ThemedText } from '../../components';
+import { Col, Row, ThemedAsset, ThemedButton, ThemedIcon, ThemedText } from '../../components';
 
 export const ABOUT_KEY = 'About';
 
@@ -23,7 +23,7 @@ export const About = () => {
             }}>
 
                 <Col style={{ overflow: 'hidden', borderRadius: config.borderRadius }}>
-                    <TouchableNativeFeedback
+                    <ThemedButton
                         accessibilityHint='This button will open an external browser and redirect you to our GitHub page'
                         onPress={() => {
                             const url = 'https://github.com/diegostaga/ciano';
@@ -35,11 +35,11 @@ export const About = () => {
                             <ThemedIcon name={'logo-github'} />
                             <ThemedText content={'Find us on GitHub!'} />
                         </Row>
-                    </TouchableNativeFeedback>
+                    </ThemedButton>
                 </Col>
 
                 <Col style={{ overflow: 'hidden', borderRadius: config.borderRadius, marginTop: isLandscape ? 0 : 20 }}>
-                    <TouchableNativeFeedback
+                    <ThemedButton
                         accessibilityHint='This button will open an external browser and redirect you to our GitHub page to submit and issue'
                         onPress={() => {
                             const url = 'https://github.com/diegostaga/ciano/issues/new';
@@ -51,7 +51,7 @@ export const About = () => {
                             <ThemedIcon name={'logo-github'} />
                             <ThemedText content={'Report an issue!'} />
                         </Row>
-                    </TouchableNativeFeedback>
+                    </ThemedButton>
                 </Col>
             </Col>
 

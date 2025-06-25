@@ -16,6 +16,7 @@ export const loadBoards = async (state, setState, setTemp, forceRefresh) => {
         const boards = forceRefresh ?
             await Repo(state.api).boards.getRemote() :
             await Repo(state.api).boards.getLocalOrRemote();
+        console.log(boards);
         setState({ ...state, boards });
     }
     catch (err) {

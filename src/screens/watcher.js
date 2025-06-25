@@ -1,10 +1,10 @@
 
 import { useNavigation, useTheme } from '@react-navigation/native';
 import React, { useContext, useState } from 'react';
-import { FlatList, Image, Text, TouchableNativeFeedback } from 'react-native';
+import { FlatList, Image, Text } from 'react-native';
 
 import { BOTTOM_NAV_KEY, Ctx } from '../app';
-import { Col, HeaderIcon, HtmlText, ListSeparator, ModalAlert, Row, ThemedAsset, ThemedText } from '../components';
+import { Col, HeaderIcon, HtmlText, ListSeparator, ModalAlert, Row, ThemedAsset, ThemedButton, ThemedText } from '../components';
 import { Repo } from '../data/repo';
 import { updateWatcher } from '../data/utils';
 import { getThreadSignature, historyAdd } from '../helpers';
@@ -115,7 +115,7 @@ const WatcherItem = ({ item }) => {
     const isSelecting = temp.watcherMultiSelection.size > 0;
 
     return <Col style={isSelected ? selectedStyle : containerStyle}>
-        <TouchableNativeFeedback
+        <ThemedButton
             onLongPress={() => {
                 if (isSelecting) { return; }
                 setTemp(prev => {
@@ -164,6 +164,6 @@ const WatcherItem = ({ item }) => {
                         </Col>}
                 </Col>
             </Row>
-        </TouchableNativeFeedback>
+        </ThemedButton>
     </Col>;
 };
