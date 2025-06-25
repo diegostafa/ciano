@@ -12,12 +12,11 @@ import { Col, TabIcon } from './components.js';
 import { Config, themeModes } from './context/config.js';
 import { State, totNew, totYou } from './context/state.js';
 import { Temp } from './context/temp.js';
-import { updateWatcher } from './data/utils.js';
 import { BOARD_TAB_KEY, BoardTab } from './screens/board/tab.js';
 import { THREAD_KEY } from './screens/board/thread.js';
 import { History } from './screens/history.js';
 import { SETTINGS_TAB_KEY, SettingsTab } from './screens/settings/tab.js';
-import { Watcher, WATCHER_TAB_KEY, WatcherHeaderRight } from './screens/watcher.js';
+import { Watcher, WATCHER_TAB_KEY } from './screens/watcher.js';
 import { DarkTheme, DarkThemeHighContrast, LightTheme, LightThemeHighContrast } from './theme.js';
 enableScreens();
 
@@ -38,7 +37,6 @@ export const App = () => {
     const [state, setState] = React.useState(null);
     const [config, setConfig] = React.useState(null);
     const [temp, setTemp] = React.useState(Temp.default());
-    const [watcherTask, setWatchertask] = React.useState(null);
 
     async function restoreState() { setState(await State.restore()) }
     async function restoreConfig() { setConfig(await Config.restore()) }
@@ -65,14 +63,6 @@ export const App = () => {
         return () => { unsubscribe(); };
     }, [config, state]);
 
-    React.useEffect(() => {
-        if (state && config && !watcherTask) {
-            const task = setInterval(async () => {
-                await updateWatcher(state, setState);
-            }, config.watcherUpdateSecs * 1000)
-            setWatchertask(task);
-        }
-    }, [config, state, watcherTask]);
 
     if (!state || !config) {
         return <Col style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }} />;
@@ -125,8 +115,10 @@ const BottomNav = () => {
                 component={Watcher}
                 options={{
                     tabBarBadge: totNewReplies > 0 ? totNewReplies : undefined,
-                    tabBarBadgeStyle: { backgroundColor: totYouReplies > 0 ? theme.colors.primary : undefined },
-                    headerRight: WatcherHeaderRight,
+                    tabBarBadgeStyle: {
+                        backgroundColor: totYouReplies > 0 ? theme.colors.primary : 'white',
+                        color: totYouReplies > 0 ? theme.colors.primaryInverted : 'black',
+                    },
                     tabBarIcon: TabIcon('notifications'),
                     headerStyle: { height: HEADER_HEIGHT },
                     title: 'Watcher'

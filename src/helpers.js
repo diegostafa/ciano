@@ -35,12 +35,26 @@ export const getLocal = async (key) => {
 export const relativeTime = (tstamp) => {
     return formatDistanceToNow(Number(tstamp) * 1000, { addSuffix: true });
 };
-export const historyAdd = async (state, setState, thread) => {
-    if (!thread) {
+export const historyAdd = async (state, setState, item) => {
+    if (!item) {
         return state.history;
     }
-    const others = state.history.filter(item => item.id !== thread.id);
-    await setStateAndSave(setState, 'history', [...others, thread]);
+    const others = state.history.filter(i => i.id !== item.id);
+    await setStateAndSave(setState, 'history', [...others, item]);
+};
+export const watcherAdd = async (state, setState, item) => {
+    if (!item) {
+        return state.history;
+    }
+    if (state.watching.some(i => i.thread.id === item.thread.id)) {
+        return;
+    }
+    await setStateAndSave(setState, 'watching', [...state.watching, item]);
+};
+export const watcherReset = async (state, setState, id) => {
+    await setStateAndSave(setState, 'watching', state.watching.map(i =>
+        i.thread.id === id ? { ...i, new: 0, you: 0 } : i
+    ));
 };
 export const getComment = (comments, threadId) => {
     return comments.find(item => item.id === threadId);

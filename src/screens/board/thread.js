@@ -12,7 +12,7 @@ import { setStateAndSave, threadSorts } from '../../context/state';
 import { hasCommentsErrors } from '../../context/temp';
 import { Repo } from '../../data/repo';
 import { loadComments, uploadComment } from '../../data/utils';
-import { commentContains, getCurrFullBoard, getRepliesTo, getThreadHeaderSignature, quotes, relativeTime } from '../../helpers';
+import { commentContains, getCurrFullBoard, getRepliesTo, getThreadHeaderSignature, quotes, relativeTime, watcherReset } from '../../helpers';
 export const THREAD_KEY = 'Thread';
 
 const getDefaultForm = (config, thread) => {
@@ -132,7 +132,7 @@ export const ThreadHeaderRight = () => {
     </Row>;
 };
 export const Thread = () => {
-    const { state, config, temp, setTemp } = React.useContext(Ctx);
+    const { state, setState, config, temp, setTemp } = React.useContext(Ctx);
     const { width } = useWindowDimensions();
     const sailor = useNavigation();
     const theme = useTheme();
@@ -153,9 +153,12 @@ export const Thread = () => {
                 formSubError: null,
                 formComError: null,
             }));
+
+            watcherReset(state, setState, thread.id);
+
             setOnce(false);
         }
-    }, [once, setTemp]);
+    }, [once, setState, setTemp, state, thread.id]);
 
 
     React.useEffect(() => {

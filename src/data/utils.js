@@ -13,9 +13,7 @@ export const loadBoards = async (state, setState, setTemp, forceRefresh) => {
     }));
 
     try {
-        const boards = forceRefresh ?
-            await Repo(state.api).boards.getRemote() :
-            await Repo(state.api).boards.getLocalOrRemote();
+        const boards = await Repo(state.api).boards.getRemote();
         await setStateAndSave(setState, 'boards', boards);
     }
     catch (err) {
@@ -180,17 +178,21 @@ export const uploadThread = async (state, setState, setTemp, data) => {
     setTemp(prev => ({ ...prev, isUploadingThread: false }));
 };
 export const updateWatcher = async (state, setState) => {
-    console.log(state.watching);
-
     const newWatching = await Promise.all(state.watching.map(async watched => {
-        const newComments = await Repo(state.api).comments.getRemote(watched.thread.board, watched.thread.id);
-        const diff = newComments.slice(watched.thread.replies);
-        const you = diff.filter(com => quotes(com).some(id => state.myComments.includes(id)));
-        return {
-            thread: { ...watched.thread, replies: newComments.length },
-            new: diff.length,
-            you: you.length,
-        };
+        try {
+            const newComments = await Repo(state.api).comments.getRemote(watched.thread.board, watched.thread.id);
+            const diff = newComments.slice(watched.thread.replies);
+            const you = diff.filter(com => quotes(com).some(id => state.myComments.includes(id)));
+            return {
+                thread: { ...watched.thread, replies: newComments.length },
+                new: diff.length,
+                you: you.length,
+            };
+        }
+        catch (e) {
+            return watched
+        }
     }));
-    await setStateAndSave(setState, 'watching', newWatching);
+    await setStateAndSave(setState, 'watching',
+        newWatching.concat(state.watching.filter(i => !newWatching.some(j => j.thread.id === i.thread.id))));
 };

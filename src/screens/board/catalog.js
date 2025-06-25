@@ -604,7 +604,6 @@ const CatalogFooter = ({ threads }) => {
     let suffix = threads.length === 1 ? 'thread' : 'threads';
     return <FooterList child={<ThemedText style={{ textAlign: 'center' }} content={`${threads.length} ${suffix}`} />} />
 }
-
 const NoThreads = () => {
     const { temp } = React.useContext(Ctx);
     if (temp.catalogFilter === null) {

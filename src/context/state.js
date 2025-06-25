@@ -7,7 +7,7 @@ const defaultState = {
     activeBoards: [],
     history: [],
     myComments: [],
-    watching: [], // [{thread, last, unread, replies}]
+    watching: [], // [{thread, new, you}]
     catalogViewMode: 0,
     catalogSort: 0,
     threadSort: 0,
