@@ -181,7 +181,7 @@ export const ThemedText = ({ content, style, line }) => {
     };
 
     if (line) {
-        return <Col style={{ overflow: 'hidden', flex: 1 }}>
+        return <Col style={{ overflow: 'hidden', justifyContent: 'center', flex: 1 }}>
             <Text ellipsizeMode='tail' numberOfLines={1} style={{ ...defaultStyle, ...tempStyle }}>{content}</Text>
         </Col>;
     }

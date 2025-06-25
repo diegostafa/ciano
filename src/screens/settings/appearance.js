@@ -13,9 +13,9 @@ export const APPEARANCE_KEY = 'Appearance';
 export const Appearance = () => {
     const theme = useTheme();
     const { config, setConfig } = useContext(Ctx);
-
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayTstamp = Math.floor(yesterday.getTime() / 1000);
 
     return <ScrollView style={{ backgroundColor: theme.colors.card, }}>
         <Col style={{ padding: 10, gap: 10 }}>
@@ -40,7 +40,7 @@ export const Appearance = () => {
             <Section title={"Date format"}>
                 <ToggleProp
                     propName={'relativeTime'}
-                    desc={`Use relative dates?\nPreview: ${config.relativeTime ? relativeTime(yesterday.valueOf()) : yesterday.toDateString()}`}
+                    desc={`Use relative dates?\nPreview: ${config.relativeTime ? relativeTime(yesterdayTstamp) : yesterday.toLocaleString()}`}
                 />
             </Section>
         </Col>
