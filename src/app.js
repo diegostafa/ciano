@@ -12,7 +12,6 @@ import { Col, TabIcon } from './components.js';
 import { Config, themeModes } from './context/config.js';
 import { State } from './context/state.js';
 import { Temp } from './context/temp.js';
-import { updateWatcher } from './data/utils.js';
 import { BOARD_TAB_KEY, BoardTab } from './screens/board/tab.js';
 import { THREAD_KEY } from './screens/board/thread.js';
 import { History } from './screens/history.js';
@@ -68,7 +67,7 @@ export const App = () => {
     React.useEffect(() => {
         if (state && config && !watcherTask) {
             const task = setInterval(async () => {
-                await updateWatcher(state, setState);
+                // await updateWatcher(state, setState);
             }, config.watcherUpdateSecs * 1000)
             setWatchertask(task);
         }

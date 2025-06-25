@@ -28,6 +28,11 @@ export const Accessibility = () => {
             <Section title={'Visual noise'}>
                 <ToggleProp propName={'disableMovingElements'} desc={'Disable moving elements?'} />
             </Section>
+
+            <Section title={'Usability'}>
+                <ToggleProp propName={'autofocus'} desc={'Enable keyboard autofocus?'} />
+            </Section>
+
         </Col>
     </ScrollView>;
 };

@@ -17,6 +17,7 @@ const defaultConfig = {
     uiFontScale: 1,
     htmlFontScale: 1,
     highContrast: false,
+    autofocus: true,
 
     // behaviour
     defaultName: null,

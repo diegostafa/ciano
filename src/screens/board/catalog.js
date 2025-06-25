@@ -5,7 +5,7 @@ import { TextInput } from 'react-native-gesture-handler';
 
 import { Ctx, HEADER_HEIGHT, NAVBAR_WIDTH } from '../../app';
 import { BoardInfo, Col, Fab, FooterList, HeaderIcon, HeaderThemedText, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedButton, ThemedIcon, ThemedText, UpdateGap } from '../../components';
-import { catalogModes, catalogSorts, setStateAndSave, State } from '../../context/state';
+import { catalogModes, catalogSorts, setStateAndSave } from '../../context/state';
 import { hasBoardsErrors, hasThreadsErrors, isOnline } from '../../context/temp';
 import { Repo } from '../../data/repo';
 import { loadBoards, loadThreads } from '../../data/utils';
@@ -131,7 +131,9 @@ export const CatalogHeaderRight = () => {
 
     const nextCatalogMode = (state.catalogViewMode + 1) % 2;
     return <Row >
-        {temp.catalogFilter === null && <HeaderIcon name={'search'} onPress={() => setTemp(prev => ({ ...prev, catalogFilter: '' }))} />}
+        {temp.catalogFilter === null && <HeaderIcon name={'search'} onPress={() => {
+            setTemp(prev => ({ ...prev, catalogFilter: '' }));
+        }} />}
         <HeaderIcon name='ellipsis-vertical' onPress={() => setCatalogActions(true)} />
 
         <ModalMenu
@@ -158,7 +160,6 @@ export const CatalogHeaderRight = () => {
                 [`View as ${catalogModes[nextCatalogMode]}`, catalogModes[nextCatalogMode], async () => {
                     setCatalogActions(false);
                     await setStateAndSave(setState, 'catalogViewMode', nextCatalogMode);
-                    await State.set('catalogViewMode', nextCatalogMode);
                 }],
                 ['Go top', 'arrow-up', async () => {
                     setCatalogActions(false);
@@ -180,7 +181,6 @@ export const CatalogHeaderRight = () => {
                     async function defer() {
                         await setStateAndSave(setState, 'catalogSort', index);
                         setTemp(prev => ({ ...prev, threads: [...prev.threads].sort(sort), isComputingThreads: false }));
-                        await State.set('catalogSort', index);
                     }
                     defer()
 
@@ -214,11 +214,10 @@ export const Catalog = () => {
     }, [sailor, setTemp, temp.catalogFilter]);
 
     React.useEffect(() => {
-        setTemp(prev => ({
-            ...prev,
-            catalogReflist: state.catalogViewMode === 0 ? listref : gridref
-        }))
-    }, [state.catalogViewMode, setTemp]);
+        if (temp.catalogReflist === null) {
+            setTemp(prev => ({ ...prev, catalogReflist: state.catalogViewMode === 0 ? listref : gridref }))
+        }
+    }, [state.catalogViewMode, setTemp, temp.catalogReflist]);
 
     React.useEffect(() => {
         if (hasBoardsErrors(temp) || hasThreadsErrors(temp)) {

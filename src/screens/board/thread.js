@@ -37,7 +37,7 @@ export const ThreadHeaderTitle = () => {
         speed={config.disableMovingElements ? 0 : 0.3}
         spacing={titleWidth}
         style={{ flex: 1, width: titleWidth, height: HEADER_HEIGHT, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
-        <HtmlText value={html} raw />
+        <HtmlText value={`<header>${html}</header>`} raw />
     </Marquee>;
 };
 export const ThreadHeaderRight = () => {

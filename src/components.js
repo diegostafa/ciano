@@ -667,6 +667,8 @@ export const SearchBar = ({ placeholder, value, onChangeText, onClose }) => {
         borderBottomColor: theme.colors.primary
     }}>
         <TextInput
+            // eslint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus={config.autofocus}
             placeholder={placeholder}
             value={value}
             onChangeText={onChangeText}

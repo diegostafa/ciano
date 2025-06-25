@@ -69,7 +69,7 @@ export const catalogSorts = [
         name: 'last reply',
         icon: 'time',
         sort: (a, b) => {
-            return b.bumped_at - a.bumped_at || b.created_at - a.created_at;
+            return (b.bumped_at - a.bumped_at) || (b.created_at - a.created_at);
         }
     },
     {
