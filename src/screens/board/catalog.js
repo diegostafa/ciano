@@ -347,7 +347,7 @@ export const Catalog = () => {
     if (temp.threads === null) {
         return <UpdateGap />;
     }
-    if (temp.threads.lenght === 0) {
+    if (temp.threads.length === 0) {
         if (temp.catalogFilter === null) {
             return <ThemedAsset name={'placeholder'} msg={'There are no threads here, be the first poster!'} />;
         }

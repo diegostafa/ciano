@@ -89,7 +89,7 @@ export const loadComments = async (state, setTemp, refresh) => {
 
         let comments = data;
         // don't sort op
-        if (comments.lenght > 0) {
+        if (comments.length > 0) {
             const sort = threadSorts[state.threadSort].sort;
             const head = comments[0];
             const tail = comments.slice(1).sort((a, b) => sort({ state, comments })(a, b) * (state.threadRev ? -1 : 1));
