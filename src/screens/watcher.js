@@ -42,8 +42,7 @@ export const WatcherHeaderRight = () => {
             setTemp(prev => ({ ...prev, watcherMultiSelection: new Set() }));
         }} />
     </Row>
-}
-
+};
 export const Watcher = () => {
     const { state, setState, temp, setTemp } = useContext(Ctx);
     const theme = useTheme();
@@ -81,14 +80,12 @@ export const Watcher = () => {
         />
     </Col>;
 };
-
 const NoWatchedThreads = () => {
     return <Col style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 }}>
         <ThemedText content={'You are not following any thread'} />
         <ThemedAsset name={'error'} />
     </Col>
 };
-
 const WatcherItem = ({ item }) => {
     const { state, setState, temp, setTemp } = useContext(Ctx);
     const sailor = useNavigation();

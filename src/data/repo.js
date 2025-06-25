@@ -53,7 +53,6 @@ export const Repo = (api) => {
         },
     }
 };
-
 const getRemote = async ({ key, remote }) => {
     const res = await remote();
     await setLocal(key, res);

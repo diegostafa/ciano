@@ -320,19 +320,38 @@ export const Catalog = () => {
         />;
     }
     if (temp.isComputingThreads) {
-        return <ThemedAsset name={'placeholder'} msg={'Sorting in your threads'} />;
+        return <ThemedAsset
+            name={'placeholder'}
+            msg={'Sorting in your threads'}
+        />;
     }
     if (temp.isFetchingBoards) {
-        return <ThemedAsset name={'placeholder'} msg={'Loading boards'} loading />;
+        return <ThemedAsset
+            name={'placeholder'}
+            msg={'Loading boards'} loading
+        />;
     }
     if (temp.isFetchingThreads) {
-        return <ThemedAsset name={'placeholder'} msg={'Loading threads!\nThis might take a bit of time'} loading />;
+        return <ThemedAsset
+            name={'placeholder'}
+            msg={'Loading threads!\nThis might take a bit of time'}
+            loading
+        />;
     }
     if (state.activeBoards.length === 0) {
-        return <ThemedAsset name={'placeholder'} msg={'It is rather empty in here...\nYou should try to enable at least one board!'} />;
+        return <ThemedAsset
+            name={'placeholder'}
+            msg={'It is rather empty in here...\nYou should try to enable at least one board!'}
+        />;
     }
     if (temp.threads === null) {
         return <UpdateGap />;
+    }
+    if (temp.threads.lenght === 0) {
+        if (temp.catalogFilter === null) {
+            return <ThemedAsset name={'placeholder'} msg={'There are no threads here, be the first poster!'} />;
+        }
+        return <ThemedAsset name={'placeholder'} msg={'No threads found'} />;
     }
 
     const isWatching = selectedThread !== null && state.watching.some(item => item.thread.id === selectedThread.id);
@@ -375,14 +394,6 @@ export const Catalog = () => {
         <ModalMediaPreview />
     </Col>;
 };
-const NoThreads = () => {
-    const { temp } = React.useContext(Ctx);
-    if (temp.catalogFilter === null) {
-        return <ThemedAsset name={'placeholder'} msg={'There are no threads here, be the first one to post!'} />;
-    }
-    return <ThemedAsset name={'placeholder'} msg={'No threads found'} />;
-
-};
 const GridCatalog = ({ width, height, setSelectedThread }) => {
     const { state, temp, setTemp, config } = React.useContext(Ctx);
     const isVertical = width < height;
@@ -418,7 +429,6 @@ const GridCatalog = ({ width, height, setSelectedThread }) => {
             keyExtractor={(item) => String(item.id)}
             onRefresh={async () => await loadThreads(state, setTemp, true)}
             refreshing={temp.isFetchingThreads}
-            ListEmptyComponent={<NoThreads />}
             ListFooterComponent={<CatalogFooter threads={threads} />}
         />;
     }
@@ -438,7 +448,6 @@ const GridCatalog = ({ width, height, setSelectedThread }) => {
         keyExtractor={(item) => String(item.id)}
         onRefresh={async () => await loadThreads(state, setTemp, true)}
         refreshing={temp.isFetchingThreads}
-        ListEmptyComponent={<NoThreads />}
         ListFooterComponent={<CatalogFooter threads={threads} />}
     />;
 }
@@ -476,7 +485,6 @@ const ListCatalog = ({ width, height, setSelectedThread }) => {
         onRefresh={async () => await loadThreads(state, setTemp, true)}
         refreshing={temp.isFetchingThreads}
         // ItemSeparatorComponent={ListSeparator}
-        ListEmptyComponent={<NoThreads />}
         ListFooterComponent={<CatalogFooter threads={threads} />}
     />;
 };
@@ -598,6 +606,7 @@ const ListTile = ({ thread, th, setSelectedThread }) => {
     </Row>;
 };
 const CatalogFooter = ({ threads }) => {
-    return <FooterList child={<ThemedText style={{ textAlign: 'center' }} content={`${threads.length} Threads`} />}
-    />
+    if (threads.length === 0) return undefined;
+    let suffix = threads.length === 1 ? 'thread' : 'threads';
+    return <FooterList child={<ThemedText style={{ textAlign: 'center' }} content={`${threads.length} ${suffix}`} />} />
 }

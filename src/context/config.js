@@ -2,11 +2,14 @@ import { getLocal, setLocal } from '../helpers';
 
 const defaultConfig = {
     // appearance
-    themeMode: 2, // 0:light, 1:dark, 2:auto
+    themeMode: 2,
     relativeTime: false,
-    catalogGridCols: 3, catalogGridRows: 4,
-    catalogGridColsLandscape: 5, catalogGridRowsLandscape: 2,
-    catalogListRows: 7, catalogListRowsLandscape: 3,
+    catalogGridCols: 3,
+    catalogGridRows: 4,
+    catalogGridColsLandscape: 5,
+    catalogGridRowsLandscape: 2,
+    catalogListRows: 7,
+    catalogListRowsLandscape: 3,
     borderRadius: 10,
 
     // accessibility
@@ -24,6 +27,7 @@ const defaultConfig = {
     autoWatchThreads: true,
     muteVideos: false,
     loopVideos: true,
+    watcherUpdateSecs: 10,
 
     // advanced
     loadFaster: true,
@@ -45,3 +49,8 @@ export const Config = {
     },
     default: () => defaultConfig
 };
+export const themeModes = [
+    'light',
+    'dark',
+    'auto',
+];

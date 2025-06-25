@@ -1,6 +1,8 @@
 /* eslint-disable react/display-name */
 import { Marquee } from '@animatereactnative/marquee';
 import { ImageZoom } from '@likashefqet/react-native-image-zoom';
+import Slider from '@react-native-community/slider';
+import SegmentedControl from '@react-native-segmented-control/segmented-control';
 import { useTheme } from '@react-navigation/native';
 import { filesize } from 'filesize';
 import React, { useContext, useRef } from 'react';
@@ -13,6 +15,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
 
 import { Ctx, HEADER_HEIGHT } from './app';
+import { Config } from './context/config';
 import { Repo } from './data/repo';
 import { capitalize, downloadMedia, getImageAsset, isGif, isImage, isVideo } from './helpers';
 import { DarkHtmlTheme, LightHtmlTheme } from './theme';
@@ -138,7 +141,7 @@ export const ModalAlert = ({ msg, visible, left, right, onClose, onPressLeft, on
             </Col>
         }
     />
-}
+};
 export const ModalMenu = ({ visible, onClose, items }) => {
     const theme = useTheme();
     const btnStyle = { padding: 15 };
@@ -168,21 +171,21 @@ export const ModalMenu = ({ visible, onClose, items }) => {
 export const ThemedText = ({ content, style, line }) => {
     const theme = useTheme();
     const { config } = useContext(Ctx);
-    let fontSize = 14;
-    if (style && 'fontSize' in style) {
-        fontSize = style.fontSize * config.uiFontScale;
+    const tempStyle = { ...style };
+    if (tempStyle && 'fontSize' in tempStyle) {
+        tempStyle.fontSize = Math.min(tempStyle.fontSize * config.uiFontScale, 32);
     }
     const defaultStyle = {
         color: theme.colors.text,
-        fontSize
+        fontSize: Math.min(14 * config.uiFontScale, 32)
     };
 
     if (line) {
         return <Col style={{ overflow: 'hidden', flex: 1 }}>
-            <Text ellipsizeMode='tail' numberOfLines={1} style={{ ...defaultStyle, ...style }}>{content}</Text>
+            <Text ellipsizeMode='tail' numberOfLines={1} style={{ ...defaultStyle, ...tempStyle }}>{content}</Text>
         </Col>;
     }
-    return <Text style={{ ...defaultStyle, ...style }}>{content}</Text>;
+    return <Text style={{ ...defaultStyle, ...tempStyle }}>{content}</Text>;
 };
 export const HeaderThemedText = ({ content, style, line }) => {
     const { config } = useContext(Ctx);
@@ -200,6 +203,25 @@ export const HtmlText = React.memo(({ value, onLinkPress, raw }) => {
 export const HeaderButton = ({ child, enabled, onPress }) => {
     const theme = useTheme();
     const { config } = React.useContext(Ctx);
+
+    if (!enabled) {
+        return <Col style={{
+            overflow: 'hidden',
+            borderRadius: config.borderRadius,
+            marginRight: 5,
+            backgroundColor: 'gray',
+        }}>
+            <Col style={{
+                justifyContent: 'space-between',
+                paddingLeft: 15,
+                paddingRight: 15,
+                paddingTop: 6,
+                paddingBottom: 6,
+            }}>
+                {child}
+            </Col>
+        </Col>;
+    }
 
     return <Col style={{
         overflow: 'hidden',
@@ -223,7 +245,7 @@ export const HeaderButton = ({ child, enabled, onPress }) => {
 export const ListSeparator = () => {
     const theme = useTheme();
     return <Col style={{ height: 2, backgroundColor: theme.colors.highlight }} />;
-}
+};
 export const ModalMediaPreview = () => {
     const { width, height } = useWindowDimensions();
     const { temp, setTemp } = React.useContext(Ctx);
@@ -290,10 +312,12 @@ const MediaPreview = ({ comment, onClose }) => {
                 padding: 10,
                 backgroundColor: theme.colors.overlay,
             }}>
-                <Title
+                <Marquee
+                    speed={0.3}
                     spacing={width - 150}
-                    title={`${comment.file_name}.${comment.media_ext}\n(${filesize(comment.media_size)})`} />
-
+                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
+                    <ThemedText content={`${comment.file_name}.${comment.media_ext}\n(${filesize(comment.media_size)})`} />
+                </Marquee>
                 <Row style={{ gap: 10 }}>
                     <HeaderIcon name={'download'} onPress={async () => {
                         await downloadMedia(setTemp, state, comment);
@@ -436,9 +460,12 @@ const LocalMediaPreview = ({ media, onClose }) => {
                 padding: 10,
                 backgroundColor: theme.colors.overlay,
             }}>
-                <Title
+                <Marquee
+                    speed={0.3}
                     spacing={width - 150}
-                    title={`${name} (${filesize(size)})`} />
+                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
+                    <ThemedText content={`${name} (${filesize(size)})`} />
+                </Marquee>
                 <Row style={{ gap: 10 }}>
                     <HeaderIcon name={'close'} onPress={onClose} />
                 </Row>
@@ -518,20 +545,15 @@ const LocalMediaPreview = ({ media, onClose }) => {
         </Col >}
     </Col>;
 };
-export const BooleanConfig = ({ title, description, isEnabled, onToggle }) => {
-    return <Row style={{ padding: 10 }}>
-        <Col>
-            <ThemedText content={title} style={{ fontWeight: 'bold' }} />
-            <ThemedText content={description} />
-        </Col>
-        <Switch
-            trackColor={{ false: '#767577', true: '#81b0ff' }}
-            thumbColor={isEnabled ? '#f5dd4b' : '#f4f3f4'}
-            ios_backgroundColor='#3e3e3e'
-            onValueChange={onToggle}
-            value={isEnabled}
-        />
-    </Row>;
+export const Toggle = ({ isEnabled, onToggle }) => {
+    const theme = useTheme();
+    return <Switch
+        trackColor={{ false: 'rgb(154, 154, 154)', true: 'rgb(206, 206, 206)' }}
+        thumbColor={isEnabled ? theme.colors.primary : 'rgb(108, 108, 108)'}
+        ios_backgroundColor={theme.colors.highlight}
+        onValueChange={onToggle}
+        value={isEnabled}
+    />;
 };
 export const Row = ({ children, style, ...rest }) => {
     return <View style={[{ flexDirection: 'row' }, style]} {...rest}>
@@ -604,11 +626,10 @@ export const BoardInfo = ({ board }) => {
     </Col>;
 };
 export const ThemedAsset = ({ name, msg, desc, retry, loading }) => {
-    const colorscheme = useColorScheme();
-    const theme = colorscheme === 'dark' ? 'dark' : 'light';
+    const colorscheme = useColorScheme() === 'dark' ? 'dark' : 'light';
     const { config } = useContext(Ctx);
-    const asset = getImageAsset(theme, name);
-    console.log(asset);
+    const asset = getImageAsset(colorscheme, name);
+    const theme = useTheme();
     return <Col style={{ flex: 1, gap: 10, justifyContent: 'center', alignItems: 'center' }}>
         {loading && <Loader />}
         <ThemedText content={msg} style={{ textAlign: 'center' }} />
@@ -631,7 +652,7 @@ export const UpdateGap = () => {
 export const Loader = () => {
     const theme = useTheme();
     return <ActivityIndicator size={'large'} color={theme.colors.primary} />;
-}
+};
 export const SearchBar = ({ placeholder, value, onChangeText, onClose }) => {
     const { width } = useWindowDimensions();
     const theme = useTheme();
@@ -659,35 +680,11 @@ export const SearchBar = ({ placeholder, value, onChangeText, onClose }) => {
         <HeaderIcon name={'close'} onPress={onClose} />
     </Row>;
 };
-export const Title = ({ title, spacing, onPress }) => {
-    const { config } = useContext(Ctx);
-
-    if (!config.disableMovingElements) {
-        return <Marquee
-            speed={0.3}
-            spacing={spacing}
-            style={{ flex: 1, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
-            <HtmlText value={title} raw />
-        </Marquee>;
-    }
-
-    return <Row>
-        <TouchableNativeFeedback onPress={onPress}>
-            <ThemedText line content={title} />
-        </TouchableNativeFeedback>
-    </Row>;
-};
-
 export const FooterList = ({ child }) => {
-    const { config } = useContext(Ctx);
-    const theme = useTheme();
     return <Col style={{
         padding: 10,
         paddingTop: 50,
         paddingBottom: 50,
-        borderTopRightRadius: config.borderRadius,
-        borderTopLeftRadius: config.borderRadius,
-        backgroundColor: theme.colors.background
     }}>{child}</Col>
 };
 export const HeaderList = ({ child }) => {
@@ -701,4 +698,88 @@ export const HeaderList = ({ child }) => {
         borderBottomLeftRadius: config.borderRadius,
         backgroundColor: theme.colors.background
     }}>{child}</Col>
+};
+export const ToggleProp = ({ propName, desc }) => {
+    const { config, setConfig } = useContext(Ctx);
+
+    return <Row style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <Col style={{ overflow: 'hidden', flex: 1 }}>
+            <ThemedText content={desc} />
+        </Col>
+        <Toggle
+            isEnabled={config[propName]}
+            onToggle={async value => {
+                setConfig({ ...config, [propName]: value });
+                Config.set(propName, value);
+            }} />
+    </Row>
+};
+export const SliderProp = ({ propName, desc, min, max, step }) => {
+    const { config, setConfig } = useContext(Ctx);
+
+    return <Col style={{ gap: 20 }}>
+        <ThemedText style={{ textAlign: 'center' }} content={desc} />
+        <Row style={{}}>
+            <ThemedText content={`${min}x`} />
+            <Slider
+                style={{ flex: 1 }}
+                value={config[propName]}
+                lowerLimit={min}
+                minimumValue={min}
+                maximumValue={max}
+                upperLimit={max}
+                step={step}
+                onValueChange={async value => {
+                    setConfig({ ...config, [propName]: value });
+                    await Config.set(propName, value);
+                }}
+            />
+            <ThemedText content={`${max}x`} />
+        </Row>
+    </Col>;
+};
+export const Section = ({ children, title }) => {
+    const theme = useTheme();
+    const { config } = useContext(Ctx);
+
+    const sectionStyle = {
+        backgroundColor: theme.colors.background,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        borderRadius: config.borderRadius,
+        overflow: 'hidden',
+        padding: 10,
+        gap: 20,
+    };
+    const titleStyle = {
+        fontWeight: 'bold',
+        fontSize: 16,
+    };
+    return <Col style={sectionStyle}>
+        <ThemedText style={titleStyle} content={title} />
+        {children}
+    </Col>
+
+
+};
+export const EnumProp = ({ propName, desc, values }) => {
+    const theme = useTheme();
+    const { config, setConfig } = useContext(Ctx);
+
+    return <Col style={{ gap: 10 }}>
+        <ThemedText content={desc} />
+        <SegmentedControl
+            tabStyle={{ borderRadius: config.borderRadius }}
+            values={values}
+            selectedIndex={config[propName] || 0}
+            onChange={async (event) => {
+                setConfig({ ...config, [propName]: event.nativeEvent.selectedSegmentIndex });
+                await Config.set(propName, event.nativeEvent.selectedSegmentIndex);
+            }}
+            tintColor={theme.colors.primary}
+            backgroundColor={theme.colors.highlight}
+            fontStyle={{ color: theme.colors.text }}
+            activeFontStyle={{ color: theme.colors.primaryInverted }}
+        />
+    </Col>;
 };

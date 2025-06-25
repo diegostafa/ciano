@@ -1,5 +1,7 @@
 /* eslint-disable react/react-in-jsx-scope */
 
+import { useTheme } from '@react-navigation/native';
+
 import { HEADER_HEIGHT, Stack } from '../../app.js';
 import { CATALOG_KEY, Catalog, CatalogHeaderLeft, CatalogHeaderRight, CatalogHeaderTitle } from './catalog.js';
 import { CREATE_THREAD_KEY, CreateThread, CreateThreadHeaderRight, CreateThreadHeaderTitle } from './create_thread.js';
@@ -9,24 +11,33 @@ import { THREAD_KEY, Thread, ThreadHeaderRight, ThreadHeaderTitle } from './thre
 export const BOARD_TAB_KEY = 'BoardTab';
 
 export const BoardTab = () => {
+    const theme = useTheme();
+    const options = {
+        headerStyle: {
+            height: HEADER_HEIGHT,
+            borderBottomWidth: 1,
+            borderBottomColor: theme.colors.border,
+        },
+    }
+
     return <Stack.Navigator>
         <Stack.Screen
             name={CATALOG_KEY}
             component={Catalog}
             options={{
+                ...options,
                 headerLeft: CatalogHeaderLeft,
                 headerTitle: CatalogHeaderTitle,
                 headerRight: CatalogHeaderRight,
-                headerStyle: { height: HEADER_HEIGHT },
             }}
         />
         <Stack.Screen
             name={THREAD_KEY}
             component={Thread}
             options={{
+                ...options,
                 headerTitle: ThreadHeaderTitle,
                 headerRight: ThreadHeaderRight,
-                headerStyle: { height: HEADER_HEIGHT },
                 animation: 'slide_from_right',
             }}
         />
@@ -34,8 +45,8 @@ export const BoardTab = () => {
             name={CREATE_THREAD_KEY}
             component={CreateThread}
             options={{
+                ...options,
                 animation: 'slide_from_bottom',
-                headerStyle: { height: HEADER_HEIGHT },
                 headerTitle: CreateThreadHeaderTitle,
                 headerRight: CreateThreadHeaderRight,
             }}
@@ -44,8 +55,8 @@ export const BoardTab = () => {
             name={SETUP_BOARDS_KEY}
             component={SetupBoards}
             options={{
+                ...options,
                 animation: 'slide_from_bottom',
-                headerStyle: { height: HEADER_HEIGHT },
                 headerTitle: SetupBoardsHeaderTitle,
                 headerRight: SetupBoardsHeaderRight,
             }}

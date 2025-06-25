@@ -106,23 +106,28 @@ const HistoryTile = ({ item, th, setForget, setOpen }) => {
     const padding = 10;
     const imgSz = th - padding * 2 - margin;
 
-    return <Col style={{ marginLeft: 5, marginRight: 5, borderRadius: config.borderRadius, overflow: 'hidden', marginTop: margin, backgroundColor: theme.colors.background }}>
+    return <Col style={{
+        marginLeft: 5,
+        marginRight: 5,
+        borderRadius: config.borderRadius,
+        overflow: 'hidden',
+        marginTop: margin, backgroundColor:
+            theme.colors.background
+    }}>
         <TouchableNativeFeedback
             onLongPress={() => { setForget(item); }}
             onPress={() => { setOpen(item); }}>
-            <Col>
-                <Row style={{ overflow: 'hidden', marginRight: 10, alignItems: 'center', padding, height: th, gap: 15 }} >
-                    <Image src={img} style={{
-                        top: 0,
-                        borderRadius: th / 2,
-                        width: imgSz,
-                        height: imgSz,
-                    }} />
-                    <Col style={{ overflow: 'hidden', flex: 1 }}>
-                        <ThemedText line content={getThreadHistorySignature(item)} />
-                    </Col>
-                </Row>
-            </Col>
+            <Row style={{ overflow: 'hidden', marginRight: 10, alignItems: 'center', padding, height: th, gap: 15 }} >
+                <Image src={img} style={{
+                    top: 0,
+                    borderRadius: th / 2,
+                    width: imgSz,
+                    height: imgSz,
+                }} />
+                <Col style={{ overflow: 'hidden', flex: 1 }}>
+                    <ThemedText line content={getThreadHistorySignature(item)} />
+                </Col>
+            </Row>
         </TouchableNativeFeedback>
     </Col>;
 };

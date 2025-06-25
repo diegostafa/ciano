@@ -23,7 +23,7 @@ export const threadContains = (thread, filter) => {
 export const firstSplitAt = (text, needle) => {
     const index = text.indexOf(needle);
     return index !== -1 ? text.substring(0, index) : text;
-}
+};
 export const setLocal = async (key, value) => {
     return AsyncStorage.setItem(key, JSON.stringify(value));
 };
@@ -53,7 +53,7 @@ export const quotes = (comment) => {
     }
     const matches = comment.com.match(/&gt;&gt;\d+/g) || [];
     return matches.map(match => Number(match.slice(8)));
-}
+};
 export const getThreadHistorySignature = (thread) => {
     const content = decode(stripHtml((thread.sub || thread.com)));
     const board = `/${thread.board}/`;
@@ -64,15 +64,14 @@ export const getThreadSignature = (thread) => {
     let text = thread.sub ? `${board}<sub>${thread.sub}</sub>` : `${board}<com>${thread.com}</com>`;
     text = firstSplitAt(text, '<br>');
     text = firstSplitAt(text, '\n');
-    console.log(text);
     return text;
-}
+};
 export const getThreadHeaderSignature = (thread) => {
     let text = thread.sub ? `/${thread.board}/ - ${thread.sub}` : `/${thread.board}/ - ${thread.com}`;
     text = firstSplitAt(text, '<br>');
     text = firstSplitAt(text, '\n');
     return text;
-}
+};
 export const currRoute = (state) => {
     const tabRoute = state.routes.find(r => r.name === BOARD_NAV_KEY);
     const stackState = tabRoute?.state;
@@ -91,16 +90,16 @@ export const capitalize = (str) => {
 };
 export const isImage = (ext) => {
     return ext === 'jpg' || ext === 'jpeg' || ext === 'png';
-}
+};
 export const isGif = (ext) => {
     return ext === 'gif';
-}
+};
 export const isVideo = (ext) => {
     return ext === 'mp4' || ext === 'webm';
-}
+};
 export const getCurrFullBoard = (state) => {
     return state.boards.find(item => item.code === state.board);
-}
+};
 export const downloadMedia = async (setTemp, state, comment) => {
     try {
         const url = Repo(state.api).media.full(comment);

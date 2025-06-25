@@ -1,12 +1,13 @@
 /* eslint-disable react/display-name */
+import { Marquee } from '@animatereactnative/marquee';
 import { useNavigation, useTheme } from '@react-navigation/native';
 import { filesize } from 'filesize';
 import React, { useCallback, useRef } from 'react';
 import { ActivityIndicator, FlatList, Image, Linking, Pressable, ScrollView, TextInput, TouchableHighlight, TouchableNativeFeedback, useWindowDimensions } from 'react-native';
 import ImageCropPicker from 'react-native-image-crop-picker';
 
-import { Ctx } from '../../app';
-import { Col, Fab, FooterList, HeaderIcon, HtmlText, ListSeparator, ModalAlert, ModalLocalMediaPreview, ModalMediaPreview, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedIcon, ThemedText, Title, UpdateGap } from '../../components';
+import { Ctx, HEADER_HEIGHT } from '../../app';
+import { Col, Fab, FooterList, HeaderIcon, HtmlText, ListSeparator, ModalAlert, ModalLocalMediaPreview, ModalMediaPreview, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedIcon, ThemedText, UpdateGap } from '../../components';
 import { State, threadSorts } from '../../context/state';
 import { hasCommentsErrors } from '../../context/temp';
 import { Repo } from '../../data/repo';
@@ -26,22 +27,18 @@ const getDefaultForm = (config, thread) => {
     };
 };
 export const ThreadHeaderTitle = () => {
-    const { state } = React.useContext(Ctx);
+    const { state, config } = React.useContext(Ctx);
     const { width } = useWindowDimensions();
     const thread = state.history.at(-1);
     const titleWidth = width - 150;
-    const title = getThreadHeaderSignature(thread);
-    const [showInfo, setShowInfo] = React.useState(false);
+    const html = getThreadHeaderSignature(thread);
 
-    return <Row>
-        <Title spacing={titleWidth} title={`<header>${title}</header>`} onPress={() => setShowInfo(true)} />;
-        <ModalView
-            visible={showInfo}
-            onClose={() => setShowInfo(false)}
-            content={<Col>
-                <ThemedText content={title} />
-            </Col>} />
-    </Row>;
+    return <Marquee
+        speed={config.disableMovingElements ? 0 : 0.3}
+        spacing={titleWidth}
+        style={{ flex: 1, width: titleWidth, height: HEADER_HEIGHT, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' }}>
+        <HtmlText value={html} raw />
+    </Marquee>;
 };
 export const ThreadHeaderRight = () => {
     const { state, setState, temp, setTemp, config } = React.useContext(Ctx);
@@ -95,7 +92,6 @@ export const ThreadHeaderRight = () => {
             setThreadActions(false);
             temp.threadReflist.current?.refresh();
         }],
-        ['Stats', 'stats-chart', () => { setThreadActions(false); }],
         ['Go top', 'arrow-up', () => {
             setThreadActions(false);
             temp.threadReflist.current?.scrollToIndex({ animated: true, index: 0 });
@@ -150,7 +146,21 @@ export const Thread = () => {
     const [repliesStack, setRepliesStack] = React.useState([]);
     const [createComment, setCreateComment] = React.useState(false);
     const [form, setForm] = React.useState(getDefaultForm(config, thread));
+    const [once, setOnce] = React.useState(true);
     const board = getCurrFullBoard(state);
+    React.useEffect(() => {
+        if (once) {
+            setTemp(prev => ({
+                ...prev,
+                formMediaError: null,
+                formNameError: null,
+                formSubError: null,
+                formComError: null,
+            }));
+            setOnce(false);
+        }
+    }, [once, setTemp]);
+
 
     React.useEffect(() => {
         const unsubscribe = sailor.addListener('beforeRemove', (e) => {
@@ -423,7 +433,7 @@ const CommentTile = React.memo(({ comment, selectedComment, setSelectedComment, 
 
                             {img &&
                                 <Col>
-                                    <HtmlText value={`<info>Attachment: ${comment.file_name}.${comment.media_ext}</info>`} />
+                                    <HtmlText value={`<info>Attachment: ${comment.file_name || comment.media_name}.${comment.media_ext}</info>`} />
                                     {comment.media_size && <HtmlText value={`<info>Size: ${filesize(comment.media_size)} </info>`} />}
                                 </Col>}
                         </Col>
@@ -481,10 +491,6 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
     const { width } = useWindowDimensions();
     const [viewMode, setViewMode] = React.useState(2);
     const handleSize = 32;
-    const [formMediaError, setFormMediaError] = React.useState(null);
-    const [formNameError, setFormNameError] = React.useState(null);
-    const [formComError, setFormComError] = React.useState(null);
-    const [formSubError, setFormSubError] = React.useState(null);
 
     if (temp.isUploadingComment) {
         return <Row style={{
@@ -536,8 +542,8 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                     <Col style={{ flex: 1, paddingLeft: 10, justifyContent: 'space-between' }}>
                         <Col>
                             <ThemedText content={`Name: ${form.media.path.split('/').pop()}`} />
-                            {formMediaError !== null ?
-                                <ThemedText style={{ color: theme.colors.danger }} content={`Size: ${filesize(form.media.size)} (${formMediaError})`} /> :
+                            {temp.formMediaError !== null ?
+                                <ThemedText style={{ color: theme.colors.danger }} content={`Size: ${filesize(form.media.size)} (${temp.formMediaError})`} /> :
                                 <ThemedText content={`Size: ${filesize(form.media.size)}`} />
                             }
                             <ThemedText content={`Type: ${form.media.mime}`} />
@@ -581,13 +587,12 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                             mediaType: 'any',
                             multiple: false
                         }).then((media) => {
-                            setForm({ ...form, media });
-                            const fsize = filesize(media.size);
-                            const maxSize = filesize(getCurrFullBoard(state.board).maxMediaSize);
+                            const fsize = media.size;
+                            const maxSize = getCurrFullBoard(state).max_file_size;
                             if (fsize > maxSize) {
-                                setFormMediaError(`File is too big (max is ${maxSize})`);
-                                return;
+                                setTemp(prev => ({ ...prev, formMediaError: `File is too big, max is ${filesize(maxSize)}` }));
                             }
+                            setForm({ ...form, media });
                         });
                     }}>
                         <Col style={{ padding: 10, flex: 1, justifyContent: 'center', alignItems: 'center' }}>

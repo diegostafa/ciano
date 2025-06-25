@@ -27,7 +27,6 @@ export const DarkTheme = {
         notification: 'rgb(255, 69, 58)',
         highlight: 'rgba(255, 255, 255, 0.1)',
         formBg: 'rgb(50, 50, 55)',
-
         err: 'rgb(255, 123, 123)',
         lastVisited: 'rgba(214, 255, 250, 0.2)',
         danger: 'rgba(255, 0,0, 0.1)',
@@ -42,21 +41,8 @@ export const DarkTheme = {
 export const LightThemeHighContrast = {
     dark: false,
     colors: {
-        primary: 'rgb(0, 122, 255)',
-        background: 'rgb(242, 242, 242)',
-        card: 'rgb(255, 255, 255)',
-        text: 'rgb(28, 28, 30)',
-        border: 'rgb(216, 216, 216)',
-        notification: 'rgb(255, 59, 48)',
-        highlight: 'rgba(0, 0, 0, 0.1)',
-        formBg: 'rgb(57, 60, 66)'
-    },
-    fonts: DefaultLight.fonts,
-};
-export const DarkThemeHighContrast = {
-    dark: true,
-    colors: {
-        primary: '#b294bb',
+        primary: 'rgb(165, 221, 255)',
+        primaryInverted: 'rgb(0, 0, 0)',
         background: '#1d2021',
         card: 'rgb(18, 18, 18)',
         text: 'rgb(229, 229, 231)',
@@ -64,11 +50,37 @@ export const DarkThemeHighContrast = {
         notification: 'rgb(255, 69, 58)',
         highlight: 'rgba(255, 255, 255, 0.1)',
         formBg: 'rgb(50, 50, 55)',
-
-        danger: 'rgba(255, 0, 0, 0.5)',
-        safe: 'rgba(0, 255,0, 0.5)',
+        err: 'rgb(255, 123, 123)',
+        lastVisited: 'rgba(214, 255, 250, 0.2)',
+        danger: 'rgba(255, 0,0, 0.1)',
+        safe: 'rgba(0, 0, 0, 0)',
         overlay: 'rgba(0, 0, 0, 0.8)',
         isQuotingMe: 'rgba(255, 251, 0, 0.5)',
+        isMine: 'rgb(165, 221, 255)',
+        viewReplies: 'rgba(255, 255, 255, 0.05)',
+    },
+    fonts: DefaultLight.fonts,
+};
+export const DarkThemeHighContrast = {
+    dark: true,
+    colors: {
+        primary: 'rgb(165, 221, 255)',
+        primaryInverted: 'rgb(0, 0, 0)',
+        background: '#1d2021',
+        card: 'rgb(18, 18, 18)',
+        text: 'rgb(229, 229, 231)',
+        border: 'rgb(255, 255, 255)',
+        notification: 'rgb(255, 69, 58)',
+        highlight: 'rgba(255, 255, 255, 0.1)',
+        formBg: 'rgb(50, 50, 55)',
+        err: 'rgb(88, 85, 85)',
+        lastVisited: 'rgba(214, 255, 250, 0.2)',
+        danger: 'rgba(255, 0,0, 0.1)',
+        safe: 'rgba(0, 0, 0, 0)',
+        overlay: 'rgba(0, 0, 0, 0.8)',
+        isQuotingMe: 'rgba(255, 251, 0, 0.5)',
+        isMine: 'rgb(165, 221, 255)',
+        viewReplies: 'rgba(255, 255, 255, 0.05)',
     },
     fonts: DefaultDark.fonts,
 };

@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
 
 import { Col, TabIcon } from './components.js';
-import { Config } from './context/config.js';
+import { Config, themeModes } from './context/config.js';
 import { State } from './context/state.js';
 import { Temp } from './context/temp.js';
 import { updateWatcher } from './data/utils.js';
@@ -86,7 +86,8 @@ export const App = () => {
         return <Col style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }} />;
     }
 
-    const theme = colorscheme === 'dark' ?
+    const themeMode = themeModes[config.themeMode] === 'auto' ? colorscheme : themeModes[config.themeMode];
+    const theme = themeMode === 'dark' ?
         config.highContrast ? DarkThemeHighContrast : DarkTheme :
         config.highContrast ? LightThemeHighContrast : LightTheme;
 

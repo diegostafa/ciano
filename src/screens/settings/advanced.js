@@ -1,5 +1,6 @@
 /* eslint-disable react/react-in-jsx-scope */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '@react-navigation/native';
 import { useContext } from 'react';
 import { ScrollView, TouchableNativeFeedback } from 'react-native';
 
@@ -14,8 +15,9 @@ export const ADVANCED_KEY = 'Advanced';
 
 export const Advanced = () => {
     const { state, setState, temp, setTemp, setConfig } = useContext(Ctx);
+    const theme = useTheme();
 
-    return <ScrollView style={{ padding: 20, flex: 1 }}>
+    return <ScrollView style={{ padding: 20, flex: 1, backgroundColor: theme.colors.card, }}>
         <Col>
             <TouchableNativeFeedback onPress={async () => {
                 const s = State.default();

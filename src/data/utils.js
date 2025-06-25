@@ -16,9 +16,6 @@ export const loadBoards = async (state, setState, setTemp, forceRefresh) => {
         const boards = forceRefresh ?
             await Repo(state.api).boards.getRemote() :
             await Repo(state.api).boards.getLocalOrRemote();
-
-        console.log(boards);
-
         setState({ ...state, boards });
     }
     catch (err) {
@@ -73,7 +70,7 @@ export const loadThreads = async (state, setTemp, forceRefresh) => {
         }
     }
     setTemp(prev => ({ ...prev, isFetchingThreads: false }));
-}
+};
 export const loadComments = async (state, setTemp, refresh) => {
     setTemp(prev => ({
         ...prev,
@@ -182,10 +179,8 @@ export const uploadThread = async (state, setState, setTemp, data) => {
     }
     setTemp(prev => ({ ...prev, isUploadingThread: false }));
 };
-
 export const updateWatcher = async (state, setState) => {
-    console.log('updateWatcher');
-    const newWatching = state.watching.map(async watched => {
+    const newWatching = await Promise.all(state.watching.map(async watched => {
         const newComments = await Repo(state.api).comments.getRemote(watched.boardId, watched.threadId);
         const diff = newComments.slice(watched.last);
         const you = newComments.filter(com => quotes(com).some(id => state.myComments.includes(id)));
@@ -194,6 +189,6 @@ export const updateWatcher = async (state, setState) => {
             new: diff.length,
             you: you.length,
         };
-    });
+    }));
     setState(prev => ({ ...prev, watching: newWatching }));
-}
+};

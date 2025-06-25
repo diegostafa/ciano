@@ -48,6 +48,11 @@ const defaultTemp = {
     commentsFetchErrorRequest: null,
     commentsFetchErrorResponse: null,
     commentsFetchErrorUnknown: null,
+
+    formMediaError: null,
+    formNameError: null,
+    formComError: null,
+    formSubError: null,
 };
 export const hasBoardsErrors = (temp) => {
     return temp.boardsFetchErrorTimeout !== null ||
@@ -67,10 +72,15 @@ export const hasCommentsErrors = (temp) => {
         temp.commentsFetchErrorResponse !== null ||
         temp.commentsFetchErrorUnknown !== null;
 };
+export const hasFormErrors = (temp) => {
+    return temp.formMediaError !== null ||
+        temp.formNameError !== null ||
+        temp.formComError !== null ||
+        temp.formSubError !== null;
+};
 export const isOnline = (temp) => {
     return temp.connType !== 'none';
 };
-
 export const Temp = {
     default: () => defaultTemp,
     switchApi: (temp) => {

@@ -13,7 +13,7 @@ export const About = () => {
     const { config } = useContext(Ctx);
     const { width, height } = useWindowDimensions();
     const isLandscape = width > height;
-    return <ScrollView style={{ padding: 20, flex: 1, gap: 20 }}>
+    return <ScrollView style={{ padding: 20, flex: 1, gap: 20, backgroundColor: theme.colors.card, }}>
         <ThemedText content={'Ciano'} style={{ fontSize: 24 * config.uiFontScale, fontWeight: 'bold', textAlign: 'center' }} />
         <ThemedText content={'Version: 1.0.0'} style={{ textAlign: 'center' }} />
         <Col style={{ flex: 1, marginTop: 20, gap: 20, }}>
@@ -31,7 +31,7 @@ export const About = () => {
                                 Linking.openURL(url);
                             });
                         }}>
-                        <Row style={{ padding: 15, alignItems: 'center', gap: 10, backgroundColor: theme.colors.highlight }}>
+                        <Row style={{ padding: 15, alignItems: 'center', gap: 10, backgroundColor: theme.colors.background }}>
                             <ThemedIcon name={'logo-github'} />
                             <ThemedText content={'Find us on GitHub!'} />
                         </Row>
@@ -47,7 +47,7 @@ export const About = () => {
                                 Linking.openURL(url);
                             });
                         }}>
-                        <Row style={{ padding: 15, alignItems: 'center', gap: 10, backgroundColor: theme.colors.highlight }}>
+                        <Row style={{ padding: 15, alignItems: 'center', gap: 10, backgroundColor: theme.colors.background }}>
                             <ThemedIcon name={'logo-github'} />
                             <ThemedText content={'Report an issue!'} />
                         </Row>
