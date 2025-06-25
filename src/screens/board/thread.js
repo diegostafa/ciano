@@ -61,7 +61,6 @@ export const ThreadHeaderRight = () => {
                 setThreadActions(false);
                 await setStateAndSave(setState, 'watching', [...state.watching, {
                     thread,
-                    last: thread.replies,
                     new: 0,
                     you: 0,
                 }]);
@@ -619,10 +618,9 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                         setCreateComment(false);
                         await loadComments(state, setTemp, true);
                         if (config.autoWatchThreads) {
-                            if (!state.watching.some(item => item.threadId === thread.id)) {
+                            if (!state.watching.some(item => item.thread.id === thread.id)) {
                                 await setStateAndSave(setState, 'watching', [...state.watching, {
                                     thread,
-                                    last: temp.comments.length,
                                     new: 0,
                                     you: 0
                                 }]);

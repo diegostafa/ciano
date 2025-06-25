@@ -150,8 +150,8 @@ const WatcherItem = ({ item }) => {
                     params: { screen: THREAD_KEY },
                 });
             }}>
-            <Row style={{ padding: 15 }}>
-                <Image source={{ uri: thumb }} />
+            <Row style={{ padding: 15, alignItems: 'center', gap: 20 }}>
+                <Image src={thumb} style={{ borderRadius: 100 }} width={50} height={50} />
                 <HtmlText value={sign} />
                 <Col style={{ gap: 5 }}>
                     {item.new > 0 &&

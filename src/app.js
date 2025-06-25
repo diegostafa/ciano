@@ -1,7 +1,7 @@
 import { addEventListener } from '@react-native-community/netinfo';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
 import { AppState, Platform, useColorScheme, useWindowDimensions } from 'react-native';
@@ -10,8 +10,9 @@ import { enableScreens } from 'react-native-screens';
 
 import { Col, TabIcon } from './components.js';
 import { Config, themeModes } from './context/config.js';
-import { State } from './context/state.js';
+import { State, totNew, totYou } from './context/state.js';
 import { Temp } from './context/temp.js';
+import { updateWatcher } from './data/utils.js';
 import { BOARD_TAB_KEY, BoardTab } from './screens/board/tab.js';
 import { THREAD_KEY } from './screens/board/thread.js';
 import { History } from './screens/history.js';
@@ -67,7 +68,7 @@ export const App = () => {
     React.useEffect(() => {
         if (state && config && !watcherTask) {
             const task = setInterval(async () => {
-                // await updateWatcher(state, setState);
+                await updateWatcher(state, setState);
             }, config.watcherUpdateSecs * 1000)
             setWatchertask(task);
         }
@@ -100,8 +101,12 @@ export const App = () => {
     </Ctx.Provider>;
 };
 const BottomNav = () => {
+    const { state } = React.useContext(Ctx);
     const { width, height } = useWindowDimensions();
+    const theme = useTheme();
     const isVertical = width < height;
+    const totNewReplies = totNew(state);
+    const totYouReplies = totYou(state);
 
     return <SafeAreaView style={{ flex: 1 }}>
         <Tab.Navigator
@@ -119,6 +124,8 @@ const BottomNav = () => {
                 name={WATCHER_TAB_KEY}
                 component={Watcher}
                 options={{
+                    tabBarBadge: totNewReplies > 0 ? totNewReplies : undefined,
+                    tabBarBadgeStyle: { backgroundColor: totYouReplies > 0 ? theme.colors.primary : undefined },
                     headerRight: WatcherHeaderRight,
                     tabBarIcon: TabIcon('notifications'),
                     headerStyle: { height: HEADER_HEIGHT },

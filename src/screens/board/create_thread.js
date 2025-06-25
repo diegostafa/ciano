@@ -52,10 +52,9 @@ export const CreateThreadHeaderRight = () => {
                     setNeedsConfirmation(false);
                     const thread = await uploadThread(state, setState, setTemp, form);
                     if (thread && config.autoWatchThreadsCreated) {
-                        if (!state.watching.some(item => item.threadId === thread.id)) {
+                        if (!state.watching.some(item => item.thread.id === thread.id)) {
                             await setStateAndSave(setState, 'watching', [...state.watching, {
                                 thread,
-                                last: temp.comments.length,
                                 new: 0,
                                 you: 0
                             }]);

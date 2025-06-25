@@ -14,7 +14,7 @@ const defaultState = {
     catalogRev: false,
     threadRev: false,
     showNoConnectionNotice: true,
-    api: api.ciano,
+    api: api.chan,
 };
 export const State = {
     get: async (key) => getLocal(key),
@@ -144,4 +144,14 @@ export const threadSorts = [
 export const setStateAndSave = async (setState, key, value) => {
     setState(prev => ({ ...prev, [key]: value }));
     await State.set(key, value);
+};
+export const totNew = (state) => {
+    let count = 0;
+    state.watching.forEach(watched => { count += watched.new; });
+    return count;
+};
+export const totYou = (state) => {
+    let count = 0;
+    state.watching.forEach(watched => { count += watched.you; });
+    return count;
 };

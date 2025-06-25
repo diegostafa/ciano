@@ -177,6 +177,9 @@ export const CatalogHeaderRight = () => {
             items={catalogSorts.map(({ name, sort, icon }, index) => {
                 return [name, icon, async () => {
                     setSortActions(false);
+                    if (state.catalogSort === index) {
+                        return;
+                    }
                     setTemp(prev => ({ ...prev, isComputingThreads: true }));
                     async function defer() {
                         await setStateAndSave(setState, 'catalogSort', index);
@@ -366,7 +369,6 @@ export const Catalog = () => {
                     ['watch', 'eye', async () => {
                         await setStateAndSave(setState, 'watching', [...state.watching, {
                             thread: selectedThread,
-                            last: selectedThread.replies,
                             new: 0,
                             you: 0,
                         }]);

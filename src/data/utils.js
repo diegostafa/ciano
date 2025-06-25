@@ -180,13 +180,14 @@ export const uploadThread = async (state, setState, setTemp, data) => {
     setTemp(prev => ({ ...prev, isUploadingThread: false }));
 };
 export const updateWatcher = async (state, setState) => {
-    console.log("updating watcher");
+    console.log(state.watching);
+
     const newWatching = await Promise.all(state.watching.map(async watched => {
-        const newComments = await Repo(state.api).comments.getRemote(watched.boardId, watched.threadId);
-        const diff = newComments.slice(watched.last);
-        const you = newComments.filter(com => quotes(com).some(id => state.myComments.includes(id)));
+        const newComments = await Repo(state.api).comments.getRemote(watched.thread.board, watched.thread.id);
+        const diff = newComments.slice(watched.thread.replies);
+        const you = diff.filter(com => quotes(com).some(id => state.myComments.includes(id)));
         return {
-            ...watched,
+            thread: { ...watched.thread, replies: newComments.length },
             new: diff.length,
             you: you.length,
         };
