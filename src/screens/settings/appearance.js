@@ -5,7 +5,7 @@ import { ScrollView } from 'react-native';
 
 import { Ctx } from '../../app';
 import { Col, EnumProp, Row, Section, ThemedText, Toggle, ToggleProp } from '../../components';
-import { Config } from '../../context/config';
+import { setConfigAndSave } from '../../context/config';
 import { relativeTime } from '../../helpers';
 
 export const APPEARANCE_KEY = 'Appearance';
@@ -31,8 +31,7 @@ export const Appearance = () => {
                         isEnabled={config.borderRadius > 0}
                         onToggle={async value => {
                             const borderRadius = value ? 10 : 0;
-                            setConfig({ ...config, borderRadius });
-                            await Config.set('borderRadius', borderRadius);
+                            await setConfigAndSave(setConfig, 'borderRadius', borderRadius);
                         }} />
                 </Row>
             </Section>

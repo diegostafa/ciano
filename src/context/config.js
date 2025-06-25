@@ -25,6 +25,7 @@ const defaultConfig = {
     swipeToReply: false,
     showCatalogThumbnails: true,
     autoWatchThreads: true,
+    autoWatchThreadsCreated: true,
     muteVideos: false,
     loopVideos: true,
     watcherUpdateSecs: 10,
@@ -48,6 +49,10 @@ export const Config = {
         return restored;
     },
     default: () => defaultConfig
+};
+export const setConfigAndSave = async (setConfig, key, value) => {
+    setConfig(prev => ({ ...prev, [key]: value }));
+    await Config.set(key, value);
 };
 export const themeModes = [
     'light',

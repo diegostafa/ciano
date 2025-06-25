@@ -6,7 +6,7 @@ import React, { useContext } from 'react';
 import { ScrollView } from 'react-native';
 
 import { Ctx } from '../../app';
-import { Col, ModalAlert, Section, ThemedButton, ThemedText } from '../../components';
+import { Col, ModalAlert, Section, ThemedButton, ThemedText, ToggleProp } from '../../components';
 import { Config } from '../../context/config';
 import { State } from '../../context/state';
 import { Temp } from '../../context/temp';
@@ -22,7 +22,6 @@ export const Advanced = () => {
 
     return <ScrollView style={{ backgroundColor: theme.colors.card, }}>
         <Col style={{ padding: 10, gap: 10 }}>
-
             <ModalAlert
                 visible={needsConfirmation}
                 msg={'Delete app data?'}
@@ -42,9 +41,9 @@ export const Advanced = () => {
                     await AsyncStorage.clear();
                 }}
             />
-            <Section title={"Data"}>
+            <Section title={"Server"}>
                 <Col style={{ gap: 10 }}>
-                    <ThemedText content={"Switch server"} />
+                    <ThemedText style={{ textAlign: 'center' }} content={"Switch server"} />
                     <SegmentedControl
                         tabStyle={{ borderRadius: config.borderRadius }}
                         values={['Ciano', '4chan']}
@@ -64,6 +63,11 @@ export const Advanced = () => {
                     />
                 </Col>
 
+            </Section>
+            <Section title={'Performance'}>
+                <ToggleProp propName={'loadFaster'} desc={'Load comments incrementally?'} />
+            </Section>
+            <Section title={'Data'}>
                 <Col style={{ backgroundColor: theme.colors.danger, borderRadius: config.borderRadius, overflow: 'hidden' }}>
                     <ThemedButton onPress={async () => { setNeedsConfirmation(true); }}>
                         <Col style={{ padding: 10, alignItems: 'center' }}>

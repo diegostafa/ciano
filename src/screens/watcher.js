@@ -5,6 +5,7 @@ import { FlatList, Image, Text } from 'react-native';
 
 import { BOTTOM_NAV_KEY, Ctx } from '../app';
 import { Col, HeaderIcon, HtmlText, ListSeparator, ModalAlert, Row, ThemedAsset, ThemedButton, ThemedText } from '../components';
+import { setStateAndSave } from '../context/state';
 import { Repo } from '../data/repo';
 import { updateWatcher } from '../data/utils';
 import { getThreadSignature, historyAdd } from '../helpers';
@@ -14,7 +15,7 @@ import { THREAD_KEY } from './board/thread';
 export const WATCHER_TAB_KEY = 'WatcherTab';
 
 export const WatcherHeaderRight = () => {
-    const { setState, temp, setTemp } = useContext(Ctx);
+    const { state, setState, temp, setTemp } = useContext(Ctx);
     const [confirm, setConfirm] = useState(false);
 
     if (temp.watcherMultiSelection.size === 0) {
@@ -29,9 +30,9 @@ export const WatcherHeaderRight = () => {
             right={'Yes'}
             onClose={() => { setConfirm(false); }}
             onPressLeft={() => { setConfirm(false); }}
-            onPressRight={() => {
+            onPressRight={async () => {
                 setConfirm(false);
-                setState(prev => ({ ...prev, watching: prev.watching.filter(item => !temp.watcherMultiSelection.has(item.thread.id)) }));
+                await setStateAndSave(setState, 'watching', state.watching.filter(item => !temp.watcherMultiSelection.has(item.thread.id)));
                 setTemp(prev => ({ ...prev, watcherMultiSelection: new Set() }));
             }}
         />
@@ -125,7 +126,7 @@ const WatcherItem = ({ item }) => {
                 });
 
             }}
-            onPress={() => {
+            onPress={async () => {
                 if (isSelecting) {
                     setTemp(prev => {
                         const updated = new Set(prev.watcherMultiSelection);
@@ -140,8 +141,8 @@ const WatcherItem = ({ item }) => {
                     return;
                 }
 
-                historyAdd(state, setState, item.thread)
-                setState(prev => ({ ...prev, board: item.thread.board }));
+                await historyAdd(state, setState, item.thread)
+                await setStateAndSave(setState, 'board', item.thread.board);
                 setTemp(prev => ({ ...prev, thread: item.thread }));
 
                 sailor.navigate(BOTTOM_NAV_KEY, {

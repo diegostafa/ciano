@@ -15,7 +15,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
 
 import { Ctx, HEADER_HEIGHT, isAndroid } from './app';
-import { Config } from './context/config';
+import { setConfigAndSave } from './context/config';
 import { Repo } from './data/repo';
 import { capitalize, downloadMedia, getImageAsset, isGif, isImage, isVideo } from './helpers';
 import { DarkHtmlTheme, LightHtmlTheme } from './theme';
@@ -708,10 +708,7 @@ export const ToggleProp = ({ propName, desc }) => {
         </Col>
         <Toggle
             isEnabled={config[propName]}
-            onToggle={async value => {
-                setConfig({ ...config, [propName]: value });
-                Config.set(propName, value);
-            }} />
+            onToggle={async value => { await setConfigAndSave(setConfig, propName, value); }} />
     </Row>
 };
 export const SliderProp = ({ propName, desc, min, max, step }) => {
@@ -729,10 +726,7 @@ export const SliderProp = ({ propName, desc, min, max, step }) => {
                 maximumValue={max}
                 upperLimit={max}
                 step={step}
-                onValueChange={async value => {
-                    setConfig({ ...config, [propName]: value });
-                    await Config.set(propName, value);
-                }}
+                onValueChange={async value => { await setConfigAndSave(setConfig, propName, value); }}
             />
             <ThemedText content={`${max}x`} />
         </Row>
@@ -772,10 +766,7 @@ export const EnumProp = ({ propName, desc, values }) => {
             tabStyle={{ borderRadius: config.borderRadius }}
             values={values}
             selectedIndex={config[propName] || 0}
-            onChange={async (event) => {
-                setConfig({ ...config, [propName]: event.nativeEvent.selectedSegmentIndex });
-                await Config.set(propName, event.nativeEvent.selectedSegmentIndex);
-            }}
+            onChange={async (event) => { await setConfigAndSave(setConfig, propName, event.nativeEvent.selectedSegmentIndex); }}
             tintColor={theme.colors.primary}
             backgroundColor={theme.colors.highlight}
             fontStyle={{ color: theme.colors.text }}

@@ -4,6 +4,7 @@ import { FlatList } from 'react-native';
 
 import { Ctx } from '../../app';
 import { BoardInfo, Col, HeaderIcon, HeaderThemedText, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedButton, ThemedText, UpdateGap } from '../../components';
+import { setStateAndSave } from '../../context/state';
 import { hasBoardsErrors } from '../../context/temp';
 import { loadBoards } from '../../data/utils';
 
@@ -62,14 +63,13 @@ export const SetupBoards = () => {
     }, [setTemp, temp.setupBoardsReflist]);
 
     React.useEffect(() => {
-        const unsubscribe = sailor.addListener('beforeRemove', (e) => {
+        const unsubscribe = sailor.addListener('beforeRemove', async (e) => {
             if (temp.setupBoardsFilter !== null) {
                 setTemp(prev => ({ ...prev, setupBoardsFilter: null }));
                 e.preventDefault();
                 return;
             }
-            setState(prev => ({ ...prev, activeBoards: [...activeBoards].sort() }));
-            return;
+            await setStateAndSave(setState, 'activeBoards', [...activeBoards].sort());
         });
         return unsubscribe;
     }, [activeBoards, sailor, setState, setTemp, temp]);

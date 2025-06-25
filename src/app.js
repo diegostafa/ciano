@@ -66,19 +66,11 @@ export const App = () => {
     }, [config, state]);
 
     React.useEffect(() => {
-        if (state && config) {
-            if (config.enableWatcher) {
-                const task = setInterval(async () => {
-                    await updateWatcher(state, setState);
-                    setWatchertask(task);
-                }, config.watcherUpdateSecs * 1000)
-            }
-            else {
-                if (watcherTask) {
-                    clearInterval(watcherTask);
-                    setWatchertask(null);
-                }
-            }
+        if (state && config && !watcherTask) {
+            const task = setInterval(async () => {
+                await updateWatcher(state, setState);
+            }, config.watcherUpdateSecs * 1000)
+            setWatchertask(task);
         }
     }, [config, state, watcherTask]);
 

@@ -1,4 +1,4 @@
-import { catalogSorts, threadSorts } from '../context/state';
+import { catalogSorts, setStateAndSave, threadSorts } from '../context/state';
 import { quotes } from '../helpers';
 import { Repo } from './repo';
 
@@ -16,8 +16,7 @@ export const loadBoards = async (state, setState, setTemp, forceRefresh) => {
         const boards = forceRefresh ?
             await Repo(state.api).boards.getRemote() :
             await Repo(state.api).boards.getLocalOrRemote();
-        console.log(boards);
-        setState({ ...state, boards });
+        await setStateAndSave(setState, 'boards', boards);
     }
     catch (err) {
         console.log(err);
@@ -127,7 +126,7 @@ export const uploadComment = async (state, setState, setTemp, data) => {
 
     try {
         const comment = await Repo(state.api).comments.create(data.form, data.media);
-        setState(prev => ({ ...prev, myComments: [...prev.myComments, comment.id] }))
+        await setStateAndSave(setState, 'myComments', [...state.myComments, comment.id]);
     }
     catch (err) {
         console.log(err);
@@ -159,7 +158,7 @@ export const uploadThread = async (state, setState, setTemp, data) => {
 
     try {
         const thread = await Repo(state.api).threads.create(data.form,);
-        setState(prev => ({ ...prev, myComments: [...prev.myComments, thread.id] }))
+        await setStateAndSave(setState, 'myComments', [...state.myComments, thread.id]);
         await loadThreads(state, setState, null, true);
         return thread
     }
@@ -181,6 +180,7 @@ export const uploadThread = async (state, setState, setTemp, data) => {
     setTemp(prev => ({ ...prev, isUploadingThread: false }));
 };
 export const updateWatcher = async (state, setState) => {
+    console.log("updating watcher");
     const newWatching = await Promise.all(state.watching.map(async watched => {
         const newComments = await Repo(state.api).comments.getRemote(watched.boardId, watched.threadId);
         const diff = newComments.slice(watched.last);
@@ -191,5 +191,5 @@ export const updateWatcher = async (state, setState) => {
             you: you.length,
         };
     }));
-    setState(prev => ({ ...prev, watching: newWatching }));
+    await setStateAndSave(setState, 'watching', newWatching);
 };

@@ -5,7 +5,7 @@ import { TextInput } from 'react-native-gesture-handler';
 
 import { Ctx, HEADER_HEIGHT, NAVBAR_WIDTH } from '../../app';
 import { BoardInfo, Col, Fab, FooterList, HeaderIcon, HeaderThemedText, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedButton, ThemedIcon, ThemedText, UpdateGap } from '../../components';
-import { catalogModes, catalogSorts, State } from '../../context/state';
+import { catalogModes, catalogSorts, setStateAndSave, State } from '../../context/state';
 import { hasBoardsErrors, hasThreadsErrors, isOnline } from '../../context/temp';
 import { Repo } from '../../data/repo';
 import { loadBoards, loadThreads } from '../../data/utils';
@@ -109,7 +109,7 @@ export const CatalogHeaderTitle = () => {
                                     return;
                                 }
                                 const newState = { ...state, board: item.code };
-                                setState(newState);
+                                await setStateAndSave(setState, 'board', item.code);
                                 setSelectBoard(false);
                                 await loadThreads(newState, setTemp, true);
                             }}>
@@ -150,14 +150,14 @@ export const CatalogHeaderRight = () => {
                     setCatalogActions(false);
                     setTemp(prev => ({ ...prev, isComputingThreads: true }));
                     async function defer() {
-                        setState({ ...state, catalogRev: !state.catalogRev });
+                        await setStateAndSave(setState, 'catalogRev', !state.catalogRev);
                         setTemp(prev => ({ ...prev, threads: [...prev.threads].reverse(), isComputingThreads: false }));
                     }
                     defer()
                 }],
                 [`View as ${catalogModes[nextCatalogMode]}`, catalogModes[nextCatalogMode], async () => {
                     setCatalogActions(false);
-                    setState({ ...state, catalogViewMode: nextCatalogMode });
+                    await setStateAndSave(setState, 'catalogViewMode', nextCatalogMode);
                     await State.set('catalogViewMode', nextCatalogMode);
                 }],
                 ['Go top', 'arrow-up', async () => {
@@ -178,7 +178,7 @@ export const CatalogHeaderRight = () => {
                     setSortActions(false);
                     setTemp(prev => ({ ...prev, isComputingThreads: true }));
                     async function defer() {
-                        setState({ ...state, catalogSort: index });
+                        await setStateAndSave(setState, 'catalogSort', index);
                         setTemp(prev => ({ ...prev, threads: [...prev.threads].sort(sort), isComputingThreads: false }));
                         await State.set('catalogSort', index);
                     }
@@ -233,7 +233,7 @@ export const Catalog = () => {
         }
         if (!state.board) {
             if (state.activeBoards.length > 0) {
-                setState({ ...state, board: state.activeBoards[0] });
+                setStateAndSave(setState, 'board', state.activeBoards[0]);
             }
             return;
         }
@@ -256,9 +256,7 @@ export const Catalog = () => {
             right={'Ok'}
             onPressLeft={async () => {
                 setNoConnectionModal(false);
-                const newState = { ...state, showNoConnectionNotice: false };
-                setState(newState);
-                await State.save(newState);
+                await setStateAndSave(setState, 'showNoConnectionNotice', false);
             }}
             onPressRight={() => { setNoConnectionModal(false); }}
         />
@@ -362,19 +360,17 @@ export const Catalog = () => {
             onClose={() => { setSelectedThread(null); }}
             items={[
                 (isWatching ?
-                    ['Unwatch', 'eye-off', () => {
-                        setState(prev => ({ ...prev, watching: prev.watching.filter(item => item.thread.id !== selectedThread.id) }));
+                    ['Unwatch', 'eye-off', async () => {
+                        await setStateAndSave(setState, 'watching', state.watching.filter(item => item.thread.id !== selectedThread.id));
                         setSelectedThread(null);
                     }] :
-                    ['watch', 'eye', () => {
-                        setState(prev => ({
-                            ...prev, watching: [...prev.watching, {
-                                thread: selectedThread,
-                                last: selectedThread.replies,
-                                new: 0,
-                                you: 0,
-                            }]
-                        }));
+                    ['watch', 'eye', async () => {
+                        await setStateAndSave(setState, 'watching', [...state.watching, {
+                            thread: selectedThread,
+                            last: selectedThread.replies,
+                            new: 0,
+                            you: 0,
+                        }]);
                         setSelectedThread(null);
                     }
                     ])
@@ -518,7 +514,7 @@ const GridTile = ({ thread, tw, th, setSelectedThread }) => {
         <ThemedButton
             onLongPress={() => { setSelectedThread(thread); }}
             onPress={async () => {
-                historyAdd(state, setState, thread)
+                await historyAdd(state, setState, thread)
                 sailor.navigate(THREAD_KEY);
             }}>
             <Col style={{
@@ -577,7 +573,7 @@ const ListTile = ({ thread, th, setSelectedThread }) => {
             <ThemedButton
                 onLongPress={() => { setSelectedThread(thread); }}
                 onPress={async () => {
-                    historyAdd(state, setState, thread);
+                    await historyAdd(state, setState, thread);
                     sailor.navigate(THREAD_KEY);
                 }}>
                 <Col style={{

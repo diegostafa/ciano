@@ -4,6 +4,7 @@ import { decode } from 'he';
 import RNBlobUtil from 'react-native-blob-util';
 
 import { BOARD_NAV_KEY, CATALOG_KEY } from './app';
+import { setStateAndSave } from './context/state';
 import { Repo } from './data/repo';
 
 export const stripHtml = (str) => {
@@ -34,12 +35,12 @@ export const getLocal = async (key) => {
 export const relativeTime = (tstamp) => {
     return formatDistanceToNow(Number(tstamp) * 1000, { addSuffix: true });
 };
-export const historyAdd = (state, setState, thread) => {
+export const historyAdd = async (state, setState, thread) => {
     if (!thread) {
         return state.history;
     }
     const others = state.history.filter(item => item.id !== thread.id);
-    setState({ ...state, history: [...others, thread] });
+    await setStateAndSave(setState, 'history', [...others, thread]);
 };
 export const getComment = (comments, threadId) => {
     return comments.find(item => item.id === threadId);

@@ -7,6 +7,7 @@ import ImageCropPicker from 'react-native-image-crop-picker';
 
 import { Ctx, HEADER_HEIGHT, isIos } from '../../app';
 import { Col, HeaderButton, HeaderThemedText, ModalAlert, ModalLocalMediaPreview, Row, ThemedButton, ThemedIcon, ThemedText } from '../../components';
+import { setStateAndSave } from '../../context/state';
 import { hasFormErrors } from '../../context/temp';
 import { uploadThread } from '../../data/utils';
 import { getCurrFullBoard } from '../../helpers';
@@ -50,16 +51,14 @@ export const CreateThreadHeaderRight = () => {
                 onPressRight={async () => {
                     setNeedsConfirmation(false);
                     const thread = await uploadThread(state, setState, setTemp, form);
-                    if (thread && config.autoWatchThreads) {
+                    if (thread && config.autoWatchThreadsCreated) {
                         if (!state.watching.some(item => item.threadId === thread.id)) {
-                            setState(prev => ({
-                                ...prev, watching: [...prev.watching, {
-                                    thread,
-                                    last: temp.comments.length,
-                                    new: 0,
-                                    you: 0
-                                }]
-                            }))
+                            await setStateAndSave(setState, 'watching', [...state.watching, {
+                                thread,
+                                last: temp.comments.length,
+                                new: 0,
+                                you: 0
+                            }]);
                         }
                     }
                     sailor.goBack();

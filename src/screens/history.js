@@ -5,6 +5,7 @@ import { TextInput } from 'react-native-gesture-handler';
 
 import { Ctx, HEADER_HEIGHT } from '../app';
 import { Col, HeaderIcon, ModalAlert, Row, ThemedAsset, ThemedButton, ThemedText } from '../components';
+import { setStateAndSave } from '../context/state';
 import { Repo } from '../data/repo';
 import { getThreadHistorySignature, historyAdd, threadContains } from '../helpers';
 import { THREAD_KEY } from './board/thread';
@@ -42,8 +43,8 @@ export const History = () => {
             right={'No'}
             left={'Yes'}
             onPressRight={() => { setForget(null); }}
-            onPressLeft={() => {
-                setState({ ...state, history: state.history.filter(item => item.id !== forget.id) });
+            onPressLeft={async () => {
+                await setStateAndSave(setState, 'history', state.history.filter(item => item.id !== forget.id));
                 setForget(null);
             }}
         />
@@ -54,8 +55,8 @@ export const History = () => {
             right={'No'}
             left={'Yes'}
             onPressRight={() => { setForgetAll(false); }}
-            onPressLeft={() => {
-                setState({ ...state, history: [] });
+            onPressLeft={async () => {
+                await setStateAndSave(setState, 'history', []);
                 setForgetAll(false);
             }}
         />

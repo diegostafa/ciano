@@ -13,17 +13,12 @@ export const Behaviour = () => {
 
     return <ScrollView style={{ backgroundColor: theme.colors.card, }}>
         <Col style={{ padding: 10, gap: 10 }}>
-            <Section title={'Catalog'}>
+            <Section title={'Threads and comments'}>
                 <ToggleProp propName={'showCatalogThumbnails'} desc={'Show thumbnails?'} />
-            </Section>
-
-            <Section title={'Thread'}>
                 <ToggleProp propName={'showNames'} desc={'Show names of posters?'} />
-            </Section>
-
-            <Section title={'Posting'}>
                 <ToggleProp propName={'showOptionalFields'} desc={'Show optional fields in forms?'} />
-                <ToggleProp propName={'autoWatchThreads'} desc={'Automatically watch a thread you reply to?'} />
+                <ToggleProp propName={'autoWatchThreads'} desc={'Automatically watch threads you comment on?'} />
+                <ToggleProp propName={'autoWatchThreadsCreated'} desc={'Automatically watch threads you create?'} />
             </Section>
 
             <Section title={'Media'}>

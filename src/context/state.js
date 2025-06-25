@@ -141,3 +141,7 @@ export const threadSorts = [
         }
     },
 ];
+export const setStateAndSave = async (setState, key, value) => {
+    setState(prev => ({ ...prev, [key]: value }));
+    await State.set(key, value);
+};

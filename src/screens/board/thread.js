@@ -8,7 +8,7 @@ import ImageCropPicker from 'react-native-image-crop-picker';
 
 import { Ctx, HEADER_HEIGHT } from '../../app';
 import { Col, Fab, FooterList, HeaderIcon, HtmlText, ListSeparator, ModalAlert, ModalLocalMediaPreview, ModalMediaPreview, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedButton, ThemedIcon, ThemedText, UpdateGap } from '../../components';
-import { State, threadSorts } from '../../context/state';
+import { setStateAndSave, threadSorts } from '../../context/state';
 import { hasCommentsErrors } from '../../context/temp';
 import { Repo } from '../../data/repo';
 import { loadComments, uploadComment } from '../../data/utils';
@@ -52,21 +52,19 @@ export const ThreadHeaderRight = () => {
     const items = [
         (temp.comments !== null &&
             isWatching ?
-            ['unwatch', 'eye-off', () => {
+            ['unwatch', 'eye-off', async () => {
                 setThreadActions(false);
-                setState(prev => ({ ...prev, watching: prev.watching.filter(item => item.thread.id !== thread.id) }));
+                await setStateAndSave(setState, 'watching', state.watching.filter(item => item.thread.id !== thread.id));
             }
             ] :
-            ['watch', 'eye', () => {
+            ['watch', 'eye', async () => {
                 setThreadActions(false);
-                setState(prev => ({
-                    ...prev, watching: [...prev.watching, {
-                        thread,
-                        last: thread.replies,
-                        new: 0,
-                        you: 0,
-                    }]
-                }));
+                await setStateAndSave(setState, 'watching', [...state.watching, {
+                    thread,
+                    last: thread.replies,
+                    new: 0,
+                    you: 0,
+                }]);
             }]
         ),
         ['Sort...', 'options', () => {
@@ -77,7 +75,7 @@ export const ThreadHeaderRight = () => {
             setThreadActions(false);
             setTemp(prev => ({ ...prev, isComputingComments: true }));
             async function defer() {
-                setState(prev => ({ ...prev, threadRev: !prev.threadRev }));
+                await setStateAndSave(setState, 'threadRev', !state.threadRev);
                 // don't sort op
                 if (temp.comments.length > 0) {
                     const head = temp.comments[0];
@@ -119,8 +117,7 @@ export const ThreadHeaderRight = () => {
                     setSortActions(false);
                     setTemp(prev => ({ ...prev, isComputingComments: true }));
                     async function defer() {
-                        setState({ ...state, threadSort: index });
-                        await State.set('catalogSort', index);
+                        await setStateAndSave(setState, 'threadSort', index);
                         // don't sort op
                         if (temp.comments.length > 0) {
                             const head = temp.comments[0];
@@ -623,14 +620,12 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                         await loadComments(state, setTemp, true);
                         if (config.autoWatchThreads) {
                             if (!state.watching.some(item => item.threadId === thread.id)) {
-                                setState(prev => ({
-                                    ...prev, watching: [...prev.watching, {
-                                        thread,
-                                        last: temp.comments.length,
-                                        new: 0,
-                                        you: 0
-                                    }]
-                                }))
+                                await setStateAndSave(setState, 'watching', [...state.watching, {
+                                    thread,
+                                    last: temp.comments.length,
+                                    new: 0,
+                                    you: 0
+                                }]);
                             }
                         }
                     }}>
@@ -666,13 +661,10 @@ const CommentMenu = ({ selectedComment, setSelectedComment }) => {
             // todo
             setSelectedComment(null)
         }],
-        [isMine ? 'Unmark as yours' : 'Mark as yours', isMine ? 'arrow-undo' : 'checkmark', () => {
-            if (isMine) {
-                setState({ ...state, myComments: state.myComments.filter(item => item !== selectedComment.id) })
-            }
-            else {
-                setState({ ...state, myComments: [...state.myComments, selectedComment.id] })
-            }
+        [isMine ? 'Unmark as yours' : 'Mark as yours', isMine ? 'arrow-undo' : 'checkmark', async () => {
+            await setStateAndSave(setState, 'myComments', isMine ?
+                state.myComments.filter(item => item !== selectedComment.id) :
+                [...state.myComments, selectedComment.id]);
             setSelectedComment(null)
         }],
     ];
