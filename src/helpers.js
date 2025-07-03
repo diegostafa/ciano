@@ -26,11 +26,10 @@ export const firstSplitAt = (text, needle) => {
     return index !== -1 ? text.substring(0, index) : text;
 };
 export const setLocal = async (key, value) => {
-    return AsyncStorage.setItem(key, JSON.stringify(value));
+    return await AsyncStorage.setItem(key, JSON.stringify(value));
 };
 export const getLocal = async (key) => {
-    const val = AsyncStorage.getItem(key).then(res => JSON.parse(res));
-    return val;
+    return await AsyncStorage.getItem(key).then(res => JSON.parse(res));
 };
 export const relativeTime = (tstamp) => {
     return formatDistanceToNow(Number(tstamp) * 1000, { addSuffix: true });
@@ -113,12 +112,16 @@ export const isVideo = (ext) => {
     return ext === 'mp4' || ext === 'webm';
 };
 export const getCurrFullBoard = (state) => {
+    if (!state.boards) {
+        return null;
+    }
     return state.boards.find(item => item.code === state.board);
 };
 export const downloadMedia = async (setTemp, state, comment) => {
     try {
         const url = Repo(state.api).media.full(comment);
-        const savepath = `${RNBlobUtil.fs.dirs.DownloadDir}/${comment.file_name}.${comment.media_ext}`;
+        const saveDir = RNBlobUtil.fs.dirs.DownloadDir;
+        const savepath = `${saveDir}/${comment.file_name}.${comment.media_ext}`;
         const result = await RNBlobUtil.config({
             fileCache: true,
             addAndroidDownloads: {

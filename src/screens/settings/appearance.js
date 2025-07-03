@@ -35,7 +35,14 @@ export const Appearance = () => {
                         }} />
                 </Row>
             </Section>
-
+            <Section title={'Layout'}>
+                <EnumProp
+                    propName={'layoutMode'}
+                    desc={'Set the position of the tabs'}
+                    values={['Bottom', 'Top', 'Auto']}
+                    needsRestart
+                />
+            </Section>
             <Section title={"Date format"}>
                 <ToggleProp
                     propName={'relativeTime'}

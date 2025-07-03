@@ -177,6 +177,7 @@ export const uploadThread = async (state, setState, setTemp, data) => {
     }
     setTemp(prev => ({ ...prev, isUploadingThread: false }));
 };
+
 export const updateWatcher = async (state, setState) => {
     const newWatching = await Promise.all(state.watching.map(async watched => {
         try {
@@ -184,7 +185,7 @@ export const updateWatcher = async (state, setState) => {
             const diff = newComments.slice(watched.thread.replies);
             const you = diff.filter(com => quotes(com).some(id => state.myComments.includes(id)));
             return {
-                thread: { ...watched.thread, replies: newComments.length },
+                thread: { ...watched.thread },
                 new: diff.length,
                 you: you.length,
             };
@@ -193,6 +194,6 @@ export const updateWatcher = async (state, setState) => {
             return watched
         }
     }));
-    await setStateAndSave(setState, 'watching',
-        newWatching.concat(state.watching.filter(i => !newWatching.some(j => j.thread.id === i.thread.id))));
+    const merge = newWatching.concat(state.watching.filter(i => !newWatching.some(j => j.thread.id === i.thread.id)));
+    setState({ ...state, watching: merge });
 };

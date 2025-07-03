@@ -3,7 +3,7 @@ import React, { useRef } from 'react';
 import { FlatList, Image, ScrollView, useWindowDimensions } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
 
-import { Ctx, HEADER_HEIGHT, NAVBAR_WIDTH } from '../../app';
+import { BOTTOM_NAV_WIDTH, Ctx, HEADER_HEIGHT } from '../../app';
 import { BoardInfo, Col, Fab, FooterList, HeaderIcon, HeaderThemedText, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedButton, ThemedIcon, ThemedText, UpdateGap } from '../../components';
 import { catalogModes, catalogSorts, setStateAndSave } from '../../context/state';
 import { hasBoardsErrors, hasThreadsErrors, isOnline } from '../../context/temp';
@@ -400,7 +400,7 @@ const GridCatalog = ({ width, height, setSelectedThread }) => {
         tw = width / config.catalogGridCols;
         th = (height - (HEADER_HEIGHT * 2)) / config.catalogGridRows;
     } else {
-        tw = (width - NAVBAR_WIDTH) / config.catalogGridColsLandscape;
+        tw = (width - BOTTOM_NAV_WIDTH) / config.catalogGridColsLandscape;
         th = (height - HEADER_HEIGHT) / config.catalogGridRowsLandscape;
     }
 
@@ -459,7 +459,7 @@ const ListCatalog = ({ width, height, setSelectedThread }) => {
         tw = width;
         th = (height - (HEADER_HEIGHT * 2)) / config.catalogListRows;
     } else {
-        tw = (width - NAVBAR_WIDTH);
+        tw = (width - BOTTOM_NAV_WIDTH);
         th = (height - HEADER_HEIGHT) / config.catalogListRowsLandscape;
     }
 

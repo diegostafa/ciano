@@ -1,6 +1,5 @@
 /* eslint-disable react/react-in-jsx-scope */
 
-
 import { useTheme } from '@react-navigation/native';
 import { ScrollView } from 'react-native';
 

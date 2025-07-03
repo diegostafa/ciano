@@ -1,4 +1,3 @@
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
 import { useTheme } from '@react-navigation/native';
@@ -18,7 +17,6 @@ export const Advanced = () => {
     const { state, setState, temp, setTemp, config, setConfig } = useContext(Ctx);
     const theme = useTheme();
     const [needsConfirmation, setNeedsConfirmation] = React.useState(false);
-
 
     return <ScrollView style={{ backgroundColor: theme.colors.card, }}>
         <Col style={{ padding: 10, gap: 10 }}>
@@ -71,7 +69,7 @@ export const Advanced = () => {
                 <Col style={{ backgroundColor: theme.colors.danger, borderRadius: config.borderRadius, overflow: 'hidden' }}>
                     <ThemedButton onPress={async () => { setNeedsConfirmation(true); }}>
                         <Col style={{ padding: 10, alignItems: 'center' }}>
-                            <ThemedText content={'Clear app data'} />
+                            <ThemedText content={'Reset app data'} />
                         </Col>
                     </ThemedButton>
                 </Col>

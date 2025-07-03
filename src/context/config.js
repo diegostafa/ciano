@@ -2,6 +2,7 @@ import { getLocal, setLocal } from '../helpers';
 
 const defaultConfig = {
     // appearance
+    layoutMode: 2,
     themeMode: 2,
     relativeTime: false,
     catalogGridCols: 3,
@@ -38,7 +39,7 @@ export const Config = {
     get: async (key) => getLocal(key),
     set: async (key, value) => setLocal(key, value),
     save: async (config) => {
-        for (const [key, value] of Object.keys(config)) {
+        for (const [key, value] of Object.entries(config)) {
             await setLocal(key, value);
         }
     },
@@ -58,5 +59,10 @@ export const setConfigAndSave = async (setConfig, key, value) => {
 export const themeModes = [
     'light',
     'dark',
+    'auto',
+];
+export const layoutModes = [
+    'ios',
+    'android',
     'auto',
 ];

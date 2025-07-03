@@ -118,7 +118,7 @@ const HistoryTile = ({ item, th, setForget, setOpen }) => {
         <ThemedButton
             onLongPress={() => { setForget(item); }}
             onPress={() => { setOpen(item); }}>
-            <Row style={{ overflow: 'hidden', marginRight: 10, alignItems: 'center', padding, height: th, gap: 15 }} >
+            <Row style={{ overflow: 'hidden', alignItems: 'center', padding, height: th, gap: 15 }} >
                 <Image src={img} style={{
                     top: 0,
                     borderRadius: th / 2,

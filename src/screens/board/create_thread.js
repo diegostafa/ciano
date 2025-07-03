@@ -5,7 +5,7 @@ import { Image, KeyboardAvoidingView, TouchableHighlight } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
 import ImageCropPicker from 'react-native-image-crop-picker';
 
-import { Ctx, HEADER_HEIGHT, isIos } from '../../app';
+import { Ctx, HEADER_HEIGHT, IS_IOS } from '../../app';
 import { Col, HeaderButton, HeaderThemedText, ModalAlert, ModalLocalMediaPreview, Row, ThemedButton, ThemedIcon, ThemedText } from '../../components';
 import { setStateAndSave } from '../../context/state';
 import { hasFormErrors } from '../../context/temp';
@@ -115,7 +115,7 @@ export const CreateThread = () => {
     }, [once, setTemp]);
 
     return <KeyboardAvoidingView
-        behavior={isIos() ? 'padding' : 'height'}
+        behavior={IS_IOS ? 'padding' : 'height'}
         keyboardVerticalOffset={HEADER_HEIGHT}
         style={{ flex: 1 }}>
         <ModalLocalMediaPreview />

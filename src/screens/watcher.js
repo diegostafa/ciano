@@ -1,10 +1,9 @@
-
 import { useNavigation, useTheme } from '@react-navigation/native';
 import React, { useContext, useState } from 'react';
-import { FlatList, Image, Text } from 'react-native';
+import { FlatList, Image } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 
-import { BOTTOM_NAV_KEY, Ctx } from '../app';
+import { Ctx, NAV_KEY } from '../app';
 import { Col, HtmlText, ListSeparator, Row, ThemedAsset, ThemedButton, ThemedText } from '../components';
 import { setStateAndSave } from '../context/state';
 import { Repo } from '../data/repo';
@@ -29,7 +28,6 @@ export const Watcher = () => {
                 return;
             }
             return;
-
         });
         return unsubscribe;
 
@@ -62,26 +60,23 @@ const WatcherItem = ({ item }) => {
     const thumb = Repo(state.api).media.thumb(item.thread);
     const sign = getThreadSignature(item.thread);
     const badgeStyle = {
-        borderRadius: 100,
+        paddingLeft: 5,
+        paddingRight: 5,
+        borderRadius: 5,
         overflow: 'hidden',
         alignItems: 'center',
         justifyContent: 'center',
-        width: 25,
-        height: 25,
-        backgroundColor: theme.colors.highlight,
+        backgroundColor: theme.colors.badgeNewBg,
     };
     const youBadgeStyle = {
         ...badgeStyle,
-        backgroundColor: theme.colors.primary,
+        backgroundColor: theme.colors.badgeYouBg,
     }
     const containerStyle = {
         backgroundColor: theme.colors.background,
     };
 
-
-    return <Swipeable
-        leftThreshold={50}
-    >
+    return <Swipeable leftThreshold={50}>
         <Col style={containerStyle}>
             <ThemedButton
                 onLongPress={() => {
@@ -97,26 +92,21 @@ const WatcherItem = ({ item }) => {
                     await setStateAndSave(setState, 'board', item.thread.board);
                     setTemp(prev => ({ ...prev, thread: item.thread }));
 
-                    sailor.navigate(BOTTOM_NAV_KEY, {
+                    sailor.navigate(NAV_KEY, {
                         screen: BOARD_TAB_KEY,
                         params: { screen: THREAD_KEY },
                     });
                 }}>
-                <Row style={{ padding: 15, justifyContent: 'space-between', alignItems: 'center', gap: 20 }}>
+                <Row style={{ padding: 10, justifyContent: 'space-between', alignItems: 'center', gap: 20 }}>
                     <Row style={{ alignItems: 'center', gap: 20 }}>
                         <Image src={thumb} style={{ borderRadius: 100 }} width={50} height={50} />
                         <HtmlText value={sign} />
                     </Row>
                     <Col style={{ gap: 5, justifyContent: 'space-between', alignItems: 'center' }}>
                         {item.new > 0 &&
-                            <Col style={badgeStyle}>
-                                <ThemedText content={item.new} />
-                            </Col>}
-
+                            <Col style={badgeStyle}><ThemedText style={{ color: theme.colors.badgeNewFg }} content={item.new} /></Col>}
                         {item.you > 0 &&
-                            <Col style={youBadgeStyle}>
-                                <Text>{item.you}</Text>
-                            </Col>}
+                            <Col style={youBadgeStyle}><ThemedText style={{ color: theme.colors.badgeYouFg }} content={item.you} /></Col>}
                     </Col>
                 </Row>
             </ThemedButton>

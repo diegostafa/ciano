@@ -5,7 +5,7 @@ import Slider from '@react-native-community/slider';
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
 import { useTheme } from '@react-navigation/native';
 import { filesize } from 'filesize';
-import React, { useContext, useRef } from 'react';
+import React, { useContext, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Switch, Text, TextInput, TouchableNativeFeedback, TouchableOpacity, TouchableWithoutFeedback, useColorScheme, useWindowDimensions, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -14,8 +14,9 @@ import Snackbar from 'react-native-snackbar';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
 
-import { Ctx, HEADER_HEIGHT, isAndroid } from './app';
+import { Ctx, HEADER_HEIGHT, IS_ANDROID } from './app';
 import { setConfigAndSave } from './context/config';
+import { totNew, totYou } from './context/state';
 import { Repo } from './data/repo';
 import { capitalize, downloadMedia, getImageAsset, isGif, isImage, isVideo } from './helpers';
 import { DarkHtmlTheme, LightHtmlTheme } from './theme';
@@ -758,17 +759,27 @@ export const Section = ({ children, title }) => {
 
 
 };
-export const EnumProp = ({ propName, desc, values }) => {
+export const EnumProp = ({ propName, desc, values, needsRestart }) => {
     const theme = useTheme();
     const { config, setConfig } = useContext(Ctx);
+    const [requireRestart, setRequireRestart] = useState(false);
 
     return <Col style={{ gap: 10 }}>
-        <ThemedText content={desc} />
+        <Row style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+            <ThemedText content={desc} />
+            {requireRestart && <ThemedText style={{ color: theme.colors.err }} content={'Restart required'} />}
+        </Row>
         <SegmentedControl
             tabStyle={{ borderRadius: config.borderRadius }}
             values={values}
             selectedIndex={config[propName] || 0}
-            onChange={async (event) => { await setConfigAndSave(setConfig, propName, event.nativeEvent.selectedSegmentIndex); }}
+            onChange={async (event) => {
+                if (needsRestart && !requireRestart) {
+                    setRequireRestart(true);
+                }
+                await setConfigAndSave(setConfig, propName, event.nativeEvent.selectedSegmentIndex);
+                console.log("SAVED: ", propName, event.nativeEvent.selectedSegmentIndex);
+            }}
             tintColor={theme.colors.primary}
             backgroundColor={theme.colors.highlight}
             fontStyle={{ color: theme.colors.text }}
@@ -777,10 +788,35 @@ export const EnumProp = ({ propName, desc, values }) => {
     </Col>;
 };
 export const ThemedButton = ({ children, onPress, onLongPress }) => {
-    if (isAndroid()) {
+    if (IS_ANDROID) {
         return <TouchableNativeFeedback onPress={onPress} onLongPress={onLongPress}>
             {children}
         </TouchableNativeFeedback>;
     }
     return <TouchableOpacity onPress={onPress} onLongPress={onLongPress}>{children}</TouchableOpacity>;
 }
+export const WatcherBadge = () => {
+    const { state } = useContext(Ctx);
+    const totNewReplies = totNew(state);
+    const totYouReplies = totYou(state);
+
+    const theme = useTheme();
+    const badgeStyle = {
+        paddingLeft: 5,
+        paddingRight: 5,
+        borderRadius: 5,
+        overflow: 'hidden',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: theme.colors.badgeNewBg,
+    };
+    const youBadgeStyle = {
+        ...badgeStyle,
+        backgroundColor: theme.colors.badgeYouBg,
+    }
+
+    return <Col style={totYouReplies > 0 ? youBadgeStyle : badgeStyle}><ThemedText
+        style={{ color: totYouReplies > 0 ? theme.colors.badgeYouFg : theme.colors.badgeNewFg }}
+        content={totNewReplies} /></Col>
+
+};
