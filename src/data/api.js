@@ -85,7 +85,7 @@ export const api = {
         }
     },
     chan: {
-        name: '4chan',
+        name: 'chan',
         thumb: (comment) => {
             if (!comment || !comment.media_name) {
                 return null;
@@ -175,3 +175,7 @@ export const api = {
     }
 };
 
+export const apis = {
+    ciano: api.ciano,
+    chan: api.chan,
+};

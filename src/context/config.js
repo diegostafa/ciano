@@ -34,19 +34,20 @@ const defaultConfig = {
 
     // advanced
     loadFaster: true,
+    apiName: 'chan',
 };
 export const Config = {
     get: async (key) => getLocal(key),
     set: async (key, value) => setLocal(key, value),
     save: async (config) => {
-        for (const [key, value] of Object.entries(config)) {
-            await setLocal(key, value);
-        }
+        await Promise.allSettled(Object.entries(config).map(([key, value]) =>
+            setLocal(key, value).catch(err => ({ key, error: err }))
+        ));
     },
     restore: async () => {
         const restored = {};
         for (const [key, defaultValue] of Object.entries(defaultConfig)) {
-            restored[key] = (await getLocal(key).catch(() => null)) || defaultValue
+            restored[key] = (await getLocal(key).catch(() => null)) ?? defaultValue
         }
         return restored;
     },

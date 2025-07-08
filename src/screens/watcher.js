@@ -4,7 +4,7 @@ import { FlatList, Image } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 
 import { Ctx, NAV_KEY } from '../app';
-import { Col, HtmlText, ListSeparator, Row, ThemedAsset, ThemedButton, ThemedText } from '../components';
+import { Col, HtmlText, ListSeparator, Row, ThemedAsset, ThemedButton, ThemedIcon, ThemedText } from '../components';
 import { setStateAndSave } from '../context/state';
 import { Repo } from '../data/repo';
 import { updateWatcher } from '../data/utils';
@@ -54,7 +54,7 @@ const NoWatchedThreads = () => {
     return <ThemedAsset msg={'You are not following any thread'} name={'error'} />;
 };
 const WatcherItem = ({ item }) => {
-    const { state, setState, setTemp } = useContext(Ctx);
+    const { state, setState, setTemp, config } = useContext(Ctx);
     const sailor = useNavigation();
     const theme = useTheme();
     const thumb = Repo(state.api).media.thumb(item.thread);
@@ -73,10 +73,29 @@ const WatcherItem = ({ item }) => {
         backgroundColor: theme.colors.badgeYouBg,
     }
     const containerStyle = {
+        marginLeft: 10,
+        marginRight: 10,
+        marginBottom: 5,
+        marginTop: 5,
+        overflow: 'hidden',
+        borderRadius: config.borderRadius,
         backgroundColor: theme.colors.background,
     };
 
-    return <Swipeable leftThreshold={50}>
+    return <Swipeable
+        renderRightActions={() => {
+            return <Col style={{ borderRadius: config.borderRadius, overflow: 'hidden', marginRight: 10, marginTop: 5, marginBottom: 5, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.danger }}>
+                <ThemedButton onPress={async () => {
+                    await setStateAndSave(state, setState, 'watching', state.watching.filter(t => t.thread.id !== item.thread.id));
+                }}>
+                    <Col style={{ flex: 1, padding: 10, paddingLeft: 20, paddingRight: 20, alignItems: 'center', justifyContent: 'center' }}>
+                        <ThemedIcon name={'eye-off'} size={28} />
+                    </Col>
+                </ThemedButton>
+            </Col>
+
+        }}
+        rightThreshold={50}>
         <Col style={containerStyle}>
             <ThemedButton
                 onLongPress={() => {
@@ -89,7 +108,7 @@ const WatcherItem = ({ item }) => {
                 }}
                 onPress={async () => {
                     await historyAdd(state, setState, item.thread)
-                    await setStateAndSave(setState, 'board', item.thread.board);
+                    await setStateAndSave(state, setState, 'board', item.thread.board);
                     setTemp(prev => ({ ...prev, thread: item.thread }));
 
                     sailor.navigate(NAV_KEY, {

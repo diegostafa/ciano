@@ -44,7 +44,7 @@ export const History = () => {
             left={'Yes'}
             onPressRight={() => { setForget(null); }}
             onPressLeft={async () => {
-                await setStateAndSave(setState, 'history', state.history.filter(item => item.id !== forget.id));
+                await setStateAndSave(state, setState, 'history', state.history.filter(item => item.id !== forget.id));
                 setForget(null);
             }}
         />
@@ -56,7 +56,7 @@ export const History = () => {
             left={'Yes'}
             onPressRight={() => { setForgetAll(false); }}
             onPressLeft={async () => {
-                await setStateAndSave(setState, 'history', []);
+                await setStateAndSave(state, setState, 'history', []);
                 setForgetAll(false);
             }}
         />

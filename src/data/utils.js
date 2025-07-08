@@ -14,7 +14,7 @@ export const loadBoards = async (state, setState, setTemp, forceRefresh) => {
 
     try {
         const boards = await Repo(state.api).boards.getRemote();
-        await setStateAndSave(setState, 'boards', boards);
+        await setStateAndSave(state, setState, 'boards', boards);
     }
     catch (err) {
         console.log(err);
@@ -124,7 +124,7 @@ export const uploadComment = async (state, setState, setTemp, data) => {
 
     try {
         const comment = await Repo(state.api).comments.create(data.form, data.media);
-        await setStateAndSave(setState, 'myComments', [...state.myComments, comment.id]);
+        await setStateAndSave(state, setState, 'myComments', [...state.myComments, comment.id]);
     }
     catch (err) {
         console.log(err);
@@ -156,7 +156,7 @@ export const uploadThread = async (state, setState, setTemp, data) => {
 
     try {
         const thread = await Repo(state.api).threads.create(data.form,);
-        await setStateAndSave(setState, 'myComments', [...state.myComments, thread.id]);
+        await setStateAndSave(state, setState, 'myComments', [...state.myComments, thread.id]);
         await loadThreads(state, setState, null, true);
         return thread
     }

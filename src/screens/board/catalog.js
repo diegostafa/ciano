@@ -3,8 +3,9 @@ import React, { useRef } from 'react';
 import { FlatList, Image, ScrollView, useWindowDimensions } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
 
-import { BOTTOM_NAV_WIDTH, Ctx, HEADER_HEIGHT } from '../../app';
+import { BOTTOM_NAV_WIDTH, Ctx, HEADER_HEIGHT, IS_ANDROID } from '../../app';
 import { BoardInfo, Col, Fab, FooterList, HeaderIcon, HeaderThemedText, HtmlText, ModalAlert, ModalMediaPreview, ModalMenu, ModalView, Row, SearchBar, ThemedAsset, ThemedButton, ThemedIcon, ThemedText, UpdateGap } from '../../components';
+import { layoutModes } from '../../context/config';
 import { catalogModes, catalogSorts, setStateAndSave } from '../../context/state';
 import { hasBoardsErrors, hasThreadsErrors, isOnline } from '../../context/temp';
 import { Repo } from '../../data/repo';
@@ -18,6 +19,11 @@ export const CATALOG_KEY = 'Catalog';
 
 export const CatalogHeaderLeft = () => {
     const navigation = useNavigation();
+    const { config } = React.useContext(Ctx);
+
+    if (layoutModes[config.layoutMode] === 'android' || (layoutModes[config.layoutMode] === 'auto' && IS_ANDROID)) {
+        return undefined;
+    }
     return <HeaderIcon name='menu' onPress={() => navigation.openDrawer()} />;
 };
 export const CatalogHeaderTitle = () => {
@@ -82,6 +88,7 @@ export const CatalogHeaderTitle = () => {
                     <Row style={{ justifyContent: 'space-between' }} >
                         <Col style={{ flex: 1, }}>
                             <TextInput
+                                placeholderTextColor={theme.colors.placeholder}
                                 onChangeText={text => setFilter(text)}
                                 value={filter}
                                 placeholder='Search for a board...'
@@ -109,7 +116,7 @@ export const CatalogHeaderTitle = () => {
                                     return;
                                 }
                                 const newState = { ...state, board: item.code };
-                                await setStateAndSave(setState, 'board', item.code);
+                                await setStateAndSave(state, setState, 'board', item.code);
                                 setSelectBoard(false);
                                 await loadThreads(newState, setTemp, true);
                             }}>
@@ -152,14 +159,14 @@ export const CatalogHeaderRight = () => {
                     setCatalogActions(false);
                     setTemp(prev => ({ ...prev, isComputingThreads: true }));
                     async function defer() {
-                        await setStateAndSave(setState, 'catalogRev', !state.catalogRev);
+                        await setStateAndSave(state, setState, 'catalogRev', !state.catalogRev);
                         setTemp(prev => ({ ...prev, threads: [...prev.threads].reverse(), isComputingThreads: false }));
                     }
                     defer()
                 }],
                 [`View as ${catalogModes[nextCatalogMode]}`, catalogModes[nextCatalogMode], async () => {
                     setCatalogActions(false);
-                    await setStateAndSave(setState, 'catalogViewMode', nextCatalogMode);
+                    await setStateAndSave(state, setState, 'catalogViewMode', nextCatalogMode);
                 }],
                 ['Go top', 'arrow-up', async () => {
                     setCatalogActions(false);
@@ -182,7 +189,7 @@ export const CatalogHeaderRight = () => {
                     }
                     setTemp(prev => ({ ...prev, isComputingThreads: true }));
                     async function defer() {
-                        await setStateAndSave(setState, 'catalogSort', index);
+                        await setStateAndSave(state, setState, 'catalogSort', index);
                         setTemp(prev => ({ ...prev, threads: [...prev.threads].sort(sort), isComputingThreads: false }));
                     }
                     defer()
@@ -205,8 +212,8 @@ export const Catalog = () => {
     React.useEffect(() => {
         const unsubscribe = sailor.addListener('beforeRemove', (e) => {
             if (temp.catalogFilter !== null) {
-                setTemp(prev => ({ ...prev, catalogFilter: null }));
                 e.preventDefault();
+                setTemp(prev => ({ ...prev, catalogFilter: null }));
                 return;
             }
             return;
@@ -235,7 +242,16 @@ export const Catalog = () => {
         }
         if (!state.board) {
             if (state.activeBoards.length > 0) {
-                setStateAndSave(setState, 'board', state.activeBoards[0]);
+                setStateAndSave(state, setState, 'board', state.activeBoards[0]);
+            }
+            return;
+        }
+        if (state.board !== null && !state.activeBoards.includes(state.board)) {
+            if (state.activeBoards.length > 0) {
+                setStateAndSave(state, setState, 'board', state.activeBoards[0]);
+            }
+            else {
+                setStateAndSave(state, setState, 'board', null);
             }
             return;
         }
@@ -258,7 +274,7 @@ export const Catalog = () => {
             right={'Ok'}
             onPressLeft={async () => {
                 setNoConnectionModal(false);
-                await setStateAndSave(setState, 'showNoConnectionNotice', false);
+                await setStateAndSave(state, setState, 'showNoConnectionNotice', false);
             }}
             onPressRight={() => { setNoConnectionModal(false); }}
         />
@@ -363,11 +379,11 @@ export const Catalog = () => {
             items={[
                 (isWatching ?
                     ['Unwatch', 'eye-off', async () => {
-                        await setStateAndSave(setState, 'watching', state.watching.filter(item => item.thread.id !== selectedThread.id));
+                        await setStateAndSave(state, setState, 'watching', state.watching.filter(item => item.thread.id !== selectedThread.id));
                         setSelectedThread(null);
                     }] :
                     ['watch', 'eye', async () => {
-                        await setStateAndSave(setState, 'watching', [...state.watching, {
+                        await setStateAndSave(state, setState, 'watching', [...state.watching, {
                             thread: selectedThread,
                             new: 0,
                             you: 0,
@@ -436,7 +452,7 @@ const GridCatalog = ({ width, height, setSelectedThread }) => {
         removeClippedSubviews
         numColumns={config.catalogGridColsLandscape}
         data={threads}
-        renderItem={({ item, index }) => <GridTile thread={item} tw={tw} th={th} setSelectedThread={setSelectedThread} />}
+        renderItem={({ item }) => <GridTile thread={item} tw={tw} th={th} setSelectedThread={setSelectedThread} />}
         keyExtractor={(item) => String(item.id)}
         onRefresh={async () => await loadThreads(state, setTemp, true)}
         refreshing={temp.isFetchingThreads}
@@ -489,7 +505,6 @@ const GridTile = ({ thread, tw, th, setSelectedThread }) => {
     const img = Repo(state.api).media.thumb(thread);
     const lastThread = state.history.at(-1);
     const isWatched = state.watching.some(item => item.thread.id === thread.id);
-
 
     return <Col style={{
         width: tw,

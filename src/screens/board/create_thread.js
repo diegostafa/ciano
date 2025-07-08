@@ -53,7 +53,7 @@ export const CreateThreadHeaderRight = () => {
                     const thread = await uploadThread(state, setState, setTemp, form);
                     if (thread && config.autoWatchThreadsCreated) {
                         if (!state.watching.some(item => item.thread.id === thread.id)) {
-                            await setStateAndSave(setState, 'watching', [...state.watching, {
+                            await setStateAndSave(state, setState, 'watching', [...state.watching, {
                                 thread,
                                 new: 0,
                                 you: 0
@@ -126,6 +126,7 @@ export const CreateThread = () => {
                     <ThemedText style={laberTextStyle} content={'Name'} />
                 </Row>
                 <TextInput
+                    placeholderTextColor={theme.colors.placeholder}
                     value={form.data.alias || ''}
                     style={temp.formNameError === null ? inputStyle : { ...inputStyle, borderColor: theme.colors.err }}
                     placeholder='(Optional)'
@@ -181,6 +182,7 @@ export const CreateThread = () => {
                         <ThemedText style={laberTextStyle} content={'Subject'} />
                     </Row>
                     <TextInput
+                        placeholderTextColor={theme.colors.placeholder}
                         value={form.data.sub || ''}
                         style={temp.formSubError === null ? inputStyle : { ...inputStyle, borderColor: theme.colors.err }}
                         placeholder='Subject'
@@ -216,6 +218,7 @@ export const CreateThread = () => {
                     <ThemedText style={laberTextStyle} content={'Comment'} />
                 </Row>
                 <TextInput
+                    placeholderTextColor={theme.colors.placeholder}
                     placeholder='Comment'
                     value={form.data.com || ''}
                     style={temp.formComError === null ? inputStyle : { ...inputStyle, borderColor: theme.colors.err }}

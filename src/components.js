@@ -2,7 +2,6 @@
 import { Marquee } from '@animatereactnative/marquee';
 import { ImageZoom } from '@likashefqet/react-native-image-zoom';
 import Slider from '@react-native-community/slider';
-import SegmentedControl from '@react-native-segmented-control/segmented-control';
 import { useTheme } from '@react-navigation/native';
 import { filesize } from 'filesize';
 import React, { useContext, useRef, useState } from 'react';
@@ -10,6 +9,7 @@ import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Switch, Text, T
 import FastImage from 'react-native-fast-image';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import HTMLView from 'react-native-htmlview';
+import ReactNativeSegmentedControlTab from 'react-native-segmented-control-tab';
 import Snackbar from 'react-native-snackbar';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
@@ -673,6 +673,7 @@ export const SearchBar = ({ placeholder, value, onChangeText, onClose }) => {
             placeholder={placeholder}
             value={value}
             onChangeText={onChangeText}
+            placeholderTextColor={theme.colors.placeholder}
             style={{
                 fontSize: 16 * config.uiFontScale,
                 padding: 10,
@@ -769,21 +770,22 @@ export const EnumProp = ({ propName, desc, values, needsRestart }) => {
             <ThemedText content={desc} />
             {requireRestart && <ThemedText style={{ color: theme.colors.err }} content={'Restart required'} />}
         </Row>
-        <SegmentedControl
-            tabStyle={{ borderRadius: config.borderRadius }}
-            values={values}
+        <ReactNativeSegmentedControlTab
+            tabsContainerStyle={{ backgroundColor: theme.colors.background }}
+            tabStyle={{ backgroundColor: theme.colors.highlight, borderColor: theme.colors.primary }}
+            tabTextStyle={{ color: theme.colors.text }}
+            activeTabStyle={{ backgroundColor: theme.colors.primary }}
+            activeTabTextStyle={{ color: theme.colors.primaryInverted }}
+            allowFontScaling={false}
             selectedIndex={config[propName] || 0}
-            onChange={async (event) => {
+            values={values}
+            onTabPress={async index => {
                 if (needsRestart && !requireRestart) {
                     setRequireRestart(true);
                 }
-                await setConfigAndSave(setConfig, propName, event.nativeEvent.selectedSegmentIndex);
-                console.log("SAVED: ", propName, event.nativeEvent.selectedSegmentIndex);
+                await setConfigAndSave(setConfig, propName, index);
+                console.log("SAVED: ", propName, index);
             }}
-            tintColor={theme.colors.primary}
-            backgroundColor={theme.colors.highlight}
-            fontStyle={{ color: theme.colors.text }}
-            activeFontStyle={{ color: theme.colors.primaryInverted }}
         />
     </Col>;
 };

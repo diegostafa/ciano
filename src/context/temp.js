@@ -82,10 +82,4 @@ export const isOnline = (temp) => {
 };
 export const Temp = {
     default: () => defaultTemp,
-    switchApi: (temp) => {
-        return {
-            ...defaultTemp,
-            connType: temp.connType,
-        }
-    },
 };

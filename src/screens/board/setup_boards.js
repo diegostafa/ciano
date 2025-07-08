@@ -69,10 +69,10 @@ export const SetupBoards = () => {
                 e.preventDefault();
                 return;
             }
-            await setStateAndSave(setState, 'activeBoards', [...activeBoards].sort());
+            await setStateAndSave(state, setState, 'activeBoards', [...activeBoards].sort());
         });
         return unsubscribe;
-    }, [activeBoards, sailor, setState, setTemp, temp]);
+    }, [activeBoards, sailor, setState, setTemp, state, temp]);
 
     React.useEffect(() => {
         if (hasBoardsErrors(temp)) {

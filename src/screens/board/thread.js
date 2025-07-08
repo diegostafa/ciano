@@ -1,5 +1,6 @@
 /* eslint-disable react/display-name */
 import { Marquee } from '@animatereactnative/marquee';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { useNavigation, useTheme } from '@react-navigation/native';
 import { filesize } from 'filesize';
 import React, { useCallback, useRef } from 'react';
@@ -12,7 +13,7 @@ import { setStateAndSave, threadSorts } from '../../context/state';
 import { hasCommentsErrors } from '../../context/temp';
 import { Repo } from '../../data/repo';
 import { loadComments, uploadComment } from '../../data/utils';
-import { commentContains, getCurrFullBoard, getRepliesTo, getThreadHeaderSignature, quotes, relativeTime, watcherReset } from '../../helpers';
+import { commentContains, getCurrFullBoard, getRepliesTo, getThreadHeaderSignature, quotes, relativeTime, stripHtml, watcherReset } from '../../helpers';
 export const THREAD_KEY = 'Thread';
 
 const getDefaultForm = (config, thread) => {
@@ -54,12 +55,12 @@ export const ThreadHeaderRight = () => {
             isWatching ?
             ['unwatch', 'eye-off', async () => {
                 setThreadActions(false);
-                await setStateAndSave(setState, 'watching', state.watching.filter(item => item.thread.id !== thread.id));
+                await setStateAndSave(state, setState, 'watching', state.watching.filter(item => item.thread.id !== thread.id));
             }
             ] :
             ['watch', 'eye', async () => {
                 setThreadActions(false);
-                await setStateAndSave(setState, 'watching', [...state.watching, {
+                await setStateAndSave(state, setState, 'watching', [...state.watching, {
                     thread,
                     new: 0,
                     you: 0,
@@ -74,7 +75,7 @@ export const ThreadHeaderRight = () => {
             setThreadActions(false);
             setTemp(prev => ({ ...prev, isComputingComments: true }));
             async function defer() {
-                await setStateAndSave(setState, 'threadRev', !state.threadRev);
+                await setStateAndSave(state, setState, 'threadRev', !state.threadRev);
                 // don't sort op
                 if (temp.comments.length > 0) {
                     const head = temp.comments[0];
@@ -116,7 +117,7 @@ export const ThreadHeaderRight = () => {
                     setSortActions(false);
                     setTemp(prev => ({ ...prev, isComputingComments: true }));
                     async function defer() {
-                        await setStateAndSave(setState, 'threadSort', index);
+                        await setStateAndSave(state, setState, 'threadSort', index);
                         // don't sort op
                         if (temp.comments.length > 0) {
                             const head = temp.comments[0];
@@ -562,6 +563,7 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
             {viewMode > 0 &&
                 <Col style={{ borderRadius: config.borderRadius, overflow: 'hidden' }}>
                     <TextInput
+                        placeholderTextColor={theme.colors.placeholder}
                         value={form.data.alias || ''}
                         style={{
                             backgroundColor: theme.colors.highlight,
@@ -601,6 +603,7 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
 
                 </Col>
                 <TextInput
+                    placeholderTextColor={theme.colors.placeholder}
                     value={form.data.com || ''}
                     style={{
                         flex: 1,
@@ -622,7 +625,7 @@ const CreateCommentForm = ({ setCreateComment, form, setForm }) => {
                         await loadComments(state, setTemp, true);
                         if (config.autoWatchThreads) {
                             if (!state.watching.some(item => item.thread.id === thread.id)) {
-                                await setStateAndSave(setState, 'watching', [...state.watching, {
+                                await setStateAndSave(state, setState, 'watching', [...state.watching, {
                                     thread,
                                     new: 0,
                                     you: 0
@@ -653,17 +656,21 @@ const CommentMenu = ({ selectedComment, setSelectedComment }) => {
     const isMine = state.myComments.includes(selectedComment.id);
     const items = [
         ['Quote', 'chatbox', () => {
+            const id = selectedComment.id;
             setSelectedComment(null)
         }],
         ['Quote whole comment', 'chatbox-ellipses', () => {
+            const id = selectedComment.id;
+            const content = stripHtml(selectedComment.com);
             setSelectedComment(null)
         }],
         ['Copy', 'copy', () => {
-            // todo
+            const content = stripHtml(selectedComment.com);
+            Clipboard.setString(content);
             setSelectedComment(null)
         }],
         [isMine ? 'Unmark as yours' : 'Mark as yours', isMine ? 'arrow-undo' : 'checkmark', async () => {
-            await setStateAndSave(setState, 'myComments', isMine ?
+            await setStateAndSave(state, setState, 'myComments', isMine ?
                 state.myComments.filter(item => item !== selectedComment.id) :
                 [...state.myComments, selectedComment.id]);
             setSelectedComment(null)

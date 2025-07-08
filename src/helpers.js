@@ -39,7 +39,7 @@ export const historyAdd = async (state, setState, item) => {
         return state.history;
     }
     const others = state.history.filter(i => i.id !== item.id);
-    await setStateAndSave(setState, 'history', [...others, item]);
+    await setStateAndSave(state, setState, 'history', [...others, item]);
 };
 export const watcherAdd = async (state, setState, item) => {
     if (!item) {
@@ -48,10 +48,10 @@ export const watcherAdd = async (state, setState, item) => {
     if (state.watching.some(i => i.thread.id === item.thread.id)) {
         return;
     }
-    await setStateAndSave(setState, 'watching', [...state.watching, item]);
+    await setStateAndSave(state, setState, 'watching', [...state.watching, item]);
 };
 export const watcherReset = async (state, setState, id) => {
-    await setStateAndSave(setState, 'watching', state.watching.map(i =>
+    await setStateAndSave(state, setState, 'watching', state.watching.map(i =>
         i.thread.id === id ? { ...i, new: 0, you: 0 } : i
     ));
 };

@@ -1,4 +1,3 @@
-import { api } from '../data/api';
 import { getLocal, getRepliesTo, isImage, quotes, setLocal } from '../helpers';
 
 const defaultState = {
@@ -14,41 +13,32 @@ const defaultState = {
     catalogRev: false,
     threadRev: false,
     showNoConnectionNotice: true,
-    api: api.chan,
+    api: null,
 };
+const needApi = ['board', 'boards', 'activeBoards', 'history', 'myComments', 'watching'];
+
 export const State = {
-    get: async (key) => getLocal(key),
-    set: async (key, value) => setLocal(key, value),
     save: async (state) => {
-        await setLocal(`${state.api.name}/board`, state.board);
-        await setLocal(`${state.api.name}/boards`, state.boards);
-        await setLocal(`${state.api.name}/activeBoards`, state.activeBoards);
-        await setLocal(`${state.api.name}/history`, state.history);
-        await setLocal(`${state.api.name}/myComments`, state.myComments);
-        await setLocal(`${state.api.name}/watching`, state.watching);
-        await setLocal(`catalogViewMode`, state.catalogViewMode);
-        await setLocal(`catalogSort`, state.catalogSort);
-        await setLocal(`threadSort`, state.threadSort);
-        await setLocal(`catalogRev`, state.catalogRev);
-        await setLocal(`threadRev`, state.threadRev);
-        await setLocal(`showNoConnectionNotice`, state.showNoConnectionNotice);
+        for (const [key, value] of Object.entries(state)) {
+            if (needApi.includes(key)) {
+                await setLocal(`${state.api.name}/${key}`, value)
+            }
+            else {
+                await setLocal(key, value)
+            }
+        }
     },
-    restore: async (fromApi) => {
+    restore: async (api) => {
         let restored = {};
-        const tempApi = fromApi !== undefined ? fromApi : (await getLocal('api').catch(() => null)) || defaultState.api;
-        restored.board = (await getLocal(`${tempApi.name}/board`).catch(() => null)) || defaultState.board;
-        restored.boards = (await getLocal(`${tempApi.name}/boards`).catch(() => null)) || defaultState.boards;
-        restored.activeBoards = (await getLocal(`${tempApi.name}/activeBoards`).catch(() => null)) || defaultState.activeBoards;
-        restored.history = (await getLocal(`${tempApi.name}/history`).catch(() => null)) || defaultState.history;
-        restored.myComments = (await getLocal(`${tempApi.name}/myComments`).catch(() => null)) || defaultState.myComments;
-        restored.watching = (await getLocal(`${tempApi.name}/watching`).catch(() => null)) || defaultState.watching;
-        restored.catalogViewMode = (await getLocal(`catalogViewMode`).catch(() => null)) || defaultState.catalogViewMode;
-        restored.catalogSort = (await getLocal(`catalogSort`).catch(() => null)) || defaultState.catalogSort;
-        restored.threadSort = (await getLocal(`threadSort`).catch(() => null)) || defaultState.threadSort;
-        restored.catalogRev = (await getLocal(`catalogRev`).catch(() => null)) || defaultState.catalogRev;
-        restored.threadRev = (await getLocal(`threadRev`).catch(() => null)) || defaultState.threadRev;
-        restored.showNoConnectionNotice = (await getLocal(`showNoConnectionNotice`).catch(() => null)) || defaultState.showNoConnectionNotice;
-        restored.api = tempApi;
+        for (const [key, defaultValue] of Object.entries(defaultState)) {
+            if (needApi.includes(key)) {
+                restored[key] = (await getLocal(`${api.name}/${key}`).catch(() => null)) ?? defaultValue;
+            }
+            else {
+                restored[key] = (await getLocal(key).catch(() => null)) ?? defaultValue;
+            }
+        }
+        restored.api = api;
         return restored;
     },
     default: () => defaultState
@@ -136,14 +126,19 @@ export const threadSorts = [
         icon: 'film',
         sort: () => (a, b) => {
             const hasVideoA = a.media_ext !== null && !isImage(a.media_ext) ? 1 : 0;
-            const hasVideoB = a.media_ext !== null && !isImage(b.media_ext) ? 1 : 0;
+            const hasVideoB = b.media_ext !== null && !isImage(b.media_ext) ? 1 : 0;
             return hasVideoB - hasVideoA;
         }
     },
 ];
-export const setStateAndSave = async (setState, key, value) => {
+export const setStateAndSave = async (state, setState, key, value) => {
     setState(prev => ({ ...prev, [key]: value }));
-    await State.set(key, value);
+    if (needApi.includes(key)) {
+        await setLocal(`${state.api.name}/${key}`, value)
+    }
+    else {
+        await setLocal(key, value)
+    }
 };
 export const totNew = (state) => {
     let count = 0;

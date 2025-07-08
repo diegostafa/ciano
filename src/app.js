@@ -5,14 +5,15 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 import { NavigationContainer, useTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
-import { AppState, Platform, useColorScheme, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Platform, useColorScheme, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
 
-import { Col, WatcherBadge } from './components.js';
+import { Col, TabIcon, WatcherBadge } from './components.js';
 import { Config, layoutModes, themeModes } from './context/config.js';
 import { State, totNew, totYou } from './context/state.js';
 import { Temp } from './context/temp.js';
+import { apis } from './data/api.js';
 import { BOARD_TAB_KEY, BoardTab } from './screens/board/tab.js';
 import { THREAD_KEY } from './screens/board/thread.js';
 import { History } from './screens/history.js';
@@ -36,45 +37,35 @@ export const IS_ANDROID = Platform.OS === 'android';
 
 export const App = () => {
     const colorscheme = useColorScheme();
-    const appState = React.useRef(AppState.currentState);
     const [state, setState] = React.useState(null);
     const [config, setConfig] = React.useState(null);
     const [temp, setTemp] = React.useState(Temp.default());
 
-    async function restoreState() {
-        const data = await State.restore();
-        setState(data);
-    }
-    async function restoreConfig() {
-        const data = await Config.restore();
-        console.log(data);
-        setConfig(data);
-    }
-
-    React.useEffect(() => { if (!state) restoreState() }, [state]);
-    React.useEffect(() => { if (!config) restoreConfig() }, [config]);
-
     React.useEffect(() => {
-        const handleAppStateChange = async (nextAppState) => {
-            if (appState.current === 'active' && nextAppState.match(/inactive|background/)) {
-                await State.save(state);
-                await Config.save(config);
+        async function restore() {
+            try {
+                const configData = await Config.restore();
+                setConfig(configData);
+                const api = apis[configData.apiName];
+                const stateData = await State.restore(api);
+                setState(stateData);
             }
-            appState.current = nextAppState;
-        };
-        const subscription = AppState.addEventListener('change', handleAppStateChange);
-        return () => { subscription.remove(); };
-    }, [config, state]);
+            catch (e) {
+                console.log(e);
+            }
+        }
+        restore();
+    }, []);
 
     React.useEffect(() => {
         const unsubscribe = addEventListener(ctx => {
             setTemp(prev => ({ ...prev, connType: ctx.type }));
         });
         return () => { unsubscribe(); };
-    }, [config, state]);
+    }, []);
 
     if (!state || !config) {
-        return <Col style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }} />;
+        return <Col style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator /></Col>;
     }
 
     const themeMode = themeModes[config.themeMode] === 'auto' ? colorscheme : themeModes[config.themeMode];
@@ -83,7 +74,7 @@ export const App = () => {
         config.highContrast ? LightThemeHighContrast : LightTheme;
 
     const layoutMode = layoutModes[config.layoutMode] === 'auto' ?
-        layoutModes[config.layoutMode] : IS_IOS ? 'ios' : 'android';
+        IS_IOS ? 'ios' : 'android' : layoutModes[config.layoutMode];
 
     return <DrawerNav
         state={state}
@@ -112,7 +103,7 @@ const DrawerNav = ({ state, setState, config, setConfig, temp, setTemp, nav, the
     </Ctx.Provider>;
 };
 const BotNav = () => {
-    const { state } = React.useContext(Ctx);
+    const { state, config } = React.useContext(Ctx);
     const { width, height } = useWindowDimensions();
     const theme = useTheme();
     const isVertical = width < height;
@@ -130,6 +121,7 @@ const BotNav = () => {
                 tabBarHideOnKeyboard: true,
                 tabBarLabelPosition: !isVertical ? 'below-icon' : undefined,
                 tabBarStyle: { width: !isVertical ? LANDSCAPE_NAV_WIDTH : undefined },
+                tabBarLabelStyle: { fontSize: 11 * config.uiFontScale },
             }}>
 
             <BotTab.Screen
@@ -138,20 +130,24 @@ const BotNav = () => {
                 options={{
                     tabBarBadge: totNewReplies > 0 ? totNewReplies : undefined,
                     tabBarBadgeStyle: {
+                        fontSize: 11 * config.uiFontScale,
                         backgroundColor: totYouReplies > 0 ? theme.colors.badgeYouBg : theme.colors.badgeNewBg,
                         color: totYouReplies > 0 ? theme.colors.badgeYouFg : theme.colors.badgeNewFg,
                     },
-
+                    tabBarIcon: TabIcon('notifications'),
                     headerStyle: { height: HEADER_HEIGHT },
-                    title: 'Watcher'
+                    title: 'Watcher',
+                    tabBarLabelStyle: { fontSize: 11 * config.uiFontScale },
                 }}
             />
             <BotTab.Screen
                 name={BOARD_TAB_KEY}
                 component={BoardTab}
                 options={{
+                    tabBarIcon: TabIcon('home'),
                     headerShown: false,
                     title: 'Boards',
+                    tabBarLabelStyle: { fontSize: 11 * config.uiFontScale },
                 }}
                 listeners={({ navigation, route }) => ({
                     tabPress: e => {
@@ -169,6 +165,7 @@ const BotNav = () => {
                 name={SETTINGS_TAB_KEY}
                 component={SettingsTab}
                 options={{
+                    tabBarIcon: TabIcon('settings'),
                     headerShown: false,
                     title: 'Settings',
                 }}
@@ -177,6 +174,8 @@ const BotNav = () => {
     </SafeAreaView>;
 };
 const TopNav = () => {
+    const { config } = React.useContext(Ctx);
+
     return <SafeAreaView style={{ flex: 1 }}>
         <TopTab.Navigator
             initialRouteName={BOARD_TAB_KEY}
@@ -190,6 +189,7 @@ const TopNav = () => {
                 component={Watcher}
                 options={{
                     tabBarLabel: 'Watcher',
+                    tabBarLabelStyle: { fontSize: 11 * config.uiFontScale },
                     tabBarBadge: WatcherBadge,
                 }}
             />
@@ -199,6 +199,7 @@ const TopNav = () => {
                 options={{
                     headerShown: false,
                     title: 'Boards',
+                    tabBarLabelStyle: { fontSize: 11 * config.uiFontScale },
                 }}
                 listeners={({ navigation, route }) => ({
                     tabPress: e => {
@@ -218,6 +219,7 @@ const TopNav = () => {
                 options={{
                     headerShown: false,
                     title: 'Settings',
+                    tabBarLabelStyle: { fontSize: 11 * config.uiFontScale },
                 }}
             />
         </TopTab.Navigator>

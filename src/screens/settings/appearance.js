@@ -35,11 +35,11 @@ export const Appearance = () => {
                         }} />
                 </Row>
             </Section>
-            <Section title={'Layout'}>
+            <Section title={'Navigation'}>
                 <EnumProp
                     propName={'layoutMode'}
-                    desc={'Set the position of the tabs'}
-                    values={['Bottom', 'Top', 'Auto']}
+                    desc={'Set the style of the navigation'}
+                    values={['IOS', 'Android', 'Auto']}
                     needsRestart
                 />
             </Section>
