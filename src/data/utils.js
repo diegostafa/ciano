@@ -2,7 +2,7 @@ import { catalogSorts, setStateAndSave, threadSorts } from '../context/state';
 import { quotes } from '../helpers';
 import { Repo } from './repo';
 
-export const loadBoards = async (state, setState, setTemp, forceRefresh) => {
+export const loadBoards = async (state, setState, setTemp) => {
     setTemp(prev => ({
         ...prev,
         boardsFetchErrorTimeout: null,

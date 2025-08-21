@@ -237,7 +237,7 @@ export const Catalog = () => {
             return;
         }
         if (!state.boards) {
-            loadBoards(state, setState, setTemp, true);
+            loadBoards(state, setState, setTemp);
             return;
         }
         if (!state.board) {
@@ -283,28 +283,28 @@ export const Catalog = () => {
         return <ThemedAsset
             msg={'The server is unreachable'}
             name={'error'}
-            retry={async () => { await loadBoards(state, setState, setTemp, true); }}
+            retry={async () => { await loadBoards(state, setState, setTemp); }}
         />;
     }
     if (temp.boardsFetchErrorRequest !== null) {
         return <ThemedAsset
             msg={'Malformed request'}
             name={'error'}
-            retry={async () => { await loadBoards(state, setState, setTemp, true); }}
+            retry={async () => { await loadBoards(state, setState, setTemp); }}
         />;
     }
     if (temp.boardsFetchErrorResponse !== null) {
         return <ThemedAsset
             msg={'The server returned an error'}
             name={'error'}
-            retry={async () => { await loadBoards(state, setState, setTemp, true); }}
+            retry={async () => { await loadBoards(state, setState, setTemp); }}
         />;
     }
     if (temp.boardsFetchErrorUnknown !== null) {
         return <ThemedAsset
             msg={'Unknown error'}
             name={'error'}
-            retry={async () => { await loadBoards(state, setState, setTemp, true); }}
+            retry={async () => { await loadBoards(state, setState, setTemp); }}
         />;
     }
     if (temp.threadsFetchErrorTimeout !== null) {

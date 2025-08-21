@@ -22,7 +22,7 @@ export const SetupBoardsHeaderRight = () => {
     let items = [
         ['reload', 'reload', async () => {
             setSetupBoardsActions(false);
-            await loadBoards(state, setState, setTemp, true);
+            await loadBoards(state, setState, setTemp);
         }],
     ];
 
@@ -82,7 +82,7 @@ export const SetupBoards = () => {
             return;
         }
         if (!state.boards) {
-            loadBoards(state, setState, setTemp, true);
+            loadBoards(state, setState, setTemp);
             return;
         }
     }, [config, setState, setTemp, state, temp]);
@@ -91,25 +91,25 @@ export const SetupBoards = () => {
         return <ThemedAsset
             msg={'The server is unreachable'}
             name={'placeholder'}
-            retry={async () => { await loadBoards(state, setState, setTemp, true); }} />;
+            retry={async () => { await loadBoards(state, setState, setTemp); }} />;
     }
     if (temp.boardsFetchErrorRequest !== null) {
         return <ThemedAsset
             msg={'Malformed request'}
             name={'placeholder'}
-            retry={async () => { await loadBoards(state, setState, setTemp, true); }} />;
+            retry={async () => { await loadBoards(state, setState, setTemp); }} />;
     }
     if (temp.boardsFetchErrorResponse !== null) {
         return <ThemedAsset
             msg={'The server returned an error'}
             name={'placeholder'}
-            retry={async () => { await loadBoards(state, setState, setTemp, true); }} />;
+            retry={async () => { await loadBoards(state, setState, setTemp); }} />;
     }
     if (temp.boardsFetchErrorUnknown !== null) {
         return <ThemedAsset
             msg={'The server returned an unknown error'}
             name={'placeholder'}
-            retry={async () => { await loadBoards(state, setState, setTemp, true); }} />;
+            retry={async () => { await loadBoards(state, setState, setTemp); }} />;
     }
     if (temp.isFetchingBoards) {
         return <ThemedAsset
@@ -137,7 +137,7 @@ export const SetupBoards = () => {
         />}
         <FlatList
             numColumns={2}
-            onRefresh={async () => { await loadBoards(state, setState, setTemp, true); }}
+            onRefresh={async () => { await loadBoards(state, setState, setTemp); }}
             refreshing={temp.isFetchingBoards}
             ref={setupBoardsReflist}
             data={state.boards.filter(item => item.name.toLowerCase().includes((temp.setupBoardsFilter || '').toLowerCase())).sort((a, b) => a.code.localeCompare(b.code))}
